@@ -51,28 +51,488 @@
     <div id="vignette-overlay"></div>
     <div id="crt-overlay"></div>
 
-    <!-- Computer UI (Mini-game) -->
+    <!-- Computer UI (Mini-game & Desktop OS) -->
     <div id="computer-ui" style="display: none;">
         <div id="comp-desktop">
-            <div id="comp-icon" onclick="openCompFolder()">
-                <div class="folder-icon">📁</div>
-                <div>РАБОТА</div>
-            </div>
-            
-            <div id="comp-window" style="display: none;">
-                <div id="comp-header">
-                    <span>Отчет_13.txt</span>
-                    <button id="comp-close" onclick="closeCompFolder()">X</button>
+            <!-- Desktop Icons Grid -->
+            <div class="comp-icon-grid">
+                <!-- Column 1: System & Documents -->
+                <div class="comp-icon" onclick="openCompApp('mycomp')">
+                    <div class="comp-icon-img icon-mycomp">🗄️</div>
+                    <div class="comp-icon-label">Мой компьютер</div>
                 </div>
-                <div id="comp-body">
-                    <p>Перепишите текст из желтой папки:</p>
-                    <textarea id="comp-input"></textarea>
-                    <button id="comp-submit" onclick="submitWork()">ОТПРАВИТЬ</button>
-                    <p id="comp-error"></p>
+                <div class="comp-icon" onclick="openCompApp('report')">
+                    <div class="comp-icon-img icon-doc">📄</div>
+                    <div class="comp-icon-label">Отчет_13.txt</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('docs')">
+                    <div class="comp-icon-img icon-folder">📁</div>
+                    <div class="comp-icon-label">Документы</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('trash')">
+                    <div class="comp-icon-img icon-trash">🗑️</div>
+                    <div class="comp-icon-label">Корзина</div>
+                </div>
+
+                <!-- Column 2: Work Applications -->
+                <div class="comp-icon" onclick="openCompApp('1c')">
+                    <div class="comp-icon-img icon-1c">📊</div>
+                    <div class="comp-icon-label">1С:Предприятие</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('excel')">
+                    <div class="comp-icon-img icon-excel">📈</div>
+                    <div class="comp-icon-label">MS Excel</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('mail')">
+                    <div class="comp-icon-img icon-mail">✉️</div>
+                    <div class="comp-icon-label">Почта (Outlook)</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('browser')">
+                    <div class="comp-icon-img icon-browser">🌐</div>
+                    <div class="comp-icon-label">Браузер IE</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('calc')">
+                    <div class="comp-icon-img icon-calc">🧮</div>
+                    <div class="comp-icon-label">Калькулятор</div>
+                </div>
+                <div class="comp-icon" onclick="openCompApp('notepad')">
+                    <div class="comp-icon-img icon-notepad">📝</div>
+                    <div class="comp-icon-label">Заметки</div>
+                </div>
+
+                <!-- Column 3: Games (Minecraft & Roblox!) -->
+                <div class="comp-icon icon-game-mc" onclick="openCompApp('minecraft')">
+                    <div class="comp-icon-img mc-block-icon">🟩</div>
+                    <div class="comp-icon-label">Minecraft.exe</div>
+                </div>
+                <div class="comp-icon icon-game-rb" onclick="openCompApp('roblox')">
+                    <div class="comp-icon-img rb-tilt-icon">🟥</div>
+                    <div class="comp-icon-label">Roblox Player</div>
+                </div>
+            </div>
+
+            <!-- WINDOW 1: Core Quest Text Editor (#comp-window) -->
+            <div id="comp-window" class="comp-window" style="display: none; width: 620px; top: 8%; left: 22%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-window')">
+                    <div class="comp-win-title">
+                        <span>📄</span>
+                        <span>Текстовый редактор - [Отчет_13.txt]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="minimizeCompWindow('comp-window')">_</button>
+                        <button onclick="closeCompFolder()">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-menubar">
+                    <span>Файл</span><span>Правка</span><span>Вид</span><span>Вставка</span><span>Справка</span>
+                </div>
+                <div id="comp-body" class="comp-win-content">
+                    <div class="comp-report-banner">
+                        <strong>СЛУЖЕБНЫЙ ОТЧЕТ ДЕЖУРНОГО ОПЕРАТОРА № 13-Б</strong>
+                        <p>Внимание: перепечатайте текст из желтой папки (на столе) и нажмите «ОТПРАВИТЬ»:</p>
+                    </div>
+                    <textarea id="comp-input" placeholder="Введите текст из папки..."></textarea>
+                    <div class="comp-win-actions">
+                        <button id="comp-submit" onclick="submitWork()">💾 ОТПРАВИТЬ В ГЛАВК</button>
+                        <span id="comp-error"></span>
+                    </div>
+                </div>
+                <div class="comp-win-statusbar">
+                    <span>Кодировка: Windows-1251</span>
+                    <span>Режим: Правка</span>
+                    <span>Статус: Ожидание ввода</span>
+                </div>
+            </div>
+
+            <!-- WINDOW 2: 🟩 MINECRAFT -->
+            <div id="comp-win-minecraft" class="comp-window mc-theme" style="display: none; width: 680px; top: 7%; left: 18%;">
+                <div class="comp-win-header mc-win-header" onmousedown="startDragWindow(event, 'comp-win-minecraft')">
+                    <div class="comp-win-title">
+                        <span>🟩</span>
+                        <span>Minecraft 1.5.2</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('minecraft')">X</button>
+                    </div>
+                </div>
+                <div class="mc-main-screen">
+                    <div class="mc-dirt-bg">
+                        <div class="mc-logo-wrapper">
+                            <div class="mc-logo-title">MINECRAFT</div>
+                            <div class="mc-splash-text">Не смотри в окно офиса!</div>
+                        </div>
+                        <div id="mc-menu-view" class="mc-menu-buttons">
+                            <button class="mc-btn" onclick="openMCDialog('single')">Одиночная игра</button>
+                            <button class="mc-btn" onclick="openMCDialog('multi')">Сетевая игра</button>
+                            <button class="mc-btn" onclick="openMCDialog('options')">Настройки...</button>
+                            <button class="mc-btn" onclick="closeCompApp('minecraft')">Выйти из игры</button>
+                        </div>
+                        <div id="mc-dialog-view" class="mc-dialog-box" style="display: none;">
+                            <div id="mc-dialog-title" class="mc-dialog-header">Загрузка мира...</div>
+                            <div id="mc-dialog-content" class="mc-dialog-body"></div>
+                            <button class="mc-btn mc-btn-small" onclick="closeMCDialog()">Назад</button>
+                        </div>
+                        <div class="mc-footer-info">
+                            <span>Minecraft 1.5.2 (Ночная Смена Edition)</span>
+                            <span>Разработчик: Mojang</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 3: 🟥 ROBLOX PLAYER -->
+            <div id="comp-win-roblox" class="comp-window rb-theme" style="display: none; width: 720px; top: 6%; left: 16%;">
+                <div class="comp-win-header rb-win-header" onmousedown="startDragWindow(event, 'comp-win-roblox')">
+                    <div class="comp-win-title">
+                        <span class="rb-red-box"></span>
+                        <span>Roblox Player</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('roblox')">X</button>
+                    </div>
+                </div>
+                <div class="rb-container">
+                    <div class="rb-nav">
+                        <div class="rb-nav-left">
+                            <span class="rb-nav-brand">ROBLOX</span>
+                            <span class="rb-nav-tab active">Discover</span>
+                            <span class="rb-nav-tab">Marketplace</span>
+                            <span class="rb-nav-tab">Create</span>
+                        </div>
+                        <div class="rb-nav-right">
+                            <span class="rb-robux">🪙 9,999 R$</span>
+                            <span class="rb-user">👤 Player_13</span>
+                        </div>
+                    </div>
+                    <div id="rb-games-list" class="rb-content">
+                        <div class="rb-headline">Рекомендуемые игры для тебя:</div>
+                        <div class="rb-cards-grid">
+                            <div class="rb-card" onclick="launchRobloxGame('Escape The Night Office / Побег из Офиса (ХОРРОР)')">
+                                <div class="rb-card-thumb thumb-office">🏢</div>
+                                <div class="rb-card-title">Escape The Night Office (ХОРРОР)</div>
+                                <div class="rb-card-meta">⭐ 95% | 👥 48.2K игроков</div>
+                            </div>
+                            <div class="rb-card" onclick="launchRobloxGame('DOORS: Floor 2 (Отель 13)')">
+                                <div class="rb-card-thumb thumb-doors">🚪</div>
+                                <div class="rb-card-title">DOORS: Floor 2 (Отель 13)</div>
+                                <div class="rb-card-meta">⭐ 98% | 👥 134.1K игроков</div>
+                            </div>
+                            <div class="rb-card" onclick="launchRobloxGame('Survive The Zombie Blizzard (Метель)')">
+                                <div class="rb-card-thumb thumb-blizzard">🧟</div>
+                                <div class="rb-card-title">Survive The Zombie Blizzard</div>
+                                <div class="rb-card-meta">⭐ 91% | 👥 27.8K игроков</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="rb-loading-modal" class="rb-modal" style="display: none;">
+                        <div class="rb-spinner"></div>
+                        <div id="rb-loading-title" class="rb-loading-text">Подключение к серверу Roblox...</div>
+                        <div id="rb-loading-desc" class="rb-loading-sub">Загрузка ресурсов карты...</div>
+                        <button class="rb-btn-close" onclick="closeRobloxModal()">Отмена</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 4: 📊 1С: ПРЕДПРИЯТИЕ 7.7 -->
+            <div id="comp-win-1c" class="comp-window" style="display: none; width: 660px; top: 11%; left: 20%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-1c')">
+                    <div class="comp-win-title">
+                        <span>📊</span>
+                        <span>1С: Бухгалтерия 7.7 - [Сводная ведомость склада]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('1c')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-menubar">
+                    <span>Операции</span><span>Документы</span><span>Журналы</span><span>Отчеты</span><span>Сервис</span><span>Справка</span>
+                </div>
+                <div class="comp-win-content 1c-content">
+                    <div class="app-1c-toolbar">
+                        <button onclick="alert1C('Документ успешно проведен.')">✔ Провести</button>
+                        <button onclick="alert1C('Печать заблокирована: нет бумаги в принтере.')">🖨 Печать</button>
+                        <button onclick="alert1C('Все остатки заморожены приказом штаба ГО.')">🔒 Блокировка</button>
+                    </div>
+                    <table class="table-1c">
+                        <thead>
+                            <tr>
+                                <th>Код</th><th>Номенклатура</th><th>Ед.</th><th>Остаток</th><th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>#014</td><td>Консервы мясные говяжьи</td><td>шт</td><td>140</td><td><span class="tag-warn">В РЕЗЕРВЕ</span></td></tr>
+                            <tr><td>#029</td><td>Медицинские аптечки АИ-2</td><td>уп</td><td>85</td><td><span class="tag-ok">ОТГРУЖЕНО</span></td></tr>
+                            <tr><td>#055</td><td>Генератор бензиновый 5.5кВт</td><td>шт</td><td>2</td><td><span class="tag-warn">ДЕФИЦИТ</span></td></tr>
+                            <tr><td>#089</td><td>Топливо дизельное (канистры 20л)</td><td>шт</td><td>60</td><td><span class="tag-crit">ЗАБЛОКИРОВАНО</span></td></tr>
+                            <tr><td>#104</td><td>Доски хвойные обрезные (укрепление)</td><td>м³</td><td>12</td><td><span class="tag-warn">В ОФИС</span></td></tr>
+                            <tr><td>#999</td><td>Спецкомплект «Карантин-ГО»</td><td>ящ</td><td>1</td><td><span class="tag-crit">ОШИБКА СВЯЗИ</span></td></tr>
+                        </tbody>
+                    </table>
+                    <div id="alert-1c-msg" class="app-1c-status">Примечание: Распоряжение шефа — закрыть баланс до 22:00 и покинуть здание.</div>
+                </div>
+            </div>
+
+            <!-- WINDOW 5: 📈 MS EXCEL -->
+            <div id="comp-win-excel" class="comp-window" style="display: none; width: 640px; top: 13%; left: 24%;">
+                <div class="comp-win-header excel-header" onmousedown="startDragWindow(event, 'comp-win-excel')">
+                    <div class="comp-win-title">
+                        <span>📈</span>
+                        <span>Microsoft Excel - [График_Дежурств_Декабрь.xls]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('excel')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-menubar">
+                    <span>Файл</span><span>Правка</span><span>Вставка</span><span>Формат</span><span>Сервис</span><span>Данные</span>
+                </div>
+                <div class="comp-win-content excel-content">
+                    <div class="excel-formula-bar">
+                        <span class="excel-fx">fx</span>
+                        <input type="text" readonly value="=ЕСЛИ(Статус='Смена_Сдана'; 'ДОМОЙ'; 'РАБОТАТЬ')" class="excel-fx-input">
+                    </div>
+                    <table class="table-excel">
+                        <thead>
+                            <tr><th></th><th>A (Сотрудник)</th><th>B (Смена)</th><th>C (Задача)</th><th>D (Статус)</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr class="highlight-row"><td>1</td><td>Смирнов И. (Вы)</td><td>Ночь 13-е</td><td>Перепечатать отчет 13-Б</td><td>В ПРОЦЕССЕ</td></tr>
+                            <tr><td>2</td><td>Михаил К. (Коллега)</td><td>Ночь 13-е</td><td>Баланс склада 1С</td><td>ЗАКАНЧИВАЕТ</td></tr>
+                            <tr><td>3</td><td>Петров А. (Кладовщик)</td><td>День 13-е</td><td>Закрыть склад</td><td>УЕХАЛ В 17:00</td></tr>
+                            <tr><td>4</td><td>Босс (Директор)</td><td>-</td><td>Эвакуация штаба</td><td>ЗА ГОРОДОМ</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- WINDOW 6: 🌐 INTERNET EXPLORER -->
+            <div id="comp-win-browser" class="comp-window" style="display: none; width: 680px; top: 9%; left: 20%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-browser')">
+                    <div class="comp-win-title">
+                        <span>🌐</span>
+                        <span>Internet Explorer - [Городской Портал Новостей]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('browser')">X</button>
+                    </div>
+                </div>
+                <div class="browser-address-bar">
+                    <span>Адрес:</span>
+                    <input type="text" readonly value="http://www.gorod-novosti.local/alert-urgent" class="browser-url">
+                </div>
+                <div class="comp-win-content browser-content">
+                    <div class="news-breaking-header">
+                        🚨 ЭКСТРЕННЫЙ ВЫПУСК НОВОСТЕЙ | 21:12
+                    </div>
+                    <div class="news-body">
+                        <h3>В ГОРОДЕ ВВЕДЕНО ЧРЕЗВЫЧАЙНОЕ ПОЛОЖЕНИЕ</h3>
+                        <p class="news-p">По сообщению МЧС и оперативного штаба, в центральном и северном районах зафиксированы массовые нападения зараженных. Электричество подается с перебоями, внешняя мобильная связь отключена.</p>
+                        <div class="news-alert-box">
+                            <strong>ПРАВИЛА БЕЗОПАСНОСТИ ДЛЯ ГРАЖДАН:</strong>
+                            <ul>
+                                <li>Не выходите на улицу после 21:30.</li>
+                                <li>Плотно заприте входные двери и забаррикадируйте окна.</li>
+                                <li>При звуках шагов за дверью или царапанья — соблюдайте полную тишину.</li>
+                                <li>Ждите утреннего оповещения сиренами гражданской обороны.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 7: ✉️ OUTLOOK EXPRESS -->
+            <div id="comp-win-mail" class="comp-window" style="display: none; width: 650px; top: 10%; left: 22%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-mail')">
+                    <div class="comp-win-title">
+                        <span>✉️</span>
+                        <span>Outlook Express - [Входящие (3)]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('mail')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-menubar">
+                    <span>Сообщение</span><span>Вид</span><span>Сервис</span><span>Справка</span>
+                </div>
+                <div class="comp-win-content mail-content">
+                    <div class="mail-list">
+                        <div class="mail-item active" onclick="showMailBody(0)">
+                            <div class="mail-item-sender">Шеф (Директор)</div>
+                            <div class="mail-item-subj">СРОЧНО: Закрывайте офис и уходите!</div>
+                        </div>
+                        <div class="mail-item" onclick="showMailBody(1)">
+                            <div class="mail-item-sender">Охрана комплекса</div>
+                            <div class="mail-item-subj">Внимание: Ворота блокируются в 22:00</div>
+                        </div>
+                        <div class="mail-item" onclick="showMailBody(2)">
+                            <div class="mail-item-sender">Михаил (Коллега)</div>
+                            <div class="mail-item-subj">Ты почти закончил?</div>
+                        </div>
+                    </div>
+                    <div id="mail-reading-pane" class="mail-body-pane">
+                        <div class="mail-body-header">
+                            <div><strong>От:</strong> Шеф &lt;boss@trans-logistics.ru&gt;</div>
+                            <div><strong>Тема:</strong> СРОЧНО: Закрывайте офис и уходите!</div>
+                        </div>
+                        <div class="mail-body-text">
+                            Смирнов, бросай всё второстепенное. Отправь отчет № 13-Б, чтобы сервер зафиксировал закрытие смены, и немедленно беги домой. На улицах творится кошмар, я еле выехал за кольцевую. Запри квартиру и жди утра.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 8: 🧮 КАЛЬКУЛЯТОР -->
+            <div id="comp-win-calc" class="comp-window" style="display: none; width: 280px; top: 18%; left: 38%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-calc')">
+                    <div class="comp-win-title">
+                        <span>🧮</span>
+                        <span>Калькулятор</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('calc')">X</button>
+                    </div>
+                </div>
+                <div class="calc-body">
+                    <input type="text" id="calc-display" readonly value="0" class="calc-screen">
+                    <div class="calc-keys">
+                        <button class="calc-btn btn-clear" onclick="calcAction('C')">C</button>
+                        <button class="calc-btn btn-op" onclick="calcAction('/')">/</button>
+                        <button class="calc-btn btn-op" onclick="calcAction('*')">*</button>
+                        <button class="calc-btn btn-op" onclick="calcAction('-')">-</button>
+                        <button class="calc-btn" onclick="calcAction('7')">7</button>
+                        <button class="calc-btn" onclick="calcAction('8')">8</button>
+                        <button class="calc-btn" onclick="calcAction('9')">9</button>
+                        <button class="calc-btn btn-op" onclick="calcAction('+')">+</button>
+                        <button class="calc-btn" onclick="calcAction('4')">4</button>
+                        <button class="calc-btn" onclick="calcAction('5')">5</button>
+                        <button class="calc-btn" onclick="calcAction('6')">6</button>
+                        <button class="calc-btn btn-eq" onclick="calcAction('=')">=</button>
+                        <button class="calc-btn" onclick="calcAction('1')">1</button>
+                        <button class="calc-btn" onclick="calcAction('2')">2</button>
+                        <button class="calc-btn" onclick="calcAction('3')">3</button>
+                        <button class="calc-btn btn-zero" onclick="calcAction('0')">0</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 9: 📝 БЛОКНОТ -->
+            <div id="comp-win-notepad" class="comp-window" style="display: none; width: 500px; top: 16%; left: 30%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-notepad')">
+                    <div class="comp-win-title">
+                        <span>📝</span>
+                        <span>Блокнот - [Заметки_Смены.txt]</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('notepad')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-menubar">
+                    <span>Файл</span><span>Правка</span><span>Формат</span><span>Вид</span><span>Справка</span>
+                </div>
+                <div class="comp-win-content">
+                    <textarea class="notepad-area" readonly>ПАМЯТКА ДЛЯ НОЧНОЙ СМЕНЫ:
+
+1. Желтая папка с текстом отчета лежит на твоем столе слева.
+2. Открой «Отчет_13.txt» и введи данные точь-в-точь.
+3. Не играй в Minecraft и Roblox, пока смена не закрыта! (Шеф проверяет логи).
+4. Михаил обещал вырубить сервер и свет после отправки отчета.
+5. Не подходи к окнам, на улице какой-то вой.</textarea>
+                </div>
+            </div>
+
+            <!-- WINDOW 10: 🗄️ МОЙ КОМПЬЮТЕР -->
+            <div id="comp-win-mycomp" class="comp-window" style="display: none; width: 520px; top: 15%; left: 25%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-mycomp')">
+                    <div class="comp-win-title">
+                        <span>🗄️</span>
+                        <span>Мой компьютер</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('mycomp')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-content explorer-content">
+                    <div class="drives-grid">
+                        <div class="drive-item" onclick="alert('Диск 3.5 (A:): Дискета не вставлена.')">
+                            <span class="drive-icon">💾</span>
+                            <span>Диск 3.5 (A:)</span>
+                        </div>
+                        <div class="drive-item" onclick="alert('Системный диск (C:): Свободно 1.4 ГБ из 4.0 ГБ.')">
+                            <span class="drive-icon">💽</span>
+                            <span>Система (C:)</span>
+                        </div>
+                        <div class="drive-item" onclick="openCompApp('docs')">
+                            <span class="drive-icon">📁</span>
+                            <span>Документы (D:)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- WINDOW 11: 🗑️ КОРЗИНА -->
+            <div id="comp-win-trash" class="comp-window" style="display: none; width: 480px; top: 20%; left: 32%;">
+                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-trash')">
+                    <div class="comp-win-title">
+                        <span>🗑️</span>
+                        <span>Корзина</span>
+                    </div>
+                    <div class="comp-win-controls">
+                        <button onclick="closeCompApp('trash')">X</button>
+                    </div>
+                </div>
+                <div class="comp-win-content explorer-content">
+                    <div class="drives-grid">
+                        <div class="drive-item" onclick="alert('Файл поврежден: stalker_face_night.bmp')">
+                            <span class="drive-icon">🖼️</span>
+                            <span>силуэт_окно.bmp</span>
+                        </div>
+                        <div class="drive-item" onclick="alert('Удаленный черновик отчета за прошлую неделю.')">
+                            <span class="drive-icon">📄</span>
+                            <span>старый_отчет.bak</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- START MENU POPUP -->
+            <div id="comp-start-menu">
+                <div class="start-banner">
+                    <span>Windows 98</span>
+                </div>
+                <div class="start-menu-items">
+                    <div class="start-item" onclick="openCompApp('report')"><span>📄</span> Отчет_13.txt</div>
+                    <div class="start-item highlight-mc" onclick="openCompApp('minecraft')"><span>🟩</span> Minecraft</div>
+                    <div class="start-item highlight-rb" onclick="openCompApp('roblox')"><span>🟥</span> Roblox Player</div>
+                    <div class="start-divider"></div>
+                    <div class="start-item" onclick="openCompApp('1c')"><span>📊</span> 1С:Предприятие 7.7</div>
+                    <div class="start-item" onclick="openCompApp('excel')"><span>📈</span> MS Excel</div>
+                    <div class="start-item" onclick="openCompApp('browser')"><span>🌐</span> Internet Explorer</div>
+                    <div class="start-item" onclick="openCompApp('mail')"><span>✉️</span> Outlook Express</div>
+                    <div class="start-item" onclick="openCompApp('calc')"><span>🧮</span> Калькулятор</div>
+                    <div class="start-item" onclick="openCompApp('notepad')"><span>📝</span> Блокнот</div>
+                    <div class="start-divider"></div>
+                    <div class="start-item" onclick="closeComputerUI()"><span>🚪</span> Выход из ПК [ESC]</div>
+                </div>
+            </div>
+
+            <!-- TASKBAR AT BOTTOM -->
+            <div id="comp-taskbar">
+                <button id="comp-start-btn" onclick="toggleStartMenu()">
+                    <span class="win-logo-flag">🪟</span>
+                    <span>Пуск</span>
+                </button>
+                <div id="comp-taskbar-tabs">
+                    <!-- Dynamic tabs for open windows -->
+                </div>
+                <div id="comp-tray">
+                    <span class="tray-icon">🔊</span>
+                    <span class="tray-icon">📶</span>
+                    <span class="tray-lang">RU</span>
+                    <span id="comp-clock" class="tray-clock">21:14</span>
+                    <button id="exit-comp" class="tray-exit-btn" onclick="closeComputerUI()">ВЫЙТИ [ESC]</button>
                 </div>
             </div>
         </div>
-        <button id="exit-comp" onclick="closeComputerUI()">ВЫЙТИ ИЗ ПК [ESC]</button>
     </div>
 
     <!-- Physical Yellow Folder UI -->

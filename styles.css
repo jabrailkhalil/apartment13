@@ -187,65 +187,1004 @@ canvas {
     transform: translate(-50%, -50%) scale(1.4);
 }
 
-/* COMPUTER UI */
+/* ===================================================
+   DESKTOP OS & WORK APPS + MINECRAFT & ROBLOX STYLES
+   =================================================== */
 #computer-ui {
     position: fixed;
     top: 0; left: 0; width: 100vw; height: 100vh;
-    background: #008080; /* Windows 95 Teal */
+    background: #008080;
     z-index: 105;
-    font-family: 'Courier New', Courier, monospace;
+    font-family: 'Tahoma', 'Segoe UI', Arial, sans-serif;
+    user-select: none;
+    overflow: hidden;
 }
 
 #comp-desktop {
-    width: 100%; height: 100%; position: relative;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #008080 radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.25) 100%);
 }
 
-#comp-icon {
-    position: absolute; top: 30px; left: 30px;
-    width: 80px; text-align: center; color: white;
+/* CRT scanlines effect over the virtual monitor */
+#comp-desktop::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%);
+    background-size: 100% 4px;
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* Icons Grid */
+.comp-icon-grid {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: wrap;
+    height: calc(100vh - 65px);
+    gap: 12px 20px;
+    align-content: flex-start;
+    z-index: 10;
+}
+
+.comp-icon {
+    width: 78px;
+    text-align: center;
+    color: white;
+    cursor: pointer;
+    padding: 6px 4px;
+    border-radius: 4px;
+    transition: background 0.12s;
+}
+
+.comp-icon:hover {
+    background: rgba(0, 0, 128, 0.45);
+    outline: 1px dotted #ffffff;
+}
+
+.comp-icon:active {
+    background: rgba(0, 0, 128, 0.7);
+}
+
+.comp-icon-img {
+    width: 44px;
+    height: 44px;
+    margin: 0 auto 5px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    border-radius: 4px;
+}
+
+.comp-icon-label {
+    font-size: 11px;
+    text-shadow: 1px 1px 2px #000, -1px -1px 2px #000, 1px -1px 2px #000, -1px 1px 2px #000;
+    line-height: 1.2;
+    word-break: break-word;
+}
+
+/* Special Icons: Minecraft & Roblox */
+.mc-block-icon {
+    background: #5c3a21;
+    border: 2px solid #3c8527;
+    box-shadow: inset 0 8px 0 #4da631, 2px 2px 5px rgba(0,0,0,0.5);
+    border-radius: 6px;
+    font-size: 20px;
+}
+
+.rb-tilt-icon {
+    background: #e2231a;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    border-radius: 8px;
+    font-size: 20px;
+}
+
+/* Classic Windows 98/2000 Window Styling */
+.comp-window {
+    position: absolute;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #dfdfdf #404040 #404040 #dfdfdf;
+    box-shadow: 4px 4px 14px rgba(0,0,0,0.55);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    max-height: 85vh;
+}
+
+.comp-win-header {
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: white;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: move;
+}
+
+.comp-win-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.comp-win-controls {
+    display: flex;
+    gap: 3px;
+}
+
+.comp-win-controls button {
+    background: #c0c0c0;
+    border: 1px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    font-weight: bold;
+    font-size: 11px;
+    width: 20px;
+    height: 18px;
+    line-height: 16px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 #000;
+}
+
+.comp-win-controls button:active {
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.comp-win-menubar {
+    background: #c0c0c0;
+    border-bottom: 1px solid #808080;
+    padding: 3px 8px;
+    font-size: 11px;
+    display: flex;
+    gap: 14px;
+    color: #000;
+}
+
+.comp-win-menubar span:hover {
+    background: #000080;
+    color: #ffffff;
     cursor: pointer;
 }
-.folder-icon { font-size: 48px; }
 
-#comp-window {
-    position: absolute; top: 15%; left: 25%;
-    width: 50%; background: #c0c0c0;
-    border: 2px solid #fff; border-right-color: #000; border-bottom-color: #000;
-    box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
-    color: black;
+.comp-win-content {
+    padding: 12px;
+    overflow-y: auto;
+    flex: 1;
+    background: #c0c0c0;
+    color: #000000;
 }
 
-#comp-header {
-    background: #000080; color: white;
-    padding: 5px; display: flex; justify-content: space-between;
-    font-weight: bold;
+.comp-win-statusbar {
+    background: #c0c0c0;
+    border-top: 1px solid #808080;
+    padding: 3px 8px;
+    font-size: 10px;
+    display: flex;
+    justify-content: space-between;
+    color: #444;
 }
 
-#comp-close {
-    background: #c0c0c0; border: 1px solid #fff; border-right-color: #000; border-bottom-color: #000;
-    cursor: pointer; font-weight: bold;
+/* Report Text Editor Window */
+.comp-report-banner {
+    background: #fef08a;
+    border: 1px solid #ca8a04;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #854d0e;
 }
 
-#comp-body { padding: 15px; }
+.comp-report-banner p {
+    margin: 4px 0 0 0;
+    font-size: 11px;
+}
 
 #comp-input {
-    width: 100%; height: 120px; margin: 10px 0;
-    background: #fff; border: 2px solid #000; border-right-color: #fff; border-bottom-color: #fff;
-    font-family: 'Courier New', Courier, monospace; font-size: 16px;
-    padding: 5px; box-sizing: border-box; resize: none;
+    width: 100%;
+    height: 140px;
+    margin: 6px 0 12px 0;
+    background: #ffffff;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 15px;
+    padding: 8px;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.comp-win-actions {
+    display: flex;
+    align-items: center;
+    gap: 15px;
 }
 
 #comp-submit {
-    background: #c0c0c0; border: 2px solid #fff; border-right-color: #000; border-bottom-color: #000;
-    padding: 5px 15px; cursor: pointer; font-weight: bold;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    padding: 7px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    box-shadow: 1px 1px 0 #000;
 }
+
+#comp-submit:hover {
+    background: #d4d4d4;
+}
+
 #comp-submit:active {
-    border: 2px solid #000; border-right-color: #fff; border-bottom-color: #fff;
+    border-color: #808080 #ffffff #ffffff #808080;
 }
 
-#comp-error { color: #aa0000; font-weight: bold; margin-top: 10px; }
+#comp-error {
+    color: #dc2626;
+    font-weight: bold;
+    font-size: 12px;
+}
 
-#exit-comp, #exit-folder {
+/* MINECRAFT WINDOW */
+.mc-theme {
+    background: #2b2b2b;
+    border-color: #4a4a4a #111 #111 #4a4a4a;
+}
+
+.mc-win-header {
+    background: #222;
+    border-bottom: 2px solid #111;
+}
+
+.mc-dirt-bg {
+    background: #3b281b repeating-linear-gradient(45deg, #332216, #332216 10px, #3b281b 10px, #3b281b 20px);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    border: 2px solid #1a110a;
+}
+
+.mc-logo-wrapper {
+    position: relative;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.mc-logo-title {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 42px;
+    font-weight: 900;
+    color: #c6c6c6;
+    letter-spacing: 4px;
+    text-shadow: 4px 4px 0px #383838, 6px 6px 0px #1e1e1e, 8px 8px 12px rgba(0,0,0,0.8);
+    transform: scaleY(1.2);
+}
+
+.mc-splash-text {
+    position: absolute;
+    bottom: -12px;
+    right: -20px;
+    color: #ffff00;
+    font-family: 'Comic Sans MS', sans-serif;
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 2px 2px 0px #3f3f00;
+    transform: rotate(-14deg);
+    animation: mcPulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes mcPulse {
+    from { transform: rotate(-14deg) scale(0.95); }
+    to { transform: rotate(-14deg) scale(1.08); }
+}
+
+.mc-menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 320px;
+}
+
+.mc-btn {
+    background: #737373;
+    border: 2px solid;
+    border-color: #a8a8a8 #383838 #383838 #a8a8a8;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    font-size: 15px;
+    font-weight: bold;
+    padding: 10px;
+    cursor: pointer;
+    text-shadow: 2px 2px 0px #222;
+    box-shadow: 0 4px 0 #222;
+}
+
+.mc-btn:hover {
+    background: #8b8b8b;
+    border-color: #c4c4c4 #4a4a4a #4a4a4a #c4c4c4;
+}
+
+.mc-btn:active {
+    box-shadow: none;
+    transform: translateY(2px);
+    border-color: #383838 #a8a8a8 #a8a8a8 #383838;
+}
+
+.mc-dialog-box {
+    background: rgba(0, 0, 0, 0.75);
+    border: 2px solid #ffffff;
+    padding: 20px;
+    width: 85%;
+    color: #ffffff;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.mc-dialog-header {
+    font-size: 18px;
+    font-weight: bold;
+    color: #facc15;
+    margin-bottom: 10px;
+}
+
+.mc-dialog-body {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 15px;
+    color: #e2e8f0;
+}
+
+.mc-btn-small {
+    width: 140px;
+    margin: 0 auto;
+}
+
+.mc-footer-info {
+    margin-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    color: #888;
+    font-size: 11px;
+}
+
+/* ROBLOX WINDOW */
+.rb-theme {
+    background: #191b1d;
+    border-color: #393b3d #000 #000 #393b3d;
+    color: #ffffff;
+}
+
+.rb-win-header {
+    background: #000000;
+}
+
+.rb-red-box {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    background: #e2231a;
+    transform: rotate(15deg);
+    margin-right: 4px;
+    border-radius: 2px;
+}
+
+.rb-container {
+    background: #191b1d;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.rb-nav {
+    background: #232527;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #393b3d;
+}
+
+.rb-nav-left {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.rb-nav-brand {
+    font-weight: 900;
+    font-size: 18px;
+    letter-spacing: 1px;
+}
+
+.rb-nav-tab {
+    font-size: 13px;
+    color: #adb5bd;
+    cursor: pointer;
+}
+
+.rb-nav-tab.active, .rb-nav-tab:hover {
+    color: #ffffff;
+}
+
+.rb-nav-right {
+    display: flex;
+    gap: 15px;
+    font-size: 12px;
+}
+
+.rb-robux {
+    color: #facc15;
+    font-weight: bold;
+}
+
+.rb-content {
+    padding: 18px;
+}
+
+.rb-headline {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 14px;
+}
+
+.rb-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.rb-card {
+    background: #232527;
+    border: 1px solid #393b3d;
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    text-align: center;
+}
+
+.rb-card:hover {
+    transform: translateY(-4px);
+    border-color: #00a2ff;
+}
+
+.rb-card-thumb {
+    width: 100%;
+    height: 100px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    margin-bottom: 8px;
+}
+
+.thumb-office { background: #1e3a5f; }
+.thumb-doors { background: #3b1d11; }
+.thumb-blizzard { background: #134e4a; }
+
+.rb-card-title {
+    font-size: 13px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rb-card-meta {
+    font-size: 11px;
+    color: #9ca3af;
+}
+
+.rb-modal {
+    position: absolute;
+    top: 50px; left: 0; width: 100%; height: calc(100% - 50px);
+    background: rgba(15, 17, 20, 0.94);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.rb-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #393b3d;
+    border-top-color: #e2231a;
+    border-radius: 50%;
+    animation: rbSpin 0.9s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes rbSpin {
+    to { transform: rotate(360deg); }
+}
+
+.rb-loading-text {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.rb-loading-sub {
+    font-size: 12px;
+    color: #f87171;
+    max-width: 440px;
+    line-height: 1.4;
+    margin-bottom: 18px;
+}
+
+.rb-btn-close {
+    background: #393b3d;
+    color: #fff;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.rb-btn-close:hover {
+    background: #4b4f54;
+}
+
+/* 1C: БУХГАЛТЕРИЯ */
+.app-1c-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    background: #d4d4d4;
+    padding: 4px;
+    border: 1px solid #808080;
+}
+
+.app-1c-toolbar button {
+    background: #e2e8f0;
+    border: 1px solid #808080;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.app-1c-toolbar button:active {
+    background: #cbd5e1;
+}
+
+.table-1c {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    font-size: 11px;
+}
+
+.table-1c th, .table-1c td {
+    border: 1px solid #94a3b8;
+    padding: 5px 8px;
+    text-align: left;
+}
+
+.table-1c th {
+    background: #cbd5e1;
+    font-weight: bold;
+}
+
+.tag-warn { background: #fef08a; color: #854d0e; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.tag-ok   { background: #bbf7d0; color: #166534; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+.tag-crit { background: #fecaca; color: #991b1b; padding: 2px 6px; border-radius: 3px; font-weight: bold; }
+
+.app-1c-status {
+    margin-top: 10px;
+    font-size: 11px;
+    color: #b91c1c;
+    font-weight: bold;
+}
+
+/* MS EXCEL */
+.excel-header {
+    background: linear-gradient(90deg, #107c41, #15803d);
+}
+
+.excel-formula-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    border: 1px solid #94a3b8;
+    padding: 3px 6px;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.excel-fx {
+    font-style: italic;
+    font-weight: bold;
+    color: #475569;
+}
+
+.excel-fx-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.table-excel {
+    width: 100%;
+    border-collapse: collapse;
+    background: #ffffff;
+    font-size: 12px;
+}
+
+.table-excel th, .table-excel td {
+    border: 1px solid #cbd5e1;
+    padding: 4px 8px;
+}
+
+.table-excel th {
+    background: #f1f5f9;
+    font-weight: bold;
+    text-align: center;
+}
+
+.highlight-row {
+    background: #fef9c3;
+    font-weight: bold;
+}
+
+/* BROWSER IE */
+.browser-address-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #c0c0c0;
+    padding: 4px 8px;
+    border-bottom: 1px solid #808080;
+    font-size: 12px;
+}
+
+.browser-url {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #808080;
+    padding: 3px 6px;
+    font-family: monospace;
+    font-size: 11px;
+}
+
+.news-breaking-header {
+    background: #dc2626;
+    color: #ffffff;
+    padding: 6px 12px;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.news-body {
+    background: #ffffff;
+    padding: 15px;
+    border: 1px solid #cbd5e1;
+    margin-top: 8px;
+}
+
+.news-body h3 {
+    margin: 0 0 10px 0;
+    color: #991b1b;
+}
+
+.news-alert-box {
+    background: #fee2e2;
+    border-left: 4px solid #ef4444;
+    padding: 10px;
+    margin-top: 10px;
+    font-size: 12px;
+}
+
+/* OUTLOOK MAIL */
+.mail-content {
+    display: flex;
+    gap: 10px;
+    height: 280px;
+}
+
+.mail-list {
+    width: 200px;
+    background: #ffffff;
+    border: 1px solid #808080;
+    overflow-y: auto;
+}
+
+.mail-item {
+    padding: 8px;
+    border-bottom: 1px solid #e2e8f0;
+    cursor: pointer;
+    font-size: 11px;
+}
+
+.mail-item:hover {
+    background: #f1f5f9;
+}
+
+.mail-item.active {
+    background: #000080;
+    color: #ffffff;
+}
+
+.mail-item-sender {
+    font-weight: bold;
+}
+
+.mail-item-subj {
+    font-size: 10px;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.mail-body-pane {
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid #808080;
+    padding: 12px;
+    font-size: 12px;
+    overflow-y: auto;
+}
+
+.mail-body-header {
+    border-bottom: 1px solid #cbd5e1;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.mail-body-text {
+    line-height: 1.5;
+}
+
+/* CALCULATOR */
+.calc-body {
+    background: #c0c0c0;
+    padding: 12px;
+}
+
+.calc-screen {
+    width: 100%;
+    height: 36px;
+    background: #ffffff;
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    font-family: monospace;
+    font-size: 20px;
+    text-align: right;
+    padding: 4px 8px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+
+.calc-keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.calc-btn {
+    height: 36px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    font-weight: bold;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.calc-btn:active {
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.btn-clear { color: #dc2626; }
+.btn-op { color: #2563eb; }
+.btn-eq { background: #3b82f6; color: #fff; }
+
+/* NOTEPAD & EXPLORER */
+.notepad-area {
+    width: 100%;
+    height: 220px;
+    background: #ffffff;
+    border: 1px solid #808080;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    padding: 8px;
+    box-sizing: border-box;
+    resize: none;
+}
+
+.drives-grid {
+    display: flex;
+    gap: 20px;
+    padding: 15px;
+}
+
+.drive-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.drive-item:hover {
+    background: #e2e8f0;
+}
+
+.drive-icon {
+    font-size: 32px;
+    margin-bottom: 4px;
+}
+
+/* START MENU */
+#comp-start-menu {
+    position: absolute;
+    bottom: 34px;
+    left: 2px;
+    width: 220px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    box-shadow: 4px 4px 12px rgba(0,0,0,0.6);
+    display: none;
+    z-index: 200;
+}
+
+.start-banner {
+    background: #000080;
+    color: #ffffff;
+    padding: 6px 10px;
+    font-weight: bold;
+    font-size: 13px;
+    letter-spacing: 1px;
+}
+
+.start-menu-items {
+    padding: 4px;
+}
+
+.start-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.start-item:hover {
+    background: #000080;
+    color: #ffffff;
+}
+
+.start-divider {
+    height: 1px;
+    background: #808080;
+    margin: 4px 0;
+}
+
+.highlight-mc:hover { background: #2e7d32; }
+.highlight-rb:hover { background: #b91c1c; }
+
+/* TASKBAR AT BOTTOM */
+#comp-taskbar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 34px;
+    background: #c0c0c0;
+    border-top: 2px solid #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 100;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+#comp-start-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow: 1px 1px 0 #000;
+}
+
+#comp-start-btn:active, #comp-start-btn.active {
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+#comp-taskbar-tabs {
+    flex: 1;
+    display: flex;
+    gap: 4px;
+    margin: 0 8px;
+    overflow-x: auto;
+}
+
+.taskbar-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 24px;
+    padding: 0 10px;
+    background: #c0c0c0;
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    font-size: 11px;
+    cursor: pointer;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.taskbar-tab.active {
+    background: #e2e8f0;
+    border-color: #808080 #ffffff #ffffff #808080;
+    font-weight: bold;
+}
+
+#comp-tray {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid;
+    border-color: #808080 #ffffff #ffffff #808080;
+    padding: 2px 6px;
+    font-size: 11px;
+}
+
+.tray-exit-btn {
+    background: #dc2626 !important;
+    color: white !important;
+    border: 1px solid #7f1d1d !important;
+    padding: 3px 10px !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+}
+
+.tray-exit-btn:hover {
+    background: #b91c1c !important;
+}
+
+
+#exit-folder {
     position: absolute; bottom: 20px; right: 20px;
     background: #333; color: white; border: 1px solid white;
     padding: 10px 20px; font-family: 'PT Mono', monospace;

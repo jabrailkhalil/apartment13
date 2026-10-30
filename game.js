@@ -4511,117 +4511,149 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.fillStyle = '#008080';
         ctx.fillRect(0, 0, 512, 384);
 
-        // Desktop Icons
-        // My Computer icon
+        // COLUMN 1: System & Documents (x: 12)
+        // 1. My Computer icon
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(16, 12, 24, 20);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(19, 15, 18, 14);
+        ctx.fillStyle = '#475569'; ctx.fillRect(24, 32, 8, 4);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Компьютер', 6, 44);
+
+        // 2. 1C: Предприятие 7.7
+        ctx.fillStyle = '#eab308'; ctx.fillRect(16, 56, 24, 20);
+        ctx.fillStyle = '#dc2626'; ctx.fillRect(19, 59, 18, 14);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px monospace';
+        ctx.fillText('1C', 22, 70);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('1С:Склад', 9, 88);
+
+        // 3. MS Excel
+        ctx.fillStyle = '#15803d'; ctx.fillRect(16, 100, 24, 20);
+        ctx.fillStyle = '#22c55e'; ctx.fillRect(19, 103, 10, 14);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px sans-serif';
+        ctx.fillText('X', 21, 114);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Excel', 16, 132);
+
+        // 4. Почта (Outlook)
+        ctx.fillStyle = '#f8fafc'; ctx.fillRect(16, 144, 24, 18);
+        ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.beginPath();
+        ctx.moveTo(16, 144); ctx.lineTo(28, 154); ctx.lineTo(40, 144); ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Почта', 14, 174);
+
+        // 5. Корзина
         ctx.fillStyle = '#94a3b8';
-        ctx.fillRect(24, 20, 28, 24);
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(27, 23, 22, 18);
-        ctx.fillStyle = '#475569';
-        ctx.fillRect(34, 44, 8, 4);
-        ctx.fillRect(28, 48, 20, 3);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('Мой компьютер', 8, 64);
-
-        // Network icon
-        ctx.fillStyle = '#64748b';
-        ctx.fillRect(22, 82, 18, 14);
-        ctx.fillRect(34, 90, 18, 14);
-        ctx.strokeStyle = '#cbd5e1';
-        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(31, 96); ctx.lineTo(34, 96);
-        ctx.stroke();
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('Сеть', 26, 118);
+        ctx.moveTo(18, 188); ctx.lineTo(38, 188); ctx.lineTo(35, 208); ctx.lineTo(21, 208);
+        ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(21, 192, 14, 14);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Корзина', 10, 220);
 
-        // Recycle Bin icon
-        ctx.fillStyle = '#94a3b8';
-        ctx.beginPath();
-        ctx.moveTo(26, 138); ctx.lineTo(46, 138); ctx.lineTo(43, 162); ctx.lineTo(29, 162);
-        ctx.closePath();
-        ctx.fill();
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillRect(29, 142, 14, 16);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('Корзина', 20, 176);
+        // COLUMN 2: Work Tools (x: 68)
+        // 6. Отчет_13.txt
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(72, 12, 20, 24);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1; ctx.strokeRect(72, 12, 20, 24);
+        ctx.fillStyle = '#3b82f6'; ctx.fillRect(75, 16, 14, 2); ctx.fillRect(75, 21, 14, 2); ctx.fillRect(75, 26, 10, 2);
+        ctx.fillStyle = '#fef08a'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Отчет_13', 63, 48);
 
-        // Report File (Отчет_13.txt) icon
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(26, 196, 20, 26);
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(26, 196, 20, 26);
-        ctx.fillStyle = '#3b82f6';
-        ctx.fillRect(29, 201, 14, 2);
-        ctx.fillRect(29, 206, 14, 2);
-        ctx.fillRect(29, 211, 10, 2);
-        ctx.fillStyle = '#fef08a';
-        ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('Отчет_13.txt', 12, 236);
+        // 7. Internet Explorer (Браузер)
+        ctx.fillStyle = '#0284c7'; ctx.beginPath();
+        ctx.arc(82, 66, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fef08a'; ctx.beginPath();
+        ctx.arc(84, 63, 13, 0.4, 2.8); ctx.stroke();
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Браузер', 66, 88);
+
+        // 8. Калькулятор
+        ctx.fillStyle = '#64748b'; ctx.fillRect(72, 100, 22, 22);
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(75, 103, 16, 6);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px monospace';
+        ctx.fillText('+-=', 75, 118);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Калькулятор', 55, 134);
+
+        // 9. Заметки (Блокнот)
+        ctx.fillStyle = '#fef08a'; ctx.fillRect(72, 144, 20, 22);
+        ctx.strokeStyle = '#ca8a04'; ctx.strokeRect(72, 144, 20, 22);
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(75, 148, 14, 2); ctx.fillRect(75, 153, 14, 2);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Заметки', 66, 178);
+
+        // COLUMN 3: GAMES (MINECRAFT & ROBLOX!) (x: 126)
+        // 10. 🟩 MINECRAFT.EXE
+        ctx.fillStyle = '#4a2e18'; ctx.fillRect(130, 12, 24, 24);
+        ctx.fillStyle = '#15803d'; ctx.fillRect(130, 12, 24, 8);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(133, 20, 3, 3); ctx.fillRect(140, 20, 4, 4); ctx.fillRect(147, 20, 3, 3);
+        ctx.fillStyle = '#facc15'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Minecraft', 122, 48);
+
+        // 11. 🟥 ROBLOX PLAYER
+        ctx.fillStyle = '#e11d48'; ctx.fillRect(130, 56, 24, 24);
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(138, 64, 8, 8);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Roblox', 127, 92);
 
         // Open Document Editor Window
-        // Drop shadow
-        ctx.fillStyle = 'rgba(0,0,0,0.4)';
-        ctx.fillRect(104, 38, 382, 280);
+        var winX = 180;
+        var winY = 22;
+        var winW = 320;
+        var winH = 320;
 
-        // Window Frame
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
+        ctx.fillRect(winX + 4, winY + 4, winW, winH);
+
         ctx.fillStyle = '#c0c0c0';
-        ctx.fillRect(100, 34, 380, 280);
+        ctx.fillRect(winX, winY, winW, winH);
         ctx.strokeStyle = '#ffffff';
-        ctx.strokeRect(100, 34, 380, 280);
+        ctx.strokeRect(winX, winY, winW, winH);
 
-        // Titlebar
         ctx.fillStyle = '#000080';
-        ctx.fillRect(103, 37, 374, 22);
+        ctx.fillRect(winX + 3, winY + 3, winW - 6, 22);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('Текстовый редактор - [Отчет_13.txt]', 114, 52);
+        ctx.fillText('Текстовый редактор - [Отчет_13.txt]', winX + 8, winY + 17);
 
-        // Window Control Buttons [ _ [] X ]
         ctx.fillStyle = '#c0c0c0';
-        ctx.fillRect(455, 40, 16, 15);
+        ctx.fillRect(winX + winW - 20, winY + 5, 15, 15);
         ctx.strokeStyle = '#808080';
-        ctx.strokeRect(455, 40, 16, 15);
+        ctx.strokeRect(winX + winW - 20, winY + 5, 15, 15);
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 10px sans-serif';
-        ctx.fillText('X', 460, 52);
+        ctx.fillText('X', winX + winW - 16, winY + 16);
 
-        // Menu bar (Файл  Правка  Вид  Вставка)
         ctx.fillStyle = '#c0c0c0';
-        ctx.fillRect(103, 59, 374, 18);
+        ctx.fillRect(winX + 3, winY + 26, winW - 6, 18);
         ctx.fillStyle = '#000000';
         ctx.font = '10px sans-serif';
-        ctx.fillText('Файл   Правка   Вид   Вставка   Справка', 110, 72);
+        ctx.fillText('Файл   Правка   Вид   Вставка   Справка', winX + 6, winY + 38);
 
-        // Text Document Area
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(104, 78, 372, 232);
+        ctx.fillRect(winX + 4, winY + 45, winW - 8, winH - 72);
         ctx.strokeStyle = '#808080';
-        ctx.strokeRect(104, 78, 372, 232);
+        ctx.strokeRect(winX + 4, winY + 45, winW - 8, winH - 72);
 
-        // Document content preview
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText('СЛУЖЕБНЫЙ ОТЧЕТ № 13-Б (СРОЧНО)', 120, 105);
-        ctx.font = '11px monospace';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('СЛУЖЕБНЫЙ ОТЧЕТ № 13-Б', winX + 14, winY + 70);
+        ctx.font = '10px monospace';
         ctx.fillStyle = '#475569';
-        ctx.fillText('Смена: Ночная (21:00 - 06:00)', 120, 126);
-        ctx.fillText('Сотрудник: Дежурный оператор', 120, 144);
+        ctx.fillText('Смена: Ночная (21:00 - 06:00)', winX + 14, winY + 90);
+        ctx.fillText('Сотрудник: Дежурный оператор', winX + 14, winY + 106);
         ctx.fillStyle = '#b91c1c';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText('Статус: ОЖИДАЕТ ВВОДА ДАННЫХ...', 120, 176);
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('Статус: ОЖИДАЕТ ВВОДА ДАННЫХ...', winX + 14, winY + 135);
         ctx.fillStyle = '#0f766e';
-        ctx.font = '11px monospace';
-        ctx.fillText('Подсказка: Подойдите и нажмите [F],', 120, 210);
-        ctx.fillText('чтобы перепечатать текст из папки.', 120, 228);
+        ctx.font = '10px monospace';
+        ctx.fillText('Нажмите [F], чтобы открыть ПК,', winX + 14, winY + 168);
+        ctx.fillText('перепечатать отчет, запустить 1С,', winX + 14, winY + 184);
+        ctx.fillText('сыграть в Minecraft или Roblox!', winX + 14, winY + 200);
 
-        // Blinking cursor
         ctx.fillStyle = '#000000';
-        ctx.fillRect(120, 246, 8, 14);
+        ctx.fillRect(winX + 14, winY + 218, 7, 13);
 
         // Windows 98 Taskbar at bottom
         ctx.fillStyle = '#c0c0c0';
@@ -4632,12 +4664,10 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.moveTo(0, 354); ctx.lineTo(512, 354);
         ctx.stroke();
 
-        // Start Button [Пуск]
         ctx.fillStyle = '#c0c0c0';
         ctx.fillRect(4, 358, 64, 22);
         ctx.strokeStyle = '#808080';
         ctx.strokeRect(4, 358, 64, 22);
-        // Windows flag icon on button
         ctx.fillStyle = '#ef4444'; ctx.fillRect(8, 363, 5, 5);
         ctx.fillStyle = '#3b82f6'; ctx.fillRect(14, 363, 5, 5);
         ctx.fillStyle = '#22c55e'; ctx.fillRect(8, 369, 5, 5);
@@ -4646,25 +4676,38 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.font = 'bold 11px sans-serif';
         ctx.fillText('Пуск', 24, 374);
 
-        // Active taskbar tab
         ctx.fillStyle = '#e2e8f0';
-        ctx.fillRect(74, 358, 140, 22);
+        ctx.fillRect(72, 358, 105, 22);
         ctx.strokeStyle = '#475569';
-        ctx.strokeRect(74, 358, 140, 22);
+        ctx.strokeRect(72, 358, 105, 22);
         ctx.fillStyle = '#000000';
-        ctx.font = '10px sans-serif';
-        ctx.fillText('[Отчет_13.txt]', 86, 373);
+        ctx.font = '9px sans-serif';
+        ctx.fillText('📄 [Отчет_13.txt]', 76, 372);
 
-        // Tray clock
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(181, 358, 85, 22);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(181, 358, 85, 22);
+        ctx.fillStyle = '#000000';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('🟩 Minecraft', 186, 372);
+
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(270, 358, 85, 22);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(270, 358, 85, 22);
+        ctx.fillStyle = '#000000';
+        ctx.font = '9px sans-serif';
+        ctx.fillText('📊 1С:Склад', 276, 372);
+
         ctx.fillStyle = '#c0c0c0';
         ctx.fillRect(455, 358, 52, 22);
         ctx.strokeStyle = '#808080';
         ctx.strokeRect(455, 358, 52, 22);
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 11px monospace';
-        ctx.fillText('21:13', 466, 373);
+        ctx.fillText('21:14', 466, 373);
 
-        // Scanlines overlay for vintage CRT feel
         ctx.fillStyle = 'rgba(0,0,0,0.12)';
         for (var sl = 0; sl < 384; sl += 3) {
             ctx.fillRect(0, sl, 512, 1);
@@ -6195,16 +6238,13 @@ function handleInteraction(obj) {
         showThought('Доска объявлений. Записка: "В связи с чрезвычайной ситуацией покинуть офис до 22:00".');
     }
     else if (d.type === 'computer') {
+        gameState.inUI = true;
+        controls.unlock();
+        document.getElementById('computer-ui').style.display = 'block';
         if (!gameState.computerUsed) {
-            gameState.inUI = true;
-            controls.unlock();
-            document.getElementById('computer-ui').style.display = 'block';
-            document.getElementById('comp-window').style.display = 'none'; // reset window
-            document.getElementById('comp-input').value = '';
-            document.getElementById('comp-error').textContent = '';
             showThought('Нужно перепечатать отчет из желтой папки.');
         } else {
-            showThought('Работа закончена. Пора домой.');
+            showThought('Отчет отправлен, но компьютер еще включен.');
         }
     }
     else if (d.type === 'yellow_folder') {
@@ -6411,10 +6451,273 @@ function init() {
     };
 
     // UI Functions
-    window.openCompFolder = function() { document.getElementById('comp-window').style.display = 'block'; };
-    window.closeCompFolder = function() { document.getElementById('comp-window').style.display = 'none'; };
+// ==================== REALISTIC OFFICE COMPUTER SYSTEM ====================
+var compHighestZ = 30;
+var compActiveApps = {};
+var calcVal = '0';
+var calcOp = null;
+var calcPrev = null;
+var calcWaitNext = false;
+
+window.openCompApp = function(appId) {
+    var winId = (appId === 'report' || appId === 'docs') ? 'comp-window' : ('comp-win-' + appId);
+    var el = document.getElementById(winId);
+    if (!el) return;
+
+    compHighestZ++;
+    el.style.zIndex = compHighestZ;
+    el.style.display = 'flex';
+    compActiveApps[appId] = { id: appId, winId: winId, title: getAppTitle(appId) };
+
+    var startMenu = document.getElementById('comp-start-menu');
+    if (startMenu) startMenu.style.display = 'none';
+
+    renderTaskbarTabs();
+};
+
+window.closeCompApp = function(appId) {
+    var winId = (appId === 'report' || appId === 'docs') ? 'comp-window' : ('comp-win-' + appId);
+    var el = document.getElementById(winId);
+    if (el) el.style.display = 'none';
+    delete compActiveApps[appId];
+    renderTaskbarTabs();
+};
+
+window.minimizeCompWindow = function(winId) {
+    var el = document.getElementById(winId);
+    if (el) {
+        el.style.display = (el.style.display === 'none') ? 'flex' : 'none';
+        if (el.style.display === 'flex') {
+            compHighestZ++;
+            el.style.zIndex = compHighestZ;
+        }
+    }
+};
+
+window.toggleStartMenu = function() {
+    var sm = document.getElementById('comp-start-menu');
+    if (sm) {
+        sm.style.display = (sm.style.display === 'block') ? 'none' : 'block';
+    }
+};
+
+window.openCompFolder = function() {
+    window.openCompApp('report');
+};
+
+window.closeCompFolder = function() {
+    window.closeCompApp('report');
+};
+
+function getAppTitle(appId) {
+    var titles = {
+        'report': '📄 Отчет_13.txt',
+        'minecraft': '🟩 Minecraft 1.5.2',
+        'roblox': '🟥 Roblox Player',
+        '1c': '📊 1С:Бухгалтерия 7.7',
+        'excel': '📈 MS Excel',
+        'browser': '🌐 Internet Explorer',
+        'mail': '✉️ Outlook Express',
+        'calc': '🧮 Калькулятор',
+        'notepad': '📝 Заметки',
+        'mycomp': '🗄️ Мой компьютер',
+        'trash': '🗑️ Корзина'
+    };
+    return titles[appId] || appId;
+}
+
+function renderTaskbarTabs() {
+    var container = document.getElementById('comp-taskbar-tabs');
+    if (!container) return;
+    container.innerHTML = '';
+    var keys = Object.keys(compActiveApps);
+    for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var app = compActiveApps[k];
+        var tab = document.createElement('div');
+        tab.className = 'taskbar-tab active';
+        tab.textContent = app.title;
+        (function(targetWinId) {
+            tab.onclick = function() {
+                window.minimizeCompWindow(targetWinId);
+            };
+        })(app.winId);
+        container.appendChild(tab);
+    }
+}
+
+// Minecraft in-game launcher logic
+window.openMCDialog = function(type) {
+    var menu = document.getElementById('mc-menu-view');
+    var dialog = document.getElementById('mc-dialog-view');
+    var title = document.getElementById('mc-dialog-title');
+    var content = document.getElementById('mc-dialog-content');
+    if (!menu || !dialog) return;
+
+    menu.style.display = 'none';
+    dialog.style.display = 'block';
+
+    if (type === 'single') {
+        title.textContent = 'Одиночная игра: Мир «Офис_13_Выживание»';
+        content.innerHTML = '<div style="background:#555;padding:6px;margin:8px 0;border:1px solid #888;"><div style="background:#4ade80;width:100%;height:14px;"></div></div>' +
+            '<p style="color:#fef08a;font-weight:bold;">Генерация ландшафта: 100%</p>' +
+            '<p style="color:#f87171;font-size:13px;line-height:1.4;">⚠️ СТРАННЫЙ ЗВУК: За спиной в темном офисе раздался страшный шорох! Кто-то скребется снаружи... Монстры слишком близко. Сначала отправьте отчет по работе!</p>';
+    } else if (type === 'multi') {
+        title.textContent = 'Сетевая игра: Поиск серверов';
+        content.innerHTML = '<div style="background:#222;padding:10px;border:1px solid #444;text-align:left;margin-bottom:8px;">' +
+            '<div style="font-weight:bold;color:#60a5fa;">Локальный сервер офиса (192.168.1.13:25565)</div>' +
+            '<div style="color:#aaa;font-size:11px;">Смена до 22:00! Не гриферить склад!</div>' +
+            '<div style="color:#ef4444;font-weight:bold;margin-top:4px;">❌ ОФФЛАЙН (Серверная обесточена)</div>' +
+            '</div>' +
+            '<p style="color:#94a3b8;font-size:12px;">Коллега Михаил отключил центральный хаб сети.</p>';
+    } else {
+        title.textContent = 'Настройки игры';
+        content.innerHTML = '<p>Поле зрения (FOV): Normal</p>' +
+            '<p>Сложность: ХАРДКОР (Зомби-апокалипсис)</p>' +
+            '<p>Освещение: Минимальное (Тускло)</p>';
+    }
+};
+
+window.closeMCDialog = function() {
+    var menu = document.getElementById('mc-menu-view');
+    var dialog = document.getElementById('mc-dialog-view');
+    if (menu && dialog) {
+        menu.style.display = 'flex';
+        dialog.style.display = 'none';
+    }
+};
+
+// Roblox in-game client logic
+window.launchRobloxGame = function(gameName) {
+    var modal = document.getElementById('rb-loading-modal');
+    var title = document.getElementById('rb-loading-title');
+    var desc = document.getElementById('rb-loading-desc');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+    title.textContent = 'Подключение к «' + gameName + '»...';
+    desc.textContent = 'Поиск доступных серверов Roblox... Загрузка плейса...';
+
+    setTimeout(function() {
+        if (modal.style.display === 'flex') {
+            title.textContent = '❌ Ошибка подключения 279';
+            desc.textContent = 'Интернет-провайдер заблокировал внешние игровые порты из-за режима Чрезвычайной Ситуации в городе. Доделайте отчет и уходите из здания!';
+        }
+    }, 1400);
+};
+
+window.closeRobloxModal = function() {
+    var modal = document.getElementById('rb-loading-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+// 1C helper
+window.alert1C = function(text) {
+    var el = document.getElementById('alert-1c-msg');
+    if (el) el.textContent = text;
+};
+
+// Outlook Express helper
+window.showMailBody = function(idx) {
+    var pane = document.getElementById('mail-reading-pane');
+    var items = document.querySelectorAll('.mail-item');
+    if (items) {
+        for (var i = 0; i < items.length; i++) {
+            items[i].classList.remove('active');
+        }
+        if (items[idx]) items[idx].classList.add('active');
+    }
+    if (!pane) return;
+
+    if (idx === 0) {
+        pane.innerHTML = '<div class="mail-body-header"><div><strong>От:</strong> Шеф &lt;boss@trans-logistics.ru&gt;</div><div><strong>Тема:</strong> СРОЧНО: Закрывайте офис и уходите!</div></div>' +
+            '<div class="mail-body-text">Смирнов, бросай всё второстепенное. Отправь отчет № 13-Б, чтобы сервер зафиксировал закрытие смены, и немедленно беги домой. На улицах творится кошмар, я еле выехал за кольцевую. Запри квартиру и жди утра.</div>';
+    } else if (idx === 1) {
+        pane.innerHTML = '<div class="mail-body-header"><div><strong>От:</strong> Охрана комплекса &lt;security@complex.ru&gt;</div><div><strong>Тема:</strong> Внимание: Ворота блокируются в 22:00</div></div>' +
+            '<div class="mail-body-text">Уведомляем дежурную смену: в 22:00 внешний периметр бизнес-центра запирается на засовы. Все, кто останется внутри, будут заблокированы до снятия комендантского часа.</div>';
+    } else {
+        pane.innerHTML = '<div class="mail-body-header"><div><strong>От:</strong> Михаил &lt;mikhail@trans-logistics.ru&gt;</div><div><strong>Тема:</strong> Ты почти закончил?</div></div>' +
+            '<div class="mail-body-text">У меня в 1С половина связей отвалилась. Слышишь вой на улице? Доделывай отчет и давай сваливать вместе.</div>';
+    }
+};
+
+// Calculator logic
+window.calcAction = function(val) {
+    var screen = document.getElementById('calc-display');
+    if (!screen) return;
+
+    if (val === 'C') {
+        calcVal = '0';
+        calcOp = null;
+        calcPrev = null;
+        calcWaitNext = false;
+        screen.value = '0';
+    } else if (val === '+' || val === '-' || val === '*' || val === '/') {
+        calcPrev = parseFloat(screen.value);
+        calcOp = val;
+        calcWaitNext = true;
+    } else if (val === '=') {
+        if (calcOp && calcPrev !== null) {
+            var cur = parseFloat(screen.value);
+            var res = 0;
+            if (calcOp === '+') res = calcPrev + cur;
+            else if (calcOp === '-') res = calcPrev - cur;
+            else if (calcOp === '*') res = calcPrev * cur;
+            else if (calcOp === '/') res = cur !== 0 ? (calcPrev / cur) : 0;
+            screen.value = String(Math.round(res * 10000) / 10000);
+            calcVal = screen.value;
+            calcOp = null;
+            calcPrev = null;
+            calcWaitNext = true;
+        }
+    } else {
+        if (screen.value === '0' || calcWaitNext) {
+            screen.value = val;
+            calcWaitNext = false;
+        } else {
+            screen.value += val;
+        }
+        calcVal = screen.value;
+    }
+};
+
+// Simple window dragging
+var compDragTarget = null;
+var compDragOffX = 0;
+var compDragOffY = 0;
+
+window.startDragWindow = function(e, winId) {
+    var el = document.getElementById(winId);
+    if (!el) return;
+    compHighestZ++;
+    el.style.zIndex = compHighestZ;
+    compDragTarget = el;
+    var rect = el.getBoundingClientRect();
+    compDragOffX = e.clientX - rect.left;
+    compDragOffY = e.clientY - rect.top;
+
+    document.addEventListener('mousemove', onCompDragMove);
+    document.addEventListener('mouseup', onCompDragEnd);
+};
+
+function onCompDragMove(e) {
+    if (!compDragTarget) return;
+    var left = Math.max(0, Math.min(window.innerWidth - 100, e.clientX - compDragOffX));
+    var top = Math.max(0, Math.min(window.innerHeight - 80, e.clientY - compDragOffY));
+    compDragTarget.style.left = left + 'px';
+    compDragTarget.style.top = top + 'px';
+}
+
+function onCompDragEnd() {
+    compDragTarget = null;
+    document.removeEventListener('mousemove', onCompDragMove);
+    document.removeEventListener('mouseup', onCompDragEnd);
+}
+
     window.closeComputerUI = function() { 
         document.getElementById('computer-ui').style.display = 'none'; 
+        var startMenu = document.getElementById('comp-start-menu');
+        if (startMenu) startMenu.style.display = 'none';
         gameState.inUI = false; 
         controls.lock(); 
     };
