@@ -795,17 +795,95 @@ function createStalker(x, z) {
 }
 
 // ==================== SNOW ====================
-function addSnow(zCenter, zRange, xRange) {
-    var count = 600;
+var cachedSnowflakeTex = null;
+function getSnowflakeTexture() {
+    if (cachedSnowflakeTex) return cachedSnowflakeTex;
+    try {
+        var canvas = document.createElement('canvas');
+        canvas.width = 64;
+        canvas.height = 64;
+        var ctx = canvas.getContext('2d');
+        var grad = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
+        grad.addColorStop(0.3, 'rgba(240, 248, 255, 0.85)');
+        grad.addColorStop(0.65, 'rgba(220, 235, 255, 0.35)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 64, 64);
+        cachedSnowflakeTex = new THREE.CanvasTexture(canvas);
+    } catch (e) {
+        cachedSnowflakeTex = null;
+    }
+    return cachedSnowflakeTex;
+}
+
+function addSnow(zMin, zMax, xMin, xMax, yMin, yMax, count, flakeSize) {
+    if (snowParticles) {
+        scene.remove(snowParticles);
+        snowParticles = null;
+    }
+
+    if (typeof yMin === 'undefined') {
+        var zCenter = zMin;
+        var zRange = zMax;
+        var xRange = xMin;
+        zMin = zCenter - zRange / 2;
+        zMax = zCenter + zRange / 2;
+        xMin = -xRange / 2;
+        xMax = xRange / 2;
+        yMin = 0;
+        yMax = 6;
+        count = 1500;
+        flakeSize = 0.075;
+    } else {
+        count = count || 2500;
+        flakeSize = flakeSize || 0.08;
+    }
+
     var geo = new THREE.BufferGeometry();
     var verts = new Float32Array(count * 3);
+    var speeds = new Float32Array(count);
+    var sways = new Float32Array(count);
+    var swayPhases = new Float32Array(count);
+
     for (var i = 0; i < count; i++) {
-        verts[i * 3] = (Math.random() - 0.5) * xRange;
-        verts[i * 3 + 1] = Math.random() * 5;
-        verts[i * 3 + 2] = zCenter + (Math.random() - 0.5) * zRange;
+        var i3 = i * 3;
+        verts[i3]     = xMin + Math.random() * (xMax - xMin);
+        verts[i3 + 1] = yMin + Math.random() * (yMax - yMin);
+        verts[i3 + 2] = zMin + Math.random() * (zMax - zMin);
+
+        speeds[i] = 0.016 + Math.random() * 0.024;
+        sways[i] = 0.004 + Math.random() * 0.008;
+        swayPhases[i] = Math.random() * Math.PI * 2;
     }
+
     geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-    var pts = new THREE.Points(geo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05 }));
+
+    var sTex = getSnowflakeTexture();
+    var snowMat = new THREE.PointsMaterial({
+        color: 0xffffff,
+        size: flakeSize,
+        map: sTex || null,
+        transparent: true,
+        opacity: 0.92,
+        depthWrite: false,
+        blending: THREE.NormalBlending
+    });
+
+    var pts = new THREE.Points(geo, snowMat);
+    pts.userData = {
+        count: count,
+        xMin: xMin,
+        xMax: xMax,
+        yMin: yMin,
+        yMax: yMax,
+        zMin: zMin,
+        zMax: zMax,
+        speeds: speeds,
+        sways: sways,
+        swayPhases: swayPhases
+    };
+
     scene.add(pts);
     snowParticles = pts;
 }
@@ -1574,8 +1652,8 @@ function buildApartment(isReturn) {
     roomLight.position.set(0, 2.9, 0);
     scene.add(roomLight);
 
-    // Snow outside window
-    addSnow(-4, 2, 4);
+    // Snow outside window (wide panoramic snowfall across the entire courtyard)
+    addSnow(-22, -3.05, -16, 16, 0, 9.5, 2600, 0.075);
 
     // Christmas tree in the corner near bed and exit
     buildChristmasTree();
@@ -3625,6 +3703,9 @@ function buildShop() {
     addMesh(new THREE.BoxGeometry(0.08, 2.5, 0.18), makeMat(0xd5dbdb), 1.16, 1.25, 5.9);
     addMesh(new THREE.BoxGeometry(0.08, 2.5, 0.18), makeMat(0xd5dbdb), 0, 1.25, 5.9);
 
+    // Snow falling outside the supermarket glass doors
+    addSnow(5.95, 20, -12, 12, 0, 8.5, 1800, 0.075);
+
     // ==================== PROCEDURAL FOOD ITEM STOCKING ====================
     var tex = getShopTextures();
     var matCache = {};
@@ -4054,7 +4135,8 @@ function buildStreet(toWork) {
 
     // Cold dark blue night ambient light
     scene.add(new THREE.AmbientLight(0x111c2e, 1.2));
-    addSnow(-len, len, 10);
+    // Heavy blizzard falling everywhere across the entire street from sky to ground
+    addSnow(-54, 4, -7, 7, 0, 11.5, 3800, 0.08);
 
     camera.position.set(0, 1.6, 0);
     camera.lookAt(0, 1.6, -5);
@@ -5261,12 +5343,36 @@ function animate() {
         }
     }
 
-    // Snow
-    if (snowParticles) {
+    // Snow animation: realistic snowfall across the entire volume with wind sway
+    if (snowParticles && snowParticles.geometry && snowParticles.geometry.attributes.position && snowParticles.userData && snowParticles.userData.speeds) {
         var pos = snowParticles.geometry.attributes.position.array;
-        for (var i = 1; i < pos.length; i += 3) {
-            pos[i] -= 0.015;
-            if (pos[i] < -0.5) pos[i] = 5;
+        var u = snowParticles.userData;
+        var sps = u.speeds;
+        var sws = u.sways;
+        var phs = u.swayPhases;
+        var pTime = time * 0.001;
+
+        for (var si = 0; si < u.count; si++) {
+            var sIdx = si * 3;
+            // Downward fall with individual speed
+            pos[sIdx + 1] -= sps[si];
+            // Gentle natural wind sway on X and Z
+            pos[sIdx]     += Math.sin(pTime * 2.2 + phs[si]) * sws[si];
+            pos[sIdx + 2] += Math.cos(pTime * 1.6 + phs[si]) * (sws[si] * 0.6);
+
+            // Wrap around Y
+            if (pos[sIdx + 1] < u.yMin) {
+                pos[sIdx + 1] = u.yMax - (Math.random() * 0.3);
+                pos[sIdx]     = u.xMin + Math.random() * (u.xMax - u.xMin);
+                pos[sIdx + 2] = u.zMin + Math.random() * (u.zMax - u.zMin);
+            }
+
+            // Wrap around X and Z
+            if (pos[sIdx] < u.xMin) pos[sIdx] = u.xMax;
+            else if (pos[sIdx] > u.xMax) pos[sIdx] = u.xMin;
+
+            if (pos[sIdx + 2] < u.zMin) pos[sIdx + 2] = u.zMax;
+            else if (pos[sIdx + 2] > u.zMax) pos[sIdx + 2] = u.zMin;
         }
         snowParticles.geometry.attributes.position.needsUpdate = true;
     }
