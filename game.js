@@ -1556,8 +1556,12 @@ function buildApartment(isReturn) {
     dFront.userData = { name: 'Тумбочка (ящик)', type: 'nightstand', drawerGroup: drawerGroup, flashMesh: flMesh, isOpen: false, animating: false };
     interactables.push(dFront);
 
-    // Light switch
-    var sw = addMesh(new THREE.BoxGeometry(0.1, 0.15, 0.05), makeMat(0xdddddd), 1.5, 1.3, 2.97);
+    // Light switch (placed right beside entrance door at x=0.80, safely away from tree)
+    var switchPlateMat = makeMat(0xdedad2);
+    var switchRockerMat = makeMat(0xf0ede6);
+    addMesh(new THREE.BoxGeometry(0.12, 0.16, 0.025), switchPlateMat, 0.80, 1.35, 2.98);
+    addMesh(new THREE.BoxGeometry(0.06, 0.08, 0.035), switchRockerMat, 0.80, 1.35, 2.965);
+    var sw = addMesh(new THREE.BoxGeometry(0.26, 0.30, 0.12), new THREE.MeshBasicMaterial({ visible: false }), 0.80, 1.35, 2.95);
     sw.userData = { name: 'Выключатель', type: 'switch' };
     interactables.push(sw);
 
