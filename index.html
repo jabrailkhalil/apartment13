@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Квартира 13 (3D)</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=PT+Mono&display=swap" rel="stylesheet">
+    <!-- Load Three.js locally (avoids CORS issues with file://) -->
+    <script src="three.min.js"></script>
+</head>
+<body>
+    <div id="blocker">
+        <div id="instructions">
+            <span id="click-to-wake">Нажмите, чтобы проснуться</span>
+            <br />
+            <br />
+            <span class="small-text">WASD = Ходить | Мышь = Осмотреться | ЛКМ = Взаимодействовать</span>
+        </div>
+    </div>
+    
+    <div id="ui-layer">
+        <div id="crosshair"></div>
+        <div id="interaction-prompt"></div>
+        <div id="thought-box"></div>
+        <div id="objective-text"></div>
+    </div>
+
+    <!-- Chapter Title Overlay -->
+    <div id="chapter-overlay">
+        <div id="chapter-title"></div>
+        <div id="chapter-subtitle"></div>
+    </div>
+
+    <!-- Sleep Overlay (5 seconds duration) -->
+    <div id="sleep-overlay" style="display: none;">
+        <div id="sleep-content">
+            <div id="sleep-icon">🌙</div>
+            <div id="sleep-text">Сон...</div>
+            <div id="sleep-subtext">5 сек.</div>
+        </div>
+    </div>
+
+    <!-- New Year Audio Element (Preloaded) -->
+    <audio id="bg-audio" src="assets/new_year.mp3" preload="auto" loop></audio>
+
+    <!-- Lobotomy Audio Element (Preloaded) -->
+    <audio id="lobotomy-audio" src="Maebi%20-%20The%20Lobotomy.mp3" preload="auto" loop></audio>
+
+    <!-- CRT & Vignette Overlays -->
+    <div id="vignette-overlay"></div>
+    <div id="crt-overlay"></div>
+
+    <!-- Computer UI (Mini-game) -->
+    <div id="computer-ui" style="display: none;">
+        <div id="comp-desktop">
+            <div id="comp-icon" onclick="openCompFolder()">
+                <div class="folder-icon">📁</div>
+                <div>РАБОТА</div>
+            </div>
+            
+            <div id="comp-window" style="display: none;">
+                <div id="comp-header">
+                    <span>Отчет_13.txt</span>
+                    <button id="comp-close" onclick="closeCompFolder()">X</button>
+                </div>
+                <div id="comp-body">
+                    <p>Перепишите текст из желтой папки:</p>
+                    <textarea id="comp-input"></textarea>
+                    <button id="comp-submit" onclick="submitWork()">ОТПРАВИТЬ</button>
+                    <p id="comp-error"></p>
+                </div>
+            </div>
+        </div>
+        <button id="exit-comp" onclick="closeComputerUI()">ВЫЙТИ ИЗ ПК [ESC]</button>
+    </div>
+
+    <!-- Physical Yellow Folder UI -->
+    <div id="folder-ui" style="display: none;">
+        <div id="folder-paper">
+            <h3>ОТЧЕТ СМЕНЫ</h3>
+            <p id="folder-text">Смирнов Иван, 14.05.1991, 32 года. Геолокация: 55.7558 N, 37.6173 E. Код: QWERT YUIOP ASDFG.</p>
+        </div>
+        <button id="exit-folder" onclick="closeFolderUI()">ЗАКРЫТЬ ПАПКУ [ESC]</button>
+    </div>
+
+    <!-- Phone Push Notification Toast -->
+    <div id="phone-toast" onclick="onToastClick()">
+        <div class="toast-icon">💬</div>
+        <div class="toast-content">
+            <div id="toast-sender" class="toast-sender">Босс</div>
+            <div id="toast-text" class="toast-text">вы уволены,не спрашивайте почему.</div>
+        </div>
+    </div>
+
+    <!-- Phone Messenger UI -->
+    <div id="phone-ui" style="display: none;">
+        <div id="phone-frame">
+            <div id="phone-top-bar">
+                <span id="phone-time">08:15</span>
+                <span>📶 4G &nbsp; 🔋 94%</span>
+            </div>
+
+            <!-- 1. Chat List View -->
+            <div id="phone-chat-list-view">
+                <div id="phone-list-header">
+                    <span>Сообщения</span>
+                </div>
+                <div id="phone-chat-items">
+                    <div class="phone-chat-item" id="chat-item-boss" onclick="openChat('boss')" style="display: none;">
+                        <div class="chat-avatar boss-avatar">👔</div>
+                        <div class="chat-item-body">
+                            <div class="chat-item-title-row">
+                                <span class="chat-name">Босс</span>
+                                <span class="chat-time">08:14</span>
+                            </div>
+                            <div class="chat-preview" id="boss-preview">вы уволены,не спрашивайте почему.</div>
+                        </div>
+                        <div class="chat-unread-dot" id="boss-unread"></div>
+                    </div>
+
+                    <div class="phone-chat-item" id="chat-item-sergey" onclick="openChat('sergey')" style="display: none;">
+                        <div class="chat-avatar sergey-avatar">👤</div>
+                        <div class="chat-item-body">
+                            <div class="chat-item-title-row">
+                                <span class="chat-name">Сергей</span>
+                                <span class="chat-time">08:15</span>
+                            </div>
+                            <div class="chat-preview" id="sergey-preview">прикинь че,меня уволили и просили не спрашивать причину.</div>
+                        </div>
+                        <div class="chat-unread-dot" id="sergey-unread"></div>
+                    </div>
+
+                    <div class="phone-chat-item" id="chat-item-bank" onclick="switchPhoneTab('bank')" style="display: none;">
+                        <div class="chat-avatar bank-avatar">🏦</div>
+                        <div class="chat-item-body">
+                            <div class="chat-item-title-row">
+                                <span class="chat-name">Мой Банк</span>
+                                <span class="chat-time">08:16</span>
+                            </div>
+                            <div class="chat-preview" id="bank-preview">Баланс: 5 000 ₽. Расчет при увольнении.</div>
+                        </div>
+                        <div class="chat-unread-dot" id="bank-unread"></div>
+                    </div>
+
+                    <div id="phone-empty-state" style="color: #666; text-align: center; margin-top: 50px; font-size: 13px;">
+                        Нет сообщений
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Chat Conversation View -->
+            <div id="phone-conversation-view" style="display: none;">
+                <div id="phone-header">
+                    <span class="phone-back-btn" onclick="openChatList()">◀</span>
+                    <div class="phone-contact-info">
+                        <div id="phone-contact-name" class="phone-contact-name">Чат</div>
+                        <div id="phone-status" class="phone-contact-status">онлайн</div>
+                    </div>
+                </div>
+                <div id="phone-messages-list"></div>
+                <div id="phone-input-bar">
+                    <input type="text" id="phone-input" placeholder="Написать Сергею..." autocomplete="off" onkeydown="if(event.key==='Enter') sendPhoneReply()">
+                    <button id="phone-send-btn" onclick="sendPhoneReply()">➤</button>
+                </div>
+            </div>
+
+            <!-- 3. Bank View (Money / Balance) -->
+            <div id="phone-bank-view" style="display: none;">
+                <div id="phone-bank-header">
+                    <span>Мой Банк</span>
+                </div>
+                <div id="phone-bank-content">
+                    <div class="bank-card">
+                        <div class="bank-card-top">
+                            <span class="card-type">Дебетовая карта</span>
+                            <span class="card-chip">💳</span>
+                        </div>
+                        <div class="card-balance">5 000 ₽</div>
+                        <div class="card-bottom">
+                            <span class="card-number">•••• 1313</span>
+                            <span class="card-system">МИР</span>
+                        </div>
+                    </div>
+                    <div class="bank-history-title">История операций</div>
+                    <div class="bank-history-list">
+                        <div class="bank-tx-item income">
+                            <div class="tx-info">
+                                <div class="tx-title">Расчет при увольнении</div>
+                                <div class="tx-time">Сегодня, 08:16</div>
+                            </div>
+                            <div class="tx-amount">+5 000 ₽</div>
+                        </div>
+                        <div class="bank-tx-item expense">
+                            <div class="tx-info">
+                                <div class="tx-title">Доставка пиццы</div>
+                                <div class="tx-time">Вчера, 22:30</div>
+                            </div>
+                            <div class="tx-amount">-850 ₽</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <div id="phone-bottom-nav">
+                <div class="phone-nav-btn active" id="nav-btn-chats" onclick="switchPhoneTab('messages')">
+                    <span class="nav-btn-icon">💬</span>
+                    <span class="nav-btn-text">Чаты</span>
+                </div>
+                <div class="phone-nav-btn" id="nav-btn-bank" onclick="switchPhoneTab('bank')">
+                    <span class="nav-btn-icon">💳</span>
+                    <span class="nav-btn-text">Банк</span>
+                    <span class="nav-btn-badge" id="nav-bank-badge" style="display: none;">1</span>
+                </div>
+            </div>
+        </div>
+        <button id="exit-phone" onclick="closePhoneUI()">ЗАКРЫТЬ ТЕЛЕФОН [ESC]</button>
+    </div>
+
+    <!-- Shop Cart & Balance HUD (Chapter 7) -->
+    <div id="shop-cart-hud" style="display: none;">
+        <div id="shop-cart-line">🛒 Корзина: <span id="shop-cart-total">0</span> ₽ (<span id="shop-cart-count">0</span> шт.)</div>
+        <div id="shop-balance-line">💳 Карта: <span id="shop-balance-val">5 000</span> ₽</div>
+    </div>
+
+    <script src="assets.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
