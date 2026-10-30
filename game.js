@@ -1,4 +1,4 @@
-// ==================== ERROR HANDLER ====================
+﻿// ==================== ERROR HANDLER ====================
 // NOTE: "Script error at 0:0" = browser blocked error details from cross-origin script
 // All scripts are now local so this should not appear
 window.onerror = function(msg, url, line, col, error) {
@@ -4077,71 +4077,371 @@ function buildShop() {
     }
 }
 
+// ==================== PROCEDURAL SOVIET APARTMENT FACADE TEXTURE ====================
+var cachedStreetBuildingTex = null;
+function getStreetBuildingTexture() {
+    if (cachedStreetBuildingTex) return cachedStreetBuildingTex;
+    try {
+        var canvas = document.createElement('canvas');
+        canvas.width = 1024;
+        canvas.height = 1024;
+        var ctx = canvas.getContext('2d');
+
+        // Weathered dark concrete building paneling
+        ctx.fillStyle = '#1c2128';
+        ctx.fillRect(0, 0, 1024, 1024);
+
+        // Panel seams (horizontal & vertical joints)
+        ctx.strokeStyle = '#0e1217';
+        ctx.lineWidth = 4;
+        var floors = 8;
+        var bays = 8;
+        var bayW = 1024 / bays;
+        var floorH = 1024 / floors;
+
+        for (var f = 0; f <= floors; f++) {
+            ctx.beginPath();
+            ctx.moveTo(0, f * floorH);
+            ctx.lineTo(1024, f * floorH);
+            ctx.stroke();
+        }
+        for (var b = 0; b <= bays; b++) {
+            ctx.beginPath();
+            ctx.moveTo(b * bayW, 0);
+            ctx.lineTo(b * bayW, 1024);
+            ctx.stroke();
+        }
+
+        // Draw individual windows in each apartment panel
+        for (var r = 0; r < floors; r++) {
+            for (var c = 0; c < bays; c++) {
+                var wx = c * bayW + bayW * 0.22;
+                var wy = r * floorH + floorH * 0.22;
+                var ww = bayW * 0.56;
+                var wh = floorH * 0.56;
+
+                // Concrete window casing
+                ctx.fillStyle = '#0a0d12';
+                ctx.fillRect(wx - 3, wy - 3, ww + 6, wh + 6);
+
+                // Window illumination pattern
+                var pVal = Math.sin(r * 17.1 + c * 31.7);
+                if (pVal > 0.48) {
+                    ctx.fillStyle = '#f59e0b'; // warm cozy amber
+                } else if (pVal > 0.28) {
+                    ctx.fillStyle = '#fef08a'; // bright golden light
+                } else if (pVal > 0.12) {
+                    ctx.fillStyle = '#38bdf8'; // TV cold blue flicker
+                } else {
+                    ctx.fillStyle = '#070a0f'; // dark night window
+                }
+                ctx.fillRect(wx, wy, ww, wh);
+
+                // Window frame panes (cross mullion)
+                ctx.strokeStyle = '#181e26';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                ctx.moveTo(wx + ww * 0.5, wy);
+                ctx.lineTo(wx + ww * 0.5, wy + wh);
+                ctx.moveTo(wx, wy + wh * 0.4);
+                ctx.lineTo(wx + ww, wy + wh * 0.4);
+                ctx.stroke();
+
+                // Snowy windowsill
+                ctx.fillStyle = 'rgba(235, 245, 255, 0.88)';
+                ctx.fillRect(wx - 2, wy + wh - 1, ww + 4, 4);
+            }
+        }
+
+        cachedStreetBuildingTex = new THREE.CanvasTexture(canvas);
+        cachedStreetBuildingTex.wrapS = THREE.RepeatWrapping;
+        cachedStreetBuildingTex.wrapT = THREE.RepeatWrapping;
+        cachedStreetBuildingTex.repeat.set(4, 2);
+    } catch(e) {
+        cachedStreetBuildingTex = null;
+    }
+    return cachedStreetBuildingTex;
+}
+
+// Helper function to build a detailed snow-covered parked Soviet car
+function buildSnowyCar(x, z, rotY, bodyColor) {
+    var carGroup = new THREE.Group();
+    carGroup.position.set(x, 0, z);
+    carGroup.rotation.y = rotY;
+    scene.add(carGroup);
+
+    var carBodyMat = makeMat(bodyColor);
+    var carGlassMat = makeMat(0x0f172a);
+    var chromeMat = makeMat(0xd1d5db);
+    var tireMat = makeMat(0x18181b);
+    var hubcapMat = makeMat(0x9ca3af);
+    var snowPuffMat = makeMat(0xf8fafc);
+    var headlightMat = makeMat(0xfef08a);
+    var taillightMat = makeMat(0xdc2626);
+
+    // Lower chassis & body
+    addMesh(new THREE.BoxGeometry(1.68, 0.48, 3.8), carBodyMat, 0, 0.44, 0, carGroup);
+
+    // Cabin / Greenhouse
+    addMesh(new THREE.BoxGeometry(1.52, 0.44, 1.95), carGlassMat, 0, 0.88, -0.15, carGroup);
+
+    // Roof metal frame
+    addMesh(new THREE.BoxGeometry(1.54, 0.05, 1.88), carBodyMat, 0, 1.11, -0.15, carGroup);
+
+    // Front hood & rear trunk details
+    addMesh(new THREE.BoxGeometry(1.64, 0.04, 1.05), carBodyMat, 0, 0.69, -1.25, carGroup);
+    addMesh(new THREE.BoxGeometry(1.64, 0.04, 0.80), carBodyMat, 0, 0.69, 1.30, carGroup);
+
+    // Bumpers
+    addMesh(new THREE.BoxGeometry(1.72, 0.10, 0.12), chromeMat, 0, 0.28, -1.95, carGroup);
+    addMesh(new THREE.BoxGeometry(1.72, 0.10, 0.12), chromeMat, 0, 0.28,  1.95, carGroup);
+
+    // Headlights & Taillights
+    addMesh(new THREE.BoxGeometry(0.24, 0.12, 0.04), headlightMat, -0.62, 0.48, -1.91, carGroup);
+    addMesh(new THREE.BoxGeometry(0.24, 0.12, 0.04), headlightMat,  0.62, 0.48, -1.91, carGroup);
+    addMesh(new THREE.BoxGeometry(0.28, 0.10, 0.04), taillightMat, -0.62, 0.48,  1.91, carGroup);
+    addMesh(new THREE.BoxGeometry(0.28, 0.10, 0.04), taillightMat,  0.62, 0.48,  1.91, carGroup);
+
+    // Front Grille
+    addMesh(new THREE.BoxGeometry(0.85, 0.16, 0.04), chromeMat, 0, 0.48, -1.91, carGroup);
+
+    // 4 Wheels
+    var wheelPositions = [
+        { x: -0.84, z: -1.15 },
+        { x:  0.84, z: -1.15 },
+        { x: -0.84, z:  1.15 },
+        { x:  0.84, z:  1.15 }
+    ];
+    for (var w = 0; w < wheelPositions.length; w++) {
+        var wp = wheelPositions[w];
+        var wheel = addMesh(new THREE.CylinderGeometry(0.32, 0.32, 0.22, 12), tireMat, wp.x, 0.32, wp.z, carGroup);
+        wheel.rotation.z = Math.PI / 2;
+        var cap = addMesh(new THREE.CylinderGeometry(0.18, 0.18, 0.23, 10), hubcapMat, wp.x, 0.32, wp.z, carGroup);
+        cap.rotation.z = Math.PI / 2;
+    }
+
+    // Heavy puffy winter snow accumulation on roof, hood, and trunk
+    addMesh(new THREE.BoxGeometry(1.58, 0.16, 1.92), snowPuffMat, 0, 1.20, -0.15, carGroup);
+    addMesh(new THREE.BoxGeometry(1.66, 0.14, 1.05), snowPuffMat, 0, 0.76, -1.25, carGroup);
+    addMesh(new THREE.BoxGeometry(1.66, 0.14, 0.82), snowPuffMat, 0, 0.76,  1.30, carGroup);
+
+    // Sloped snow on windshield and rear glass
+    var frontSnow = addMesh(new THREE.BoxGeometry(1.50, 0.08, 0.48), snowPuffMat, 0, 0.94, -0.88, carGroup);
+    frontSnow.rotation.x = -0.55;
+    var rearSnow = addMesh(new THREE.BoxGeometry(1.50, 0.08, 0.44), snowPuffMat, 0, 0.94,  0.60, carGroup);
+    rearSnow.rotation.x = 0.55;
+
+    // Solid obstacle collider
+    colliders.push({ minX: x - 1.1, maxX: x + 1.1, minZ: z - 2.2, maxZ: z + 2.2 });
+}
+
 // ==================== BUILD: STREET ====================
 function buildStreet(toWork) {
     var len = 50;
-    scene.background = new THREE.Color(0x010105);
-    scene.fog = new THREE.Fog(0x010105, 2, 18);
+    scene.background = new THREE.Color(0x02050c);
+    scene.fog = new THREE.Fog(0x02050c, 3, 24);
 
-    // Load textures
     var tlStreet = new THREE.TextureLoader();
-    var streetTex = tlStreet.load(STREET_B64);
-    var streetMat = new THREE.MeshBasicMaterial({ map: streetTex });
-
     var stalkerTex = tlStreet.load(STALKER_FAR_B64);
     var stalkerMat = new THREE.MeshBasicMaterial({ map: stalkerTex });
 
     var snowGroundTex = tlStreet.load(SNOW_GROUND_B64);
     snowGroundTex.wrapS = THREE.RepeatWrapping;
     snowGroundTex.wrapT = THREE.RepeatWrapping;
-    snowGroundTex.repeat.set(1, 16);
-    var snowGroundMat = new THREE.MeshBasicMaterial({ map: snowGroundTex });
+    snowGroundTex.repeat.set(1.5, 18);
+    var snowGroundMat = new THREE.MeshLambertMaterial({ map: snowGroundTex });
 
-    // Ground with snow texture under night lighting
-    var ground = addMesh(new THREE.PlaneGeometry(8, len), snowGroundMat, 0, 0, -len / 2);
-    ground.rotation.x = -Math.PI / 2;
-
-    // Night sky ceiling plane textured with NIGHT_SKY_B64 stars
     var skyTex = tlStreet.load(NIGHT_SKY_B64);
     skyTex.wrapS = THREE.RepeatWrapping;
     skyTex.wrapT = THREE.RepeatWrapping;
-    skyTex.repeat.set(2, 6);
+    skyTex.repeat.set(2.5, 8);
     var skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
 
-    var skyCeiling = addMesh(new THREE.PlaneGeometry(24, len), skyMat, 0, 11, -len / 2);
-    skyCeiling.rotation.x = Math.PI / 2;
+    // 1. Central Snowy Asphalt Road
+    var roadMat = makeMat(0x1e242d);
+    var road = addMesh(new THREE.PlaneGeometry(5.2, len), roadMat, 0, 0.005, -len / 2);
+    road.rotation.x = -Math.PI / 2;
 
-    // Side building walls with STREET_B64 picture texture
-    var lwall = addMesh(new THREE.PlaneGeometry(len, 12), streetMat, -4, 5, -len / 2);
-    lwall.rotation.y = Math.PI / 2;
-    var rwall = addMesh(new THREE.PlaneGeometry(len, 12), streetMat, 4, 5, -len / 2);
-    rwall.rotation.y = -Math.PI / 2;
+    // Snow overlay on roadway
+    var roadSnow = addMesh(new THREE.PlaneGeometry(5.2, len), snowGroundMat, 0, 0.012, -len / 2);
+    roadSnow.rotation.x = -Math.PI / 2;
 
-    // End of street backdrop (normal street looking forward)
-    var endBackdrop = addMesh(new THREE.PlaneGeometry(20, 12), streetMat, 0, 5, -len);
+    // Subtle dark tire tracks in the snow
+    var tireTrackMat = makeMat(0x181c22);
+    var trackL = addMesh(new THREE.PlaneGeometry(0.38, len), tireTrackMat, -1.15, 0.015, -len / 2);
+    trackL.rotation.x = -Math.PI / 2;
+    var trackR = addMesh(new THREE.PlaneGeometry(0.38, len), tireTrackMat,  1.15, 0.015, -len / 2);
+    trackR.rotation.x = -Math.PI / 2;
 
-    // Rear backdrop (STALKER_FAR_B64 horror picture showing creepy stalker when turning around)
-    var rearBackdrop = addMesh(new THREE.PlaneGeometry(22, 12), stalkerMat, 0, 5, 1.5);
-    rearBackdrop.rotation.y = Math.PI; // faces toward player walking forward (-z)
+    // 2. Concrete Curbs (Бордюры) with snow caps
+    var curbMat = makeMat(0x4b5563);
+    var curbSnowMat = makeMat(0xf8fafc);
+    var curbL = addMesh(new THREE.BoxGeometry(0.24, 0.22, len), curbMat, -2.62, 0.11, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.26, 0.06, len), curbSnowMat, -2.62, 0.24, -len / 2);
+    var curbR = addMesh(new THREE.BoxGeometry(0.24, 0.22, len), curbMat,  2.62, 0.11, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.26, 0.06, len), curbSnowMat,  2.62, 0.24, -len / 2);
 
-    // Lamp posts with warm orange night glow onto the snow
-    var poleMat = makeMat(0x2a2a2a);
-    for (var zi = -4; zi > -len; zi -= 10) {
-        addMesh(new THREE.CylinderGeometry(0.05, 0.05, 4.5, 6), poleMat, -1.8, 2.25, zi);
-        var lamp = new THREE.PointLight(0xffaa44, toWork ? 1.4 : 0.8, 14);
-        lamp.position.set(-1.8, 3.2, zi);
-        scene.add(lamp);
+    // 3. Raised Pedestrian Sidewalks (Тротуары)
+    var sidewalkMat = makeMat(0x374151);
+    var walkL = addMesh(new THREE.BoxGeometry(3.6, 0.18, len), sidewalkMat, -4.45, 0.09, -len / 2);
+    addMesh(new THREE.PlaneGeometry(3.6, len), snowGroundMat, -4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
+    var walkR = addMesh(new THREE.BoxGeometry(3.6, 0.18, len), sidewalkMat,  4.45, 0.09, -len / 2);
+    addMesh(new THREE.PlaneGeometry(3.6, len), snowGroundMat,  4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
+
+    // 4. Volumetric Soft Snowdrifts (Сугробы) along curbs and building edges
+    var snowdriftMat = makeMat(0xf1f5f9);
+    var driftData = [
+        { x: -2.8, z: -6,  w: 0.7, h: 0.38, d: 3.2 },
+        { x:  2.8, z: -9,  w: 0.6, h: 0.32, d: 2.8 },
+        { x: -2.8, z: -18, w: 0.8, h: 0.42, d: 3.6 },
+        { x:  2.8, z: -23, w: 0.7, h: 0.36, d: 3.0 },
+        { x: -2.8, z: -38, w: 0.8, h: 0.40, d: 3.4 },
+        { x:  2.8, z: -43, w: 0.6, h: 0.34, d: 2.6 }
+    ];
+    for (var di = 0; di < driftData.length; di++) {
+        var dd = driftData[di];
+        addMesh(new THREE.BoxGeometry(dd.w, dd.h, dd.d), snowdriftMat, dd.x, dd.h * 0.5 + 0.10, dd.z);
     }
 
-    // Cold dark blue night ambient light
-    scene.add(new THREE.AmbientLight(0x111c2e, 1.2));
-    // Heavy blizzard falling everywhere across the entire street from sky to ground
-    addSnow(-54, 4, -7, 7, 0, 11.5, 3800, 0.08);
+    // 5. Starry Night Sky Ceiling
+    var skyCeiling = addMesh(new THREE.PlaneGeometry(28, len), skyMat, 0, 13.5, -len / 2);
+    skyCeiling.rotation.x = Math.PI / 2;
+
+    // 6. Soviet Panel Apartment Buildings (Хрущёвки / Панельки) with lit windows
+    var buildingTex = getStreetBuildingTexture();
+    var buildingMat = new THREE.MeshLambertMaterial({
+        map: buildingTex || null,
+        color: 0x99a3b0
+    });
+
+    // Left building block
+    var lwall = addMesh(new THREE.PlaneGeometry(len, 14), buildingMat, -6.25, 7.0, -len / 2);
+    lwall.rotation.y = Math.PI / 2;
+    // Roof cornice on left
+    addMesh(new THREE.BoxGeometry(0.5, 0.4, len), makeMat(0x334155), -6.1, 14.1, -len / 2);
+
+    // Right building block
+    var rwall = addMesh(new THREE.PlaneGeometry(len, 14), buildingMat, 6.25, 7.0, -len / 2);
+    rwall.rotation.y = -Math.PI / 2;
+    // Roof cornice on right
+    addMesh(new THREE.BoxGeometry(0.5, 0.4, len), makeMat(0x334155), 6.1, 14.1, -len / 2);
+
+    // Drainpipes running down buildings
+    var pipeMat = makeMat(0x475569);
+    addMesh(new THREE.CylinderGeometry(0.06, 0.06, 14, 8), pipeMat, -6.15, 7.0, -12);
+    addMesh(new THREE.CylinderGeometry(0.06, 0.06, 14, 8), pipeMat, -6.15, 7.0, -36);
+    addMesh(new THREE.CylinderGeometry(0.06, 0.06, 14, 8), pipeMat,  6.15, 7.0, -20);
+    addMesh(new THREE.CylinderGeometry(0.06, 0.06, 14, 8), pipeMat,  6.15, 7.0, -42);
+
+    // 7. Building Entrances (Подъезды) on Right Building
+    var canopyMat = makeMat(0x334155);
+    var doorIronMat = makeMat(0x1e293b);
+    var entranceZList = [-9, -27];
+    for (var ez = 0; ez < entranceZList.length; ez++) {
+        var entZ = entranceZList[ez];
+        // Concrete canopy
+        addMesh(new THREE.BoxGeometry(1.6, 0.16, 2.2), canopyMat, 5.5, 2.8, entZ);
+        // Snow on canopy
+        addMesh(new THREE.BoxGeometry(1.64, 0.12, 2.24), curbSnowMat, 5.5, 2.92, entZ);
+        // Steel entrance door with intercom
+        addMesh(new THREE.BoxGeometry(0.12, 2.3, 1.2), doorIronMat, 6.18, 1.15, entZ);
+        addMesh(new THREE.BoxGeometry(0.04, 0.14, 0.08), makeMat(0xd97706), 6.14, 1.25, entZ + 0.72);
+        // Yellow entrance light over door
+        var pLight = new THREE.PointLight(0xf59e0b, 0.85, 6);
+        pLight.position.set(5.2, 2.65, entZ);
+        scene.add(pLight);
+        // Porch steps
+        addMesh(new THREE.BoxGeometry(1.2, 0.12, 2.0), makeMat(0x475569), 5.6, 0.06, entZ);
+    }
+
+    // 8. Detailed Soviet Cast-Iron Streetlamps with Curved Necks and Sodium Glow
+    var ironPoleMat = makeMat(0x1f2937);
+    var lampGlassMat = new THREE.MeshBasicMaterial({ color: 0xffedd5 });
+    var lampPuddleTex = makeMat(0xf59e0b, { transparent: true, opacity: 0.18 });
+
+    var lampZCoords = [-3, -15, -27, -39];
+    for (var li = 0; li < lampZCoords.length; li++) {
+        var lz = lampZCoords[li];
+        var lx = (li % 2 === 0) ? -2.48 : 2.48;
+        var dirSign = (li % 2 === 0) ? 1 : -1;
+
+        var lampGroup = new THREE.Group();
+        lampGroup.position.set(lx, 0, lz);
+        scene.add(lampGroup);
+
+        // Fluted pedestal base
+        addMesh(new THREE.CylinderGeometry(0.18, 0.26, 0.75, 10), ironPoleMat, 0, 0.38, 0, lampGroup);
+        // Main tall post
+        addMesh(new THREE.CylinderGeometry(0.065, 0.085, 4.4, 8), ironPoleMat, 0, 2.58, 0, lampGroup);
+        // Arched arm reaching over road
+        var arm = addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.95, 8), ironPoleMat, dirSign * 0.38, 4.72, 0, lampGroup);
+        arm.rotation.z = dirSign * (Math.PI / 3);
+        // Lantern fixture & bulb
+        addMesh(new THREE.BoxGeometry(0.36, 0.14, 0.26), ironPoleMat, dirSign * 0.75, 4.96, 0, lampGroup);
+        addMesh(new THREE.SphereGeometry(0.11, 8, 8), lampGlassMat, dirSign * 0.75, 4.88, 0, lampGroup);
+
+        // Warm sodium-vapor glow point light
+        var streetLamp = new THREE.PointLight(0xffa238, toWork ? 1.5 : 0.95, 15);
+        streetLamp.position.set(lx + dirSign * 0.75, 4.85, lz);
+        scene.add(streetLamp);
+
+        // Warm illuminated puddle of light on the snowy ground below
+        var puddle = addMesh(new THREE.CircleGeometry(2.4, 16), lampPuddleTex, lx + dirSign * 0.75, 0.018, lz);
+        puddle.rotation.x = -Math.PI / 2;
+
+        colliders.push({ minX: lx - 0.28, maxX: lx + 0.28, minZ: lz - 0.28, maxZ: lz + 0.28 });
+    }
+
+    // 9. Overhead Sagging Power & Telephone Cables (Провода)
+    var wireMat = makeMat(0x111827);
+    for (var w = 0; w < 3; w++) {
+        var wireY = 5.2 - w * 0.45;
+        var wireZ = -8 - w * 14;
+        var wire = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 12.8, 6), wireMat, 0, wireY, wireZ);
+        wire.rotation.z = Math.PI / 2;
+    }
+
+    // 10. Parked Snow-Covered Soviet Cars
+    buildSnowyCar(2.05, -13.5, 0.08, 0x1e3a5f);  // Dark Blue Volga/Zhiguli on right curb
+    buildSnowyCar(-2.05, -31.5, -0.06, 0x831843); // Deep Maroon Zhiguli on left curb
+
+    // 11. Street Furniture: Trash Dumpsters & Wooden Benches
+    // Soviet green dumpsters
+    var dumpMat = makeMat(0x166534);
+    var dumpGroup = new THREE.Group();
+    dumpGroup.position.set(-3.7, 0, -21);
+    dumpGroup.rotation.y = 0.15;
+    scene.add(dumpGroup);
+    addMesh(new THREE.BoxGeometry(1.2, 0.95, 0.9), dumpMat, 0, 0.52, 0, dumpGroup);
+    addMesh(new THREE.BoxGeometry(1.26, 0.12, 0.96), curbSnowMat, 0, 1.05, 0, dumpGroup);
+    colliders.push({ minX: -4.4, maxX: -3.0, minZ: -21.6, maxZ: -20.4 });
+
+    // Wooden park benches covered in snow
+    var benchWoodMat = makeMat(0x78350f);
+    var bench1 = new THREE.Group();
+    bench1.position.set(-3.6, 0, -6.5);
+    scene.add(bench1);
+    addMesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), ironPoleMat, -0.7, 0.23, 0, bench1);
+    addMesh(new THREE.BoxGeometry(0.08, 0.45, 0.08), ironPoleMat,  0.7, 0.23, 0, bench1);
+    addMesh(new THREE.BoxGeometry(1.6, 0.06, 0.42), benchWoodMat, 0, 0.46, 0, bench1);
+    addMesh(new THREE.BoxGeometry(1.64, 0.08, 0.44), curbSnowMat, 0, 0.52, 0, bench1);
+
+    // 12. End and Rear Backdrops
+    var endStreetTex = tlStreet.load(STREET_B64);
+    var endStreetMat = new THREE.MeshBasicMaterial({ map: endStreetTex });
+    var endBackdrop = addMesh(new THREE.PlaneGeometry(24, 14), endStreetMat, 0, 6.0, -len);
+    var rearBackdrop = addMesh(new THREE.PlaneGeometry(24, 14), stalkerMat, 0, 6.0, 1.5);
+    rearBackdrop.rotation.y = Math.PI;
+
+    // 13. Atmospheric Night Lighting & Blizzard
+    scene.add(new THREE.AmbientLight(0x152238, 1.15));
+    // Heavy realistic blizzard falling everywhere along the entire street from sky to ground
+    addSnow(-54, 4, -8, 8, 0, 13.0, 4200, 0.08);
 
     camera.position.set(0, 1.6, 0);
     camera.lookAt(0, 1.6, -5);
 
-    // 3D Stalker figure as well
+    // 3D Stalker figure in distance
     var stalkerZ = toWork ? 20 : 12;
     createStalker(2.4, stalkerZ);
 
@@ -4187,6 +4487,7 @@ function buildStreet(toWork) {
         };
     }
 }
+
 
 // ==================== BUILD: OFFICE ====================
 function buildOffice() {
