@@ -4489,99 +4489,1232 @@ function buildStreet(toWork) {
 }
 
 
-// ==================== BUILD: OFFICE ====================
-function buildOffice() {
-    scene.background = new THREE.Color(0x030303);
-    scene.fog = new THREE.Fog(0x030303, 1, 10);
+// ==================== PROCEDURAL OFFICE TEXTURES ====================
+var cachedOfficeScreenTexPlayer = null;
+var cachedOfficeScreenTexOther = null;
+var cachedOfficeFloorTex = null;
+var cachedOfficeCeilingTex = null;
+var cachedCorkboardTex = null;
+var cachedWallClockTex = null;
 
-    var om = makeMat(0xefefef);
-    var fm2 = makeMat(0x181818);
+function getOfficeComputerScreenTexture(isPlayer) {
+    if (isPlayer && cachedOfficeScreenTexPlayer) return cachedOfficeScreenTexPlayer;
+    if (!isPlayer && cachedOfficeScreenTexOther) return cachedOfficeScreenTexOther;
 
-    // Floor + ceiling
-    var of = addMesh(new THREE.PlaneGeometry(8, 10), fm2, 0, 0, -2); of.rotation.x = -Math.PI / 2;
-    var oc = addMesh(new THREE.PlaneGeometry(8, 10), makeMat(0xefefef), 0, 3, -2); oc.rotation.x = Math.PI / 2;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 384;
+    var ctx = canvas.getContext('2d');
 
-    // Walls
-    addMesh(new THREE.PlaneGeometry(8, 3), om, 0, 1.5, -7);              // back
-    var lw2 = addMesh(new THREE.PlaneGeometry(10, 3), om, -4, 1.5, -2); lw2.rotation.y = Math.PI / 2;
-    var rw2 = addMesh(new THREE.PlaneGeometry(10, 3), om, 4, 1.5, -2);  rw2.rotation.y = -Math.PI / 2;
-    // Front wall (solid)
-    addMesh(new THREE.PlaneGeometry(8, 3), om, 0, 1.5, 3);
-    var fw2 = addMesh(new THREE.PlaneGeometry(8, 3), om, 0, 1.5, 3); fw2.rotation.y = Math.PI; // inside face
+    if (isPlayer) {
+        // Classic Windows 98 Teal Desktop
+        ctx.fillStyle = '#008080';
+        ctx.fillRect(0, 0, 512, 384);
 
-    // Office light switch
-    var osw = addMesh(new THREE.BoxGeometry(0.1, 0.15, 0.05), makeMat(0x888888), -1.2, 1.3, 2.97);
-    osw.userData = { name: 'Выключатель', type: 'office_switch' };
-    interactables.push(osw);
+        // Desktop Icons
+        // My Computer icon
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(24, 20, 28, 24);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(27, 23, 22, 18);
+        ctx.fillStyle = '#475569';
+        ctx.fillRect(34, 44, 8, 4);
+        ctx.fillRect(28, 48, 20, 3);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('Мой компьютер', 8, 64);
 
-    // Exit door
-    var exitDoor = addMesh(new THREE.PlaneGeometry(1.2, 2.2), makeMat(0x302010), 0, 1.1, 2.98);
-    exitDoor.rotation.y = Math.PI;
-    exitDoor.userData = { name: 'Выход (домой)', type: 'office_exit' };
-    interactables.push(exitDoor);
+        // Network icon
+        ctx.fillStyle = '#64748b';
+        ctx.fillRect(22, 82, 18, 14);
+        ctx.fillRect(34, 90, 18, 14);
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(31, 96); ctx.lineTo(34, 96);
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('Сеть', 26, 118);
 
-    // Multiple office desks & computers (night shift office room)
-    var deskLocations = [
-        { x: -1.2, z: -5.0, isPlayer: true },
-        { x:  1.5, z: -5.0, isPlayer: false },
-        { x: -1.2, z: -2.2, isPlayer: false },
-        { x:  1.5, z: -2.2, isPlayer: false }
-    ];
+        // Recycle Bin icon
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.moveTo(26, 138); ctx.lineTo(46, 138); ctx.lineTo(43, 162); ctx.lineTo(29, 162);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(29, 142, 14, 16);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('Корзина', 20, 176);
 
-    var deskMat = makeMat(0x3e2c1e);
-    var chairMat = makeMat(0x1a1a1a);
-    var monMat = makeMat(0x111111);
-    var greenScreenMat = new THREE.MeshBasicMaterial({ color: 0x113311 });
-    var offScreenMat = new THREE.MeshBasicMaterial({ color: 0x050c05 });
+        // Report File (Отчет_13.txt) icon
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(26, 196, 20, 26);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(26, 196, 20, 26);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fillRect(29, 201, 14, 2);
+        ctx.fillRect(29, 206, 14, 2);
+        ctx.fillRect(29, 211, 10, 2);
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('Отчет_13.txt', 12, 236);
 
-    for (var di = 0; di < deskLocations.length; di++) {
-        var dk = deskLocations[di];
-        // Desk
-        addMesh(new THREE.BoxGeometry(1.8, 0.8, 0.9), deskMat, dk.x, 0.4, dk.z);
-        colliders.push({ minX: dk.x - 0.9, maxX: dk.x + 0.9, minZ: dk.z - 0.45, maxZ: dk.z + 0.45 });
-        // Chair
-        var chair = addMesh(new THREE.BoxGeometry(0.55, 0.1, 0.55), chairMat, dk.x, 0.55, dk.z + 0.7);
-        chair.userData = { name: 'Стул', type: 'office_chair', sitX: dk.x, sitZ: dk.z + 0.5, lookX: dk.x, lookZ: dk.z - 1.0 };
-        interactables.push(chair);
-        // Monitor stand + body
-        addMesh(new THREE.BoxGeometry(0.75, 0.55, 0.1), monMat, dk.x, 1.1, dk.z - 0.3);
+        // Open Document Editor Window
+        // Drop shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.4)';
+        ctx.fillRect(104, 38, 382, 280);
 
-        if (dk.isPlayer) {
-            // Player's computer
-            var compScreen = addMesh(new THREE.PlaneGeometry(0.68, 0.48), greenScreenMat, dk.x, 1.1, dk.z - 0.24);
-            compScreen.userData = { name: 'Твой компьютер', type: 'computer' };
-            interactables.push(compScreen);
-        } else {
-            // Other office computers
-            var oScreen = addMesh(new THREE.PlaneGeometry(0.68, 0.48), offScreenMat, dk.x, 1.1, dk.z - 0.24);
-            oScreen.userData = { name: 'Чужой компьютер', type: 'other_computer' };
-            interactables.push(oScreen);
+        // Window Frame
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(100, 34, 380, 280);
+        ctx.strokeStyle = '#ffffff';
+        ctx.strokeRect(100, 34, 380, 280);
+
+        // Titlebar
+        ctx.fillStyle = '#000080';
+        ctx.fillRect(103, 37, 374, 22);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText('Текстовый редактор - [Отчет_13.txt]', 114, 52);
+
+        // Window Control Buttons [ _ [] X ]
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(455, 40, 16, 15);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(455, 40, 16, 15);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('X', 460, 52);
+
+        // Menu bar (Файл  Правка  Вид  Вставка)
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(103, 59, 374, 18);
+        ctx.fillStyle = '#000000';
+        ctx.font = '10px sans-serif';
+        ctx.fillText('Файл   Правка   Вид   Вставка   Справка', 110, 72);
+
+        // Text Document Area
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(104, 78, 372, 232);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(104, 78, 372, 232);
+
+        // Document content preview
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText('СЛУЖЕБНЫЙ ОТЧЕТ № 13-Б (СРОЧНО)', 120, 105);
+        ctx.font = '11px monospace';
+        ctx.fillStyle = '#475569';
+        ctx.fillText('Смена: Ночная (21:00 - 06:00)', 120, 126);
+        ctx.fillText('Сотрудник: Дежурный оператор', 120, 144);
+        ctx.fillStyle = '#b91c1c';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText('Статус: ОЖИДАЕТ ВВОДА ДАННЫХ...', 120, 176);
+        ctx.fillStyle = '#0f766e';
+        ctx.font = '11px monospace';
+        ctx.fillText('Подсказка: Подойдите и нажмите [F],', 120, 210);
+        ctx.fillText('чтобы перепечатать текст из папки.', 120, 228);
+
+        // Blinking cursor
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(120, 246, 8, 14);
+
+        // Windows 98 Taskbar at bottom
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(0, 354, 512, 30);
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 354); ctx.lineTo(512, 354);
+        ctx.stroke();
+
+        // Start Button [Пуск]
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(4, 358, 64, 22);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(4, 358, 64, 22);
+        // Windows flag icon on button
+        ctx.fillStyle = '#ef4444'; ctx.fillRect(8, 363, 5, 5);
+        ctx.fillStyle = '#3b82f6'; ctx.fillRect(14, 363, 5, 5);
+        ctx.fillStyle = '#22c55e'; ctx.fillRect(8, 369, 5, 5);
+        ctx.fillStyle = '#eab308'; ctx.fillRect(14, 369, 5, 5);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText('Пуск', 24, 374);
+
+        // Active taskbar tab
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(74, 358, 140, 22);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(74, 358, 140, 22);
+        ctx.fillStyle = '#000000';
+        ctx.font = '10px sans-serif';
+        ctx.fillText('[Отчет_13.txt]', 86, 373);
+
+        // Tray clock
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(455, 358, 52, 22);
+        ctx.strokeStyle = '#808080';
+        ctx.strokeRect(455, 358, 52, 22);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 11px monospace';
+        ctx.fillText('21:13', 466, 373);
+
+        // Scanlines overlay for vintage CRT feel
+        ctx.fillStyle = 'rgba(0,0,0,0.12)';
+        for (var sl = 0; sl < 384; sl += 3) {
+            ctx.fillRect(0, sl, 512, 1);
+        }
+
+        cachedOfficeScreenTexPlayer = new THREE.CanvasTexture(canvas);
+        return cachedOfficeScreenTexPlayer;
+    } else {
+        // Mikhail's screen: 1C Accounting and Green Server Terminal
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, 512, 384);
+
+        // Upper window: 1C: Бухгалтерия 7.7
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(10, 10, 492, 190);
+        ctx.fillStyle = '#000080';
+        ctx.fillRect(12, 12, 488, 22);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText('1C: БУХГАЛТЕРИЯ 7.7 - [Сводная ведомость поставок (Ноябрь)]', 20, 27);
+
+        // Table headers
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(12, 36, 488, 20);
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText('АРТИКУЛ    НАИМЕНОВАНИЕ        КОЛ-ВО   ЦЕНА   СТАТУС', 20, 50);
+
+        // Table rows
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(12, 58, 488, 140);
+        var rows = [
+            '#0944-A    Консервы мясные     140 шт   120р   [В РЕЗЕРВЕ]',
+            '#0945-B    Медикаменты тип-2    85 уп   350р   [ОТГРУЖЕНО]',
+            '#0949-X    Генератор 5.5кВт      4 шт  45000р  [ДЕФИЦИТ]',
+            '#0951-C    Топливо дизель      1200 л    52р   [ЗАБЛОКИР.]',
+            '#0999-Z    Спецпакет "Карантин"  1 ящ    ----  [ОШИБКА]'
+        ];
+        for (var ri = 0; ri < rows.length; ri++) {
+            if (ri === 4) ctx.fillStyle = '#dc2626';
+            else ctx.fillStyle = '#1e293b';
+            ctx.font = '10px monospace';
+            ctx.fillText(rows[ri], 20, 78 + ri * 24);
+        }
+
+        // Lower window: Phosphor green terminal
+        ctx.fillStyle = '#021810';
+        ctx.fillRect(10, 212, 492, 160);
+        ctx.strokeStyle = '#059669';
+        ctx.strokeRect(10, 212, 492, 160);
+
+        ctx.fillStyle = '#10b981';
+        ctx.font = '11px monospace';
+        ctx.fillText('C:\\DISTRICT_NET> ping 192.168.0.1 -t', 22, 234);
+        ctx.fillText('Ответ от 192.168.0.1: число байт=32 время=4мс TTL=64', 22, 252);
+        ctx.fillText('Ответ от 192.168.0.1: число байт=32 время=3мс TTL=64', 22, 270);
+        ctx.fillStyle = '#ef4444';
+        ctx.fillText('ВНИМАНИЕ: Превышен интервал ожидания для запроса.', 22, 294);
+        ctx.fillText('КРИТИЧЕСКИЙ СБОЙ: Связь с центральным шлюзом потеряна!', 22, 314);
+        ctx.fillStyle = '#22c55e';
+        ctx.fillText('C:\\DISTRICT_NET> _', 22, 340);
+
+        // Scanlines overlay
+        ctx.fillStyle = 'rgba(0,0,0,0.14)';
+        for (var sl2 = 0; sl2 < 384; sl2 += 3) {
+            ctx.fillRect(0, sl2, 512, 1);
+        }
+
+        cachedOfficeScreenTexOther = new THREE.CanvasTexture(canvas);
+        return cachedOfficeScreenTexOther;
+    }
+}
+
+function getOfficeFloorTexture() {
+    if (cachedOfficeFloorTex) return cachedOfficeFloorTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+
+    // Base commercial carpet slate color
+    ctx.fillStyle = '#252e3d';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // Carpet tiles (4x4 tiles of 128x128)
+    for (var ty = 0; ty < 4; ty++) {
+        for (var tx = 0; tx < 4; tx++) {
+            var px = tx * 128;
+            var py = ty * 128;
+            var isAlt = (tx + ty) % 2 === 0;
+
+            ctx.fillStyle = isAlt ? '#2a3545' : '#222b39';
+            ctx.fillRect(px + 2, py + 2, 124, 124);
+
+            // Subtle carpet fibers / mottle
+            ctx.fillStyle = isAlt ? 'rgba(255,255,255,0.025)' : 'rgba(0,0,0,0.04)';
+            for (var d = 0; d < 80; d++) {
+                var rx = px + 4 + Math.random() * 120;
+                var ry = py + 4 + Math.random() * 120;
+                ctx.fillRect(rx, ry, 2, 2);
+            }
+
+            // Dark seam between carpet tiles
+            ctx.strokeStyle = '#181f2a';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(px + 1, py + 1, 126, 126);
         }
     }
 
-    // Yellow physical folder for work
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 4);
+    cachedOfficeFloorTex = tex;
+    return cachedOfficeFloorTex;
+}
+
+function getOfficeCeilingTexture() {
+    if (cachedOfficeCeilingTex) return cachedOfficeCeilingTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+
+    // White acoustic drop ceiling panels
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(0, 0, 512, 512);
+
+    // 4x4 grid of ceiling tiles
+    for (var cy = 0; cy < 4; cy++) {
+        for (var cx = 0; cx < 4; cx++) {
+            var x0 = cx * 128;
+            var y0 = cy * 128;
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(x0 + 2, y0 + 2, 124, 124);
+
+            // Acoustic pinhole speckles
+            ctx.fillStyle = 'rgba(100, 116, 139, 0.15)';
+            for (var p = 0; p < 70; p++) {
+                var sx = x0 + 6 + Math.random() * 116;
+                var sy = y0 + 6 + Math.random() * 116;
+                ctx.fillRect(sx, sy, 2, 2);
+            }
+
+            // T-bar metal grid divider lines
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x0, y0, 128, 128);
+        }
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 3);
+    cachedOfficeCeilingTex = tex;
+    return cachedOfficeCeilingTex;
+}
+
+function getCorkboardTexture() {
+    if (cachedCorkboardTex) return cachedCorkboardTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
+
+    // Cork background
+    ctx.fillStyle = '#b68555';
+    ctx.fillRect(0, 0, 512, 256);
+    // Mottled cork texture
+    ctx.fillStyle = 'rgba(120, 70, 30, 0.12)';
+    for (var ci = 0; ci < 600; ci++) {
+        var cx = Math.random() * 512;
+        var cy = Math.random() * 256;
+        var sz = 2 + Math.random() * 4;
+        ctx.fillRect(cx, cy, sz, sz);
+    }
+
+    // Wooden frame around corkboard
+    ctx.strokeStyle = '#5c3a21';
+    ctx.lineWidth = 10;
+    ctx.strokeRect(5, 5, 502, 246);
+
+    // Pinned December Calendar
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(30, 30, 120, 150);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(30, 30, 120, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 11px sans-serif';
+    ctx.fillText('ДЕКАБРЬ 2026', 44, 50);
+    // Calendar grid
+    ctx.fillStyle = '#1e293b';
+    ctx.font = '9px monospace';
+    ctx.fillText('Пн Вт Ср Чт Пт Сб Вс', 34, 76);
+    ctx.fillText(' 1  2  3  4  5  6  7', 34, 96);
+    ctx.fillText(' 8  9 10 11 12 13 14', 34, 114);
+    ctx.fillText('15 16 17 18 19 20 21', 34, 132);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillText('22 23 24 25 26 27 28', 34, 150);
+    ctx.fillText('29 30 31', 34, 168);
+    // Red pushpin
+    ctx.fillStyle = '#ef4444';
+    ctx.beginPath();
+    ctx.arc(90, 36, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pinned Yellow Memo Note
+    ctx.fillStyle = '#fef08a';
+    ctx.fillRect(180, 40, 90, 85);
+    ctx.fillStyle = '#854d0e';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.fillText('СРОЧНО!', 200, 58);
+    ctx.font = '8px sans-serif';
+    ctx.fillText('Сдать ночной', 190, 74);
+    ctx.fillText('отчет до 22:00!', 190, 88);
+    ctx.fillText('Шеф ругается.', 190, 102);
+    // Blue pushpin
+    ctx.fillStyle = '#3b82f6';
+    ctx.beginPath();
+    ctx.arc(225, 45, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pinned Pink Memo Note
+    ctx.fillStyle = '#fbcfe8';
+    ctx.fillRect(290, 50, 90, 80);
+    ctx.fillStyle = '#831843';
+    ctx.font = '8px sans-serif';
+    ctx.fillText('Пароль от Wi-Fi:', 298, 70);
+    ctx.font = 'bold 9px monospace';
+    ctx.fillText('OfficeSec2026', 298, 86);
+    ctx.font = '8px sans-serif';
+    ctx.fillText('Не разглашать!', 298, 102);
+    // Yellow pushpin
+    ctx.fillStyle = '#eab308';
+    ctx.beginPath();
+    ctx.arc(335, 55, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Pinned Safety Memo (A4 Sheet)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(400, 30, 90, 130);
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillText('ИНСТРУКЦИЯ', 412, 48);
+    ctx.font = '7px sans-serif';
+    ctx.fillText('При сирене ГО:', 410, 62);
+    ctx.fillText('- Закрыть окна', 410, 76);
+    ctx.fillText('- Запереть двери', 410, 90);
+    ctx.fillText('- Не выходить на', 410, 104);
+    ctx.fillText('  улицу до утра!', 410, 116);
+    // Red stamp
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(420, 126, 50, 20);
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 7px sans-serif';
+    ctx.fillText('УТВЕРЖДЕНО', 423, 139);
+    // Pushpin
+    ctx.fillStyle = '#10b981';
+    ctx.beginPath();
+    ctx.arc(445, 36, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    cachedCorkboardTex = new THREE.CanvasTexture(canvas);
+    return cachedCorkboardTex;
+}
+
+function getWallClockTexture() {
+    if (cachedWallClockTex) return cachedWallClockTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
+
+    // Outer rim
+    ctx.fillStyle = '#1e293b';
+    ctx.beginPath();
+    ctx.arc(128, 128, 124, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner dial face
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(128, 128, 112, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Hour numbers
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    var nums = ['12', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11'];
+    for (var ni = 0; ni < 12; ni++) {
+        var nang = (ni / 12) * Math.PI * 2 - Math.PI / 2;
+        var nx = 128 + Math.cos(nang) * 88;
+        var ny = 128 + Math.sin(nang) * 88;
+        ctx.fillText(nums[ni], nx, ny);
+    }
+
+    // Minute tick marks
+    ctx.strokeStyle = '#64748b';
+    ctx.lineWidth = 2;
+    for (var mi = 0; mi < 60; mi++) {
+        var mang = (mi / 60) * Math.PI * 2;
+        var x1 = 128 + Math.cos(mang) * 102;
+        var y1 = 128 + Math.sin(mang) * 102;
+        var x2 = 128 + Math.cos(mang) * (mi % 5 === 0 ? 94 : 98);
+        var y2 = 128 + Math.sin(mang) * (mi % 5 === 0 ? 94 : 98);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.stroke();
+    }
+
+    // Hands set to 21:14
+    var hrAng = (9.23 / 12) * Math.PI * 2 - Math.PI / 2;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(128, 128);
+    ctx.lineTo(128 + Math.cos(hrAng) * 55, 128 + Math.sin(hrAng) * 55);
+    ctx.stroke();
+
+    var minAng = (14 / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.strokeStyle = '#0f172a';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(128, 128);
+    ctx.lineTo(128 + Math.cos(minAng) * 78, 128 + Math.sin(minAng) * 78);
+    ctx.stroke();
+
+    // Red second hand
+    var secAng = (38 / 60) * Math.PI * 2 - Math.PI / 2;
+    ctx.strokeStyle = '#dc2626';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(128, 128);
+    ctx.lineTo(128 + Math.cos(secAng) * 88, 128 + Math.sin(secAng) * 88);
+    ctx.stroke();
+
+    // Center pivot cap
+    ctx.fillStyle = '#dc2626';
+    ctx.beginPath();
+    ctx.arc(128, 128, 6, 0, Math.PI * 2);
+    ctx.fill();
+
+    cachedWallClockTex = new THREE.CanvasTexture(canvas);
+    return cachedWallClockTex;
+}
+
+// ==================== WORKSTATION & FURNITURE BUILDERS ====================
+function buildDetailedComputer(x, z, isPlayer) {
+    var compGroup = new THREE.Group();
+    compGroup.position.set(x, 0, z);
+
+    var beigeMat = makeMat(0xded6c4);       // classic 90s PC beige
+    var darkBeigeMat = makeMat(0xbab29f);   // recessed / shadowed bezel
+    var blackPlasticMat = makeMat(0x1a1a1a);
+    var ledGreenMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    var ledOrangeMat = new THREE.MeshBasicMaterial({ color: 0xf59e0b });
+    var screenTex = getOfficeComputerScreenTexture(isPlayer);
+    var screenMat = new THREE.MeshBasicMaterial({ map: screenTex });
+
+    // 1. MONITOR STAND (on desk y = 0.78 - 0.80)
+    // Swivel base
+    addMesh(new THREE.CylinderGeometry(0.12, 0.14, 0.02, 16), beigeMat, 0, 0.81, -0.22, compGroup);
+    // Stand neck / stem
+    addMesh(new THREE.CylinderGeometry(0.04, 0.045, 0.08, 12), darkBeigeMat, 0, 0.85, -0.22, compGroup);
+
+    // 2. CRT MONITOR BODY
+    // Main CRT rear chassis
+    addMesh(new THREE.BoxGeometry(0.42, 0.34, 0.28), beigeMat, 0, 0.99, -0.34, compGroup);
+    // Rear vent louvers
+    addMesh(new THREE.BoxGeometry(0.32, 0.08, 0.01), darkBeigeMat, 0, 1.05, -0.485, compGroup);
+    
+    // Front bezel (frame surrounding CRT screen)
+    addMesh(new THREE.BoxGeometry(0.46, 0.38, 0.08), beigeMat, 0, 0.99, -0.19, compGroup);
+    // Inner bevel (dark frame around tube)
+    addMesh(new THREE.BoxGeometry(0.40, 0.31, 0.02), darkBeigeMat, 0, 1.00, -0.145, compGroup);
+
+    // Curved CRT Screen Glass
+    var crtScreen = addMesh(new THREE.PlaneGeometry(0.38, 0.28), screenMat, 0, 1.00, -0.134, compGroup);
+    // Screen Hitbox & Interaction
+    if (isPlayer) {
+        crtScreen.userData = { name: 'Твой рабочий компьютер [F]', type: 'computer' };
+        interactables.push(crtScreen);
+    } else {
+        crtScreen.userData = { name: 'Компьютер коллеги [F]', type: 'other_computer' };
+        interactables.push(crtScreen);
+    }
+
+    // Monitor Front Controls (under the screen)
+    // Power button
+    addMesh(new THREE.BoxGeometry(0.03, 0.018, 0.008), blackPlasticMat, 0.16, 0.835, -0.148, compGroup);
+    // Power LED (Glowing green)
+    addMesh(new THREE.BoxGeometry(0.008, 0.008, 0.006), ledGreenMat, 0.13, 0.835, -0.148, compGroup);
+    // Adjustment knobs / dials (brightness/contrast)
+    addMesh(new THREE.CylinderGeometry(0.007, 0.007, 0.006, 8), darkBeigeMat, -0.12, 0.835, -0.148, compGroup);
+    addMesh(new THREE.CylinderGeometry(0.007, 0.007, 0.006, 8), darkBeigeMat, -0.09, 0.835, -0.148, compGroup);
+
+    // CRT Screen Light Glow (illuminates desk & keyboard)
+    var screenLight = new THREE.PointLight(isPlayer ? 0x60a5fa : 0x4ade80, 0.40, 1.3);
+    screenLight.position.set(0, 1.0, -0.05);
+    compGroup.add(screenLight);
+
+    // 3. PC TOWER CASE (System Unit under / beside the desk on floor y = 0)
+    var towerX = 0.65;
+    var towerY = 0.22;
+    var towerZ = -0.15;
+    // Tower chassis
+    addMesh(new THREE.BoxGeometry(0.18, 0.42, 0.44), beigeMat, towerX, towerY, towerZ, compGroup);
+    // Front face panel
+    addMesh(new THREE.BoxGeometry(0.176, 0.41, 0.02), darkBeigeMat, towerX, towerY, towerZ + 0.22, compGroup);
+    // 5.25" CD-ROM drive
+    addMesh(new THREE.BoxGeometry(0.14, 0.045, 0.015), beigeMat, towerX, towerY + 0.13, towerZ + 0.23, compGroup);
+    addMesh(new THREE.BoxGeometry(0.11, 0.006, 0.016), blackPlasticMat, towerX, towerY + 0.13, towerZ + 0.232, compGroup);
+    addMesh(new THREE.BoxGeometry(0.015, 0.008, 0.017), blackPlasticMat, towerX + 0.045, towerY + 0.118, towerZ + 0.232, compGroup);
+    addMesh(new THREE.BoxGeometry(0.006, 0.006, 0.018), ledGreenMat, towerX - 0.045, towerY + 0.118, towerZ + 0.232, compGroup);
+    // 3.5" Floppy Disk Drive
+    addMesh(new THREE.BoxGeometry(0.11, 0.03, 0.015), beigeMat, towerX, towerY + 0.07, towerZ + 0.23, compGroup);
+    addMesh(new THREE.BoxGeometry(0.08, 0.004, 0.016), blackPlasticMat, towerX, towerY + 0.072, towerZ + 0.232, compGroup);
+    addMesh(new THREE.BoxGeometry(0.012, 0.006, 0.017), blackPlasticMat, towerX + 0.035, towerY + 0.065, towerZ + 0.232, compGroup);
+    addMesh(new THREE.BoxGeometry(0.005, 0.005, 0.018), ledOrangeMat, towerX - 0.035, towerY + 0.065, towerZ + 0.232, compGroup);
+    // Power & Reset buttons
+    addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.01, 10), blackPlasticMat, towerX - 0.03, towerY - 0.01, towerZ + 0.231, compGroup);
+    addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.01, 10), darkBeigeMat, towerX + 0.03, towerY - 0.01, towerZ + 0.231, compGroup);
+    // Power & HDD LEDs
+    addMesh(new THREE.BoxGeometry(0.006, 0.006, 0.005), ledGreenMat, towerX - 0.01, towerY - 0.01, towerZ + 0.232, compGroup);
+    addMesh(new THREE.BoxGeometry(0.006, 0.006, 0.005), ledOrangeMat, towerX + 0.01, towerY - 0.01, towerZ + 0.232, compGroup);
+    // Lower intake vent grill
+    addMesh(new THREE.BoxGeometry(0.12, 0.08, 0.008), blackPlasticMat, towerX, towerY - 0.11, towerZ + 0.23, compGroup);
+
+    // 4. KEYBOARD (on desk y = 0.80)
+    var kbGroup = new THREE.Group();
+    kbGroup.position.set(0, 0.81, 0.05);
+    kbGroup.rotation.x = 0.05;
+    // Keyboard base wedge
+    addMesh(new THREE.BoxGeometry(0.46, 0.02, 0.16), beigeMat, 0, 0, 0, kbGroup);
+    // Keybed recess
+    addMesh(new THREE.BoxGeometry(0.44, 0.008, 0.145), darkBeigeMat, 0, 0.012, 0, kbGroup);
+    // Main alphanumeric key block
+    addMesh(new THREE.BoxGeometry(0.26, 0.012, 0.11), beigeMat, -0.07, 0.018, 0.01, kbGroup);
+    // Function keys row (F1-F12)
+    addMesh(new THREE.BoxGeometry(0.42, 0.010, 0.02), darkBeigeMat, 0, 0.018, -0.055, kbGroup);
+    // Spacebar
+    addMesh(new THREE.BoxGeometry(0.13, 0.012, 0.02), beigeMat, -0.07, 0.020, 0.055, kbGroup);
+    // Navigation / Arrow cluster
+    addMesh(new THREE.BoxGeometry(0.045, 0.012, 0.07), beigeMat, 0.10, 0.018, 0.02, kbGroup);
+    // Numpad key cluster
+    addMesh(new THREE.BoxGeometry(0.085, 0.012, 0.11), beigeMat, 0.18, 0.018, 0.01, kbGroup);
+    // Lock indicator LEDs (green dots)
+    addMesh(new THREE.BoxGeometry(0.004, 0.004, 0.004), ledGreenMat, 0.18, 0.022, -0.055, kbGroup);
+    addMesh(new THREE.BoxGeometry(0.004, 0.004, 0.004), ledGreenMat, 0.19, 0.022, -0.055, kbGroup);
+    compGroup.add(kbGroup);
+
+    // 5. MOUSEPAD & MOUSE (on desk to the right of keyboard)
+    var padMat = makeMat(0x1e293b);
+    addMesh(new THREE.BoxGeometry(0.20, 0.004, 0.22), padMat, 0.32, 0.803, 0.05, compGroup);
+    // Mouse body
+    addMesh(new THREE.BoxGeometry(0.065, 0.03, 0.10), beigeMat, 0.32, 0.82, 0.05, compGroup);
+    // Mouse button divider
+    addMesh(new THREE.BoxGeometry(0.003, 0.005, 0.04), darkBeigeMat, 0.32, 0.835, 0.025, compGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.004, 0.003), darkBeigeMat, 0.32, 0.835, 0.005, compGroup);
+
+    // 6. Cables
+    var cableMat = makeMat(0x111111);
+    var kbCable = addMesh(new THREE.CylinderGeometry(0.003, 0.003, 0.25, 6), cableMat, 0, 0.805, -0.08, compGroup);
+    kbCable.rotation.x = Math.PI / 2;
+    var mouseCable = addMesh(new THREE.CylinderGeometry(0.003, 0.003, 0.25, 6), cableMat, 0.32, 0.805, -0.08, compGroup);
+    mouseCable.rotation.x = Math.PI / 2;
+
+    scene.add(compGroup);
+    return compGroup;
+}
+
+function buildOfficeDesk(x, z, isPlayerDesk) {
+    var deskGroup = new THREE.Group();
+    deskGroup.position.set(x, 0, z);
+
+    var topMat = makeMat(0xb58d63);       // warm beech laminate top
+    var edgeMat = makeMat(0x8a633a);      // wood edging
+    var frameMat = makeMat(0x334155);     // dark grey steel
+    var silverMat = makeMat(0xd1d5db);    // silver handles
+    var panelMat = makeMat(0x94724d);     // modesty panel
+
+    // Desktop surface
+    addMesh(new THREE.BoxGeometry(1.70, 0.035, 0.85), topMat, 0, 0.78, 0, deskGroup);
+    addMesh(new THREE.BoxGeometry(1.71, 0.038, 0.01), edgeMat, 0, 0.78, 0.425, deskGroup);
+    addMesh(new THREE.BoxGeometry(1.71, 0.038, 0.01), edgeMat, 0, 0.78, -0.425, deskGroup);
+
+    // Modesty Panel
+    addMesh(new THREE.BoxGeometry(1.60, 0.40, 0.02), panelMat, 0, 0.52, -0.38, deskGroup);
+
+    // Steel Legs (left side)
+    addMesh(new THREE.BoxGeometry(0.05, 0.76, 0.05), frameMat, -0.78, 0.38, -0.38, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.76, 0.05), frameMat, -0.78, 0.38,  0.38, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.04, 0.76), frameMat, -0.78, 0.04,  0, deskGroup);
+
+    // Three-Drawer Pedestal (right side under desk)
+    var pedX = 0.58;
+    addMesh(new THREE.BoxGeometry(0.42, 0.68, 0.76), topMat, pedX, 0.36, -0.02, deskGroup);
+    for (var di = 0; di < 3; di++) {
+        var dy = 0.58 - di * 0.21;
+        addMesh(new THREE.BoxGeometry(0.40, 0.19, 0.015), topMat, pedX, dy, 0.365, deskGroup);
+        addMesh(new THREE.BoxGeometry(0.14, 0.016, 0.02), silverMat, pedX, dy, 0.378, deskGroup);
+        if (di === 0) {
+            var lock = addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.01, 8), silverMat, pedX + 0.14, dy + 0.05, 0.374, deskGroup);
+            lock.rotation.x = Math.PI / 2;
+        }
+    }
+
+    // Desk Accessories / Clutter
+    // Coffee Mug
+    var mugMat = makeMat(0xf8fafc);
+    var coffeeMat = makeMat(0x382012);
+    var mugX = -0.62;
+    var mugZ = -0.15;
+    addMesh(new THREE.CylinderGeometry(0.042, 0.038, 0.09, 14), mugMat, mugX, 0.84, mugZ, deskGroup);
+    addMesh(new THREE.CylinderGeometry(0.036, 0.036, 0.01, 12), coffeeMat, mugX, 0.87, mugZ, deskGroup);
+    var handleMesh = addMesh(new THREE.TorusGeometry(0.024, 0.007, 8, 12, Math.PI), mugMat, mugX - 0.042, 0.84, mugZ, deskGroup);
+    handleMesh.rotation.z = Math.PI / 2;
+
+    // Pen Holder Cup
+    var cupMat = makeMat(0x1e293b);
+    var penCupX = -0.62;
+    var penCupZ = 0.12;
+    addMesh(new THREE.CylinderGeometry(0.038, 0.034, 0.095, 12), cupMat, penCupX, 0.845, penCupZ, deskGroup);
+    var penMat1 = makeMat(0x2563eb);
+    var penMat2 = makeMat(0xdc2626);
+    var penMat3 = makeMat(0xeab308);
+    var p1 = addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.14, 6), penMat1, penCupX - 0.01, 0.92, penCupZ - 0.01, deskGroup);
+    p1.rotation.z = 0.18;
+    var p2 = addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.13, 6), penMat2, penCupX + 0.01, 0.91, penCupZ + 0.01, deskGroup);
+    p2.rotation.x = -0.16;
+    var p3 = addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.12, 6), penMat3, penCupX, 0.90, penCupZ, deskGroup);
+    p3.rotation.z = -0.14;
+
+    // Document stack
+    var paperMat = makeMat(0xffffff);
+    var docStack = addMesh(new THREE.BoxGeometry(0.22, 0.025, 0.30), paperMat, -0.48, 0.81, 0.22, deskGroup);
+    docStack.rotation.y = 0.06;
+
+    // Solid obstacle collider
+    colliders.push({ minX: x - 0.90, maxX: x + 0.90, minZ: z - 0.48, maxZ: z + 0.48 });
+
+    scene.add(deskGroup);
+    return deskGroup;
+}
+
+function buildColleague(x, z) {
+    var cGroup = new THREE.Group();
+    cGroup.position.set(x, 0, z);
+
+    var skinMat = makeMat(0xdfa17a);        // Caucasian skin tone
+    var hairMat = makeMat(0x2d1f18);        // dark brown styled hair
+    var sweaterMat = makeMat(0x1e3a5f);     // navy blue knitted office sweater
+    var shirtCollarMat = makeMat(0xf8fafc); // white dress shirt collar
+    var pantsMat = makeMat(0x334155);       // slate grey office trousers
+    var shoeMat = makeMat(0x0f172a);        // black leather shoes
+    var glassesMat = makeMat(0x111111);     // wireframe glasses
+    var lensMat = new THREE.MeshBasicMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.5 });
+
+    // 1. CHAIR (5-Star Ergonomic Office Swivel Chair)
+    var chairMat = makeMat(0x18181b);
+    var chromeMat = makeMat(0x94a3b8);
+    // Base hub & cylinder
+    addMesh(new THREE.CylinderGeometry(0.04, 0.05, 0.20, 12), chromeMat, 0, 0.15, 0.65, cGroup);
+    // 5 caster wheel legs radiating outwards
+    for (var legI = 0; legI < 5; legI++) {
+        var ang = (legI / 5) * Math.PI * 2;
+        var legX = Math.cos(ang) * 0.16;
+        var legZ = 0.65 + Math.sin(ang) * 0.16;
+        var wheelLeg = addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.32), chairMat, legX, 0.06, legZ, cGroup);
+        wheelLeg.rotation.y = -ang;
+        var tipX = Math.cos(ang) * 0.30;
+        var tipZ = 0.65 + Math.sin(ang) * 0.30;
+        addMesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 8), chairMat, tipX, 0.03, tipZ, cGroup);
+    }
+    // Chair seat cushion
+    addMesh(new THREE.BoxGeometry(0.52, 0.08, 0.50), chairMat, 0, 0.48, 0.62, cGroup);
+    // Chair backrest support bracket
+    addMesh(new THREE.BoxGeometry(0.06, 0.38, 0.04), chromeMat, 0, 0.68, 0.85, cGroup);
+    // Contoured backrest
+    var backrest = addMesh(new THREE.BoxGeometry(0.48, 0.48, 0.06), chairMat, 0, 0.88, 0.84, cGroup);
+    backrest.rotation.x = -0.08;
+    // Armrests
+    addMesh(new THREE.BoxGeometry(0.06, 0.03, 0.30), chairMat, -0.26, 0.70, 0.62, cGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.03, 0.30), chairMat,  0.26, 0.70, 0.62, cGroup);
+    addMesh(new THREE.CylinderGeometry(0.018, 0.018, 0.20, 8), chromeMat, -0.26, 0.60, 0.62, cGroup);
+    addMesh(new THREE.CylinderGeometry(0.018, 0.018, 0.20, 8), chromeMat,  0.26, 0.60, 0.62, cGroup);
+
+    // 2. LEGS & SHOES (seated under desk)
+    addMesh(new THREE.BoxGeometry(0.14, 0.13, 0.42), pantsMat, -0.12, 0.52, 0.42, cGroup);
+    addMesh(new THREE.BoxGeometry(0.14, 0.13, 0.42), pantsMat,  0.12, 0.52, 0.42, cGroup);
+    addMesh(new THREE.BoxGeometry(0.12, 0.40, 0.13), pantsMat, -0.12, 0.26, 0.18, cGroup);
+    addMesh(new THREE.BoxGeometry(0.12, 0.40, 0.13), pantsMat,  0.12, 0.26, 0.18, cGroup);
+    addMesh(new THREE.BoxGeometry(0.13, 0.07, 0.24), shoeMat, -0.12, 0.04, 0.14, cGroup);
+    addMesh(new THREE.BoxGeometry(0.13, 0.07, 0.24), shoeMat,  0.12, 0.04, 0.14, cGroup);
+
+    // 3. TORSO & SWEATER
+    addMesh(new THREE.BoxGeometry(0.38, 0.16, 0.32), pantsMat, 0, 0.56, 0.62, cGroup);
+    var torso = addMesh(new THREE.BoxGeometry(0.44, 0.46, 0.28), sweaterMat, 0, 0.82, 0.60, cGroup);
+    torso.rotation.x = 0.08;
+    addMesh(new THREE.BoxGeometry(0.16, 0.06, 0.14), shirtCollarMat, 0, 1.04, 0.56, cGroup);
+
+    // 4. ARMS & HANDS (resting on desk typing on keyboard)
+    var lUpperArm = addMesh(new THREE.BoxGeometry(0.11, 0.32, 0.12), sweaterMat, -0.26, 0.84, 0.55, cGroup);
+    lUpperArm.rotation.x = 0.35;
+    var rUpperArm = addMesh(new THREE.BoxGeometry(0.11, 0.32, 0.12), sweaterMat,  0.26, 0.84, 0.55, cGroup);
+    rUpperArm.rotation.x = 0.35;
+
+    var lForearm = addMesh(new THREE.BoxGeometry(0.10, 0.09, 0.36), sweaterMat, -0.16, 0.82, 0.30, cGroup);
+    lForearm.rotation.y = -0.18;
+    var rForearm = addMesh(new THREE.BoxGeometry(0.10, 0.09, 0.36), sweaterMat,  0.22, 0.82, 0.30, cGroup);
+    rForearm.rotation.y = 0.15;
+
+    var lHand = addMesh(new THREE.BoxGeometry(0.09, 0.04, 0.10), skinMat, -0.11, 0.825, 0.10, cGroup);
+    lHand.rotation.y = -0.12;
+    var rHand = addMesh(new THREE.BoxGeometry(0.085, 0.04, 0.10), skinMat, 0.28, 0.825, 0.10, cGroup);
+    rHand.rotation.y = 0.08;
+
+    // 5. NECK, HEAD & FACE
+    addMesh(new THREE.CylinderGeometry(0.06, 0.07, 0.10, 10), skinMat, 0, 1.08, 0.55, cGroup);
+    var head = addMesh(new THREE.BoxGeometry(0.20, 0.22, 0.21), skinMat, 0, 1.22, 0.52, cGroup);
+    head.rotation.x = 0.12;
+
+    var hairTop = addMesh(new THREE.BoxGeometry(0.216, 0.09, 0.226), hairMat, 0, 1.32, 0.51, cGroup);
+    hairTop.rotation.x = 0.12;
+    var hairBack = addMesh(new THREE.BoxGeometry(0.212, 0.15, 0.07), hairMat, 0, 1.23, 0.61, cGroup);
+    hairBack.rotation.x = 0.12;
+
+    addMesh(new THREE.BoxGeometry(0.03, 0.06, 0.04), skinMat, -0.11, 1.22, 0.53, cGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.06, 0.04), skinMat,  0.11, 1.22, 0.53, cGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.05, 0.04), skinMat, 0, 1.21, 0.40, cGroup);
+
+    var eyeWhiteMat = makeMat(0xf1f5f9);
+    var pupilMat = makeMat(0x0f172a);
+    addMesh(new THREE.BoxGeometry(0.04, 0.018, 0.01), eyeWhiteMat, -0.05, 1.23, 0.41, cGroup);
+    addMesh(new THREE.BoxGeometry(0.04, 0.018, 0.01), eyeWhiteMat,  0.05, 1.23, 0.41, cGroup);
+    addMesh(new THREE.BoxGeometry(0.018, 0.018, 0.012), pupilMat, -0.05, 1.23, 0.408, cGroup);
+    addMesh(new THREE.BoxGeometry(0.018, 0.018, 0.012), pupilMat,  0.05, 1.23, 0.408, cGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.012, 0.01), hairMat, -0.05, 1.26, 0.408, cGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.012, 0.01), hairMat,  0.05, 1.26, 0.408, cGroup);
+
+    // Glasses
+    addMesh(new THREE.BoxGeometry(0.06, 0.035, 0.005), glassesMat, -0.05, 1.23, 0.40, cGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.035, 0.005), glassesMat,  0.05, 1.23, 0.40, cGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.005, 0.005), glassesMat, 0, 1.24, 0.40, cGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.03, 0.002), lensMat, -0.05, 1.23, 0.401, cGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.03, 0.002), lensMat,  0.05, 1.23, 0.401, cGroup);
+
+    // 6. INTERACTIVE HITBOX
+    var colleagueHitbox = addMesh(new THREE.BoxGeometry(0.7, 1.4, 0.7), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.8, 0.55, cGroup);
+    colleagueHitbox.userData = { name: 'Коллега (Михаил) [F]', type: 'colleague' };
+    interactables.push(colleagueHitbox);
+
+    // Collider so player can't walk into Mikhail
+    colliders.push({ minX: x - 0.45, maxX: x + 0.45, minZ: z + 0.25, maxZ: z + 0.95 });
+
+    scene.add(cGroup);
+    return cGroup;
+}
+
+function buildFilingCabinet(x, z, rotY) {
+    var cabGroup = new THREE.Group();
+    cabGroup.position.set(x, 0, z);
+    cabGroup.rotation.y = rotY || 0;
+
+    var steelMat = makeMat(0x475569);
+    var darkSteelMat = makeMat(0x334155);
+    var chromeMat = makeMat(0xe2e8f0);
+
+    // Main cabinet body
+    addMesh(new THREE.BoxGeometry(0.48, 1.35, 0.62), steelMat, 0, 0.675, 0, cabGroup);
+    addMesh(new THREE.BoxGeometry(0.50, 0.05, 0.64), darkSteelMat, 0, 0.025, 0, cabGroup);
+    addMesh(new THREE.BoxGeometry(0.50, 0.03, 0.64), darkSteelMat, 0, 1.36, 0, cabGroup);
+
+    // 4 Drawers
+    for (var di = 0; di < 4; di++) {
+        var dy = 0.20 + di * 0.31;
+        addMesh(new THREE.BoxGeometry(0.44, 0.29, 0.015), steelMat, 0, dy, 0.315, cabGroup);
+        addMesh(new THREE.BoxGeometry(0.444, 0.004, 0.016), darkSteelMat, 0, dy + 0.145, 0.316, cabGroup);
+        addMesh(new THREE.BoxGeometry(0.12, 0.02, 0.025), chromeMat, 0, dy, 0.33, cabGroup);
+        addMesh(new THREE.BoxGeometry(0.08, 0.04, 0.005), chromeMat, 0, dy + 0.07, 0.325, cabGroup);
+        addMesh(new THREE.BoxGeometry(0.065, 0.028, 0.006), makeMat(0xffffff), 0, dy + 0.07, 0.326, cabGroup);
+    }
+
+    var halfW = 0.28;
+    var halfD = 0.34;
+    colliders.push({ minX: x - halfW, maxX: x + halfW, minZ: z - halfD, maxZ: z + halfD });
+
+    scene.add(cabGroup);
+    return cabGroup;
+}
+
+function buildOfficeShelving(x, z) {
+    var shelfGroup = new THREE.Group();
+    shelfGroup.position.set(x, 0, z);
+
+    var woodMat = makeMat(0x6b4f3b);
+    var darkMat = makeMat(0x4a3525);
+    var redFolderMat = makeMat(0xb91c1c);
+    var blueFolderMat = makeMat(0x1d4ed8);
+    var yellowFolderMat = makeMat(0xd97706);
+    var blackFolderMat = makeMat(0x18181b);
+    var paperMat = makeMat(0xf8fafc);
+    var boxMat = makeMat(0xca8a04);
+
+    // Vertical side panels
+    addMesh(new THREE.BoxGeometry(0.03, 2.20, 0.38), woodMat, -0.585, 1.10, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 2.20, 0.38), woodMat,  0.585, 1.10, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(1.20, 2.20, 0.015), darkMat, 0, 1.10, -0.18, shelfGroup);
+    addMesh(new THREE.BoxGeometry(1.20, 0.03, 0.38), woodMat, 0, 0.015, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(1.20, 0.03, 0.38), woodMat, 0, 2.185, 0, shelfGroup);
+
+    // Intermediate shelves
+    var shelfLevels = [0.45, 0.90, 1.35, 1.80];
+    for (var si = 0; si < shelfLevels.length; si++) {
+        var sy = shelfLevels[si];
+        addMesh(new THREE.BoxGeometry(1.14, 0.03, 0.36), woodMat, 0, sy, 0.01, shelfGroup);
+    }
+
+    // Storage boxes
+    addMesh(new THREE.BoxGeometry(0.32, 0.28, 0.34), boxMat, -0.34, 0.18, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(0.32, 0.28, 0.34), boxMat,  0.02, 0.18, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(0.32, 0.28, 0.34), boxMat,  0.38, 0.18, 0, shelfGroup);
+
+    // Document binders
+    var fMats = [redFolderMat, blueFolderMat, blackFolderMat, yellowFolderMat, blueFolderMat, redFolderMat, blackFolderMat, yellowFolderMat];
+    for (var fi = 0; fi < 12; fi++) {
+        var fx = -0.50 + fi * 0.085;
+        var fmat = fMats[fi % fMats.length];
+        addMesh(new THREE.BoxGeometry(0.075, 0.32, 0.28), fmat, fx, 0.63, 0, shelfGroup);
+        addMesh(new THREE.BoxGeometry(0.05, 0.12, 0.005), paperMat, fx, 0.65, 0.141, shelfGroup);
+    }
+
+    for (var fi2 = 0; fi2 < 6; fi2++) {
+        var fx2 = -0.50 + fi2 * 0.085;
+        var fmat2 = fMats[(fi2 + 2) % fMats.length];
+        addMesh(new THREE.BoxGeometry(0.075, 0.32, 0.28), fmat2, fx2, 1.08, 0, shelfGroup);
+        addMesh(new THREE.BoxGeometry(0.05, 0.12, 0.005), paperMat, fx2, 1.10, 0.141, shelfGroup);
+    }
+    addMesh(new THREE.BoxGeometry(0.30, 0.14, 0.22), paperMat, 0.22, 0.99, 0, shelfGroup);
+    addMesh(new THREE.BoxGeometry(0.24, 0.09, 0.30), paperMat, 0.38, 0.965, 0, shelfGroup);
+
+    // Technical manuals
+    for (var bi = 0; bi < 10; bi++) {
+        var bx = -0.48 + bi * 0.055;
+        var bmat = (bi % 2 === 0) ? darkMat : redFolderMat;
+        addMesh(new THREE.BoxGeometry(0.048, 0.26, 0.22), bmat, bx, 1.50, 0, shelfGroup);
+    }
+
+    colliders.push({ minX: x - 0.62, maxX: x + 0.62, minZ: z - 0.24, maxZ: z + 0.24 });
+
+    scene.add(shelfGroup);
+    return shelfGroup;
+}
+
+function buildWaterCooler(x, z) {
+    var wcGroup = new THREE.Group();
+    wcGroup.position.set(x, 0, z);
+
+    var whiteMat = makeMat(0xf1f5f9);
+    var darkGreyMat = makeMat(0x334155);
+    var waterBottleMat = new THREE.MeshLambertMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.65
+    });
+    var coldTapMat = makeMat(0x2563eb);
+    var hotTapMat = makeMat(0xdc2626);
+
+    // Main cooler body
+    addMesh(new THREE.BoxGeometry(0.36, 0.92, 0.36), whiteMat, 0, 0.46, 0, wcGroup);
+    addMesh(new THREE.BoxGeometry(0.38, 0.04, 0.38), darkGreyMat, 0, 0.02, 0, wcGroup);
+
+    // Dispenser alcove recess
+    addMesh(new THREE.BoxGeometry(0.26, 0.22, 0.12), darkGreyMat, 0, 0.64, 0.13, wcGroup);
+    addMesh(new THREE.BoxGeometry(0.24, 0.02, 0.10), darkGreyMat, 0, 0.54, 0.14, wcGroup);
+
+    // Dispensing levers
+    addMesh(new THREE.BoxGeometry(0.03, 0.06, 0.04), coldTapMat, -0.06, 0.70, 0.14, wcGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.06, 0.04), hotTapMat,   0.06, 0.70, 0.14, wcGroup);
+
+    // 19-Liter Water Bottle
+    addMesh(new THREE.CylinderGeometry(0.06, 0.07, 0.06, 16), whiteMat, 0, 0.94, 0, wcGroup);
+    addMesh(new THREE.CylinderGeometry(0.14, 0.14, 0.40, 16), waterBottleMat, 0, 1.16, 0, wcGroup);
+    addMesh(new THREE.SphereGeometry(0.14, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), waterBottleMat, 0, 1.36, 0, wcGroup);
+
+    // Cup dispenser tube on the side
+    addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.42, 12), makeMat(0xe2e8f0), 0.20, 0.72, 0, wcGroup);
+    addMesh(new THREE.CylinderGeometry(0.045, 0.045, 0.02, 12), darkGreyMat, 0.20, 0.93, 0, wcGroup);
+
+    // Interactable Hitbox
+    var wcHitbox = addMesh(new THREE.BoxGeometry(0.44, 1.5, 0.44), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.75, 0, wcGroup);
+    wcHitbox.userData = { name: 'Кулер для воды [F]', type: 'water_cooler' };
+    interactables.push(wcHitbox);
+
+    colliders.push({ minX: x - 0.25, maxX: x + 0.25, minZ: z - 0.25, maxZ: z + 0.25 });
+
+    scene.add(wcGroup);
+    return wcGroup;
+}
+
+function buildOfficeFluorescentLight(x, y, z, parentList) {
+    var lightGroup = new THREE.Group();
+    lightGroup.position.set(x, y, z);
+
+    var fixtureMat = makeMat(0x64748b);
+    var diffuserMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    addMesh(new THREE.BoxGeometry(1.30, 0.04, 0.60), fixtureMat, 0, 0, 0, lightGroup);
+    var panel = addMesh(new THREE.PlaneGeometry(1.22, 0.52), diffuserMat, 0, -0.021, 0, lightGroup);
+    panel.rotation.x = Math.PI / 2;
+
+    var pLight = new THREE.PointLight(0xf1f5f9, 0.55, 9.0);
+    pLight.position.set(0, -0.15, 0);
+    lightGroup.add(pLight);
+
+    if (parentList) parentList.push(pLight);
+
+    scene.add(lightGroup);
+    return lightGroup;
+}
+
+function buildOfficeWindow(x, y, z) {
+    var winGroup = new THREE.Group();
+    winGroup.position.set(x, y, z);
+
+    var frameMat = makeMat(0x1e293b);
+    var sillMat = makeMat(0x0f172a);
+    var glassMat = new THREE.MeshBasicMaterial({
+        color: 0x050c18,
+        transparent: true,
+        opacity: 0.82
+    });
+
+    // Window frame
+    addMesh(new THREE.BoxGeometry(2.20, 0.08, 0.08), frameMat, 0, 0.76, 0, winGroup);
+    addMesh(new THREE.BoxGeometry(2.20, 0.08, 0.08), frameMat, 0, -0.76, 0, winGroup);
+    addMesh(new THREE.BoxGeometry(0.08, 1.60, 0.08), frameMat, -1.06, 0, 0, winGroup);
+    addMesh(new THREE.BoxGeometry(0.08, 1.60, 0.08), frameMat,  1.06, 0, 0, winGroup);
+
+    // Mullions
+    addMesh(new THREE.BoxGeometry(2.20, 0.04, 0.06), frameMat, 0, 0, 0, winGroup);
+    addMesh(new THREE.BoxGeometry(0.04, 1.60, 0.06), frameMat, 0, 0, 0, winGroup);
+
+    // Sill
+    addMesh(new THREE.BoxGeometry(2.32, 0.06, 0.18), sillMat, 0, -0.79, 0.06, winGroup);
+
+    // Glass
+    addMesh(new THREE.PlaneGeometry(2.12, 1.52), glassMat, 0, 0, 0.01, winGroup);
+
+    scene.add(winGroup);
+    return winGroup;
+}
+
+// ==================== BUILD: OFFICE ====================
+var officeLights = [];
+
+function buildOffice() {
+    scene.background = new THREE.Color(0x020408);
+    scene.fog = new THREE.Fog(0x020408, 1, 14);
+
+    officeLights = [];
+
+    // Materials
+    var wallMat = makeMat(0xd1d5db);
+    var floorTex = getOfficeFloorTexture();
+    var floorMat = makeMat(0xffffff, { map: floorTex });
+    var ceilingTex = getOfficeCeilingTexture();
+    var ceilingMat = makeMat(0xffffff, { map: ceilingTex });
+    var skirtingMat = makeMat(0x1e293b);
+
+    // Floor & Ceiling
+    var of = addMesh(new THREE.PlaneGeometry(8.4, 10.0), floorMat, 0, 0, -2.0);
+    of.rotation.x = -Math.PI / 2;
+
+    var oc = addMesh(new THREE.PlaneGeometry(8.4, 10.0), ceilingMat, 0, 3.0, -2.0);
+    oc.rotation.x = Math.PI / 2;
+
+    // Walls
+    // Back wall (z = -7.0)
+    addMesh(new THREE.PlaneGeometry(8.4, 3.0), wallMat, 0, 1.5, -7.0);
+    addMesh(new THREE.BoxGeometry(8.4, 0.12, 0.03), skirtingMat, 0, 0.06, -6.98);
+
+    // Front wall (z = 3.0)
+    var fw = addMesh(new THREE.PlaneGeometry(8.4, 3.0), wallMat, 0, 1.5, 3.0);
+    fw.rotation.y = Math.PI;
+    addMesh(new THREE.BoxGeometry(8.4, 0.12, 0.03), skirtingMat, 0, 0.06, 2.98);
+
+    // Left wall (x = -4.2)
+    var lw = addMesh(new THREE.PlaneGeometry(10.0, 3.0), wallMat, -4.2, 1.5, -2.0);
+    lw.rotation.y = Math.PI / 2;
+    addMesh(new THREE.BoxGeometry(0.03, 0.12, 10.0), skirtingMat, -4.18, 0.06, -2.0);
+
+    // Right wall (x = 4.2)
+    var rw = addMesh(new THREE.PlaneGeometry(10.0, 3.0), wallMat, 4.2, 1.5, -2.0);
+    rw.rotation.y = -Math.PI / 2;
+    addMesh(new THREE.BoxGeometry(0.03, 0.12, 10.0), skirtingMat, 4.18, 0.06, -2.0);
+
+    // Exit Door
+    var doorFrameMat = makeMat(0x334155);
+    var doorWoodMat = makeMat(0x451a03);
+    var silverMat = makeMat(0xe2e8f0);
+
+    addMesh(new THREE.BoxGeometry(1.26, 2.26, 0.06), doorFrameMat, 0, 1.13, 2.97);
+    var exitDoor = addMesh(new THREE.BoxGeometry(1.14, 2.18, 0.04), doorWoodMat, 0, 1.10, 2.96);
+    exitDoor.userData = { name: 'Выход на улицу (домой) [F]', type: 'office_exit' };
+    interactables.push(exitDoor);
+
+    var exitSignMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    addMesh(new THREE.BoxGeometry(0.55, 0.20, 0.05), exitSignMat, 0, 2.45, 2.96);
+
+    addMesh(new THREE.BoxGeometry(0.14, 0.025, 0.05), silverMat, 0.42, 1.05, 2.92);
+    var lockMesh = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 8), silverMat, 0.42, 0.98, 2.94);
+    lockMesh.rotation.x = Math.PI / 2;
+
+    // Light switch
+    var osw = addMesh(new THREE.BoxGeometry(0.12, 0.16, 0.04), makeMat(0x94a3b8), 0.80, 1.35, 2.97);
+    osw.userData = { name: 'Выключатель света [F]', type: 'office_switch' };
+    interactables.push(osw);
+    addMesh(new THREE.BoxGeometry(0.04, 0.07, 0.02), makeMat(0xffffff), 0.80, 1.35, 2.95);
+
+    // 4 Fluorescent Light Fixtures in Ceiling
+    buildOfficeFluorescentLight(-1.5, 2.98, -4.8, officeLights);
+    buildOfficeFluorescentLight( 1.5, 2.98, -4.8, officeLights);
+    buildOfficeFluorescentLight(-1.5, 2.98, -1.2, officeLights);
+    buildOfficeFluorescentLight( 1.5, 2.98, -1.2, officeLights);
+
+    // Office Windows looking out into blizzard
+    buildOfficeWindow(-2.2, 1.7, -6.96);
+    buildOfficeWindow( 2.2, 1.7, -6.96);
+
+    // Snowfall outside office windows
+    addSnow(-9.0, -7.2, -4.5, 4.5, 0, 5.0, 450, 0.06);
+
+    // Corkboard on back wall
+    var corkTex = getCorkboardTexture();
+    var corkMat = new THREE.MeshBasicMaterial({ map: corkTex });
+    var corkBoard = addMesh(new THREE.PlaneGeometry(1.8, 0.9), corkMat, 0, 1.8, -6.95);
+    corkBoard.userData = { name: 'Доска объявлений [F]', type: 'office_board' };
+    interactables.push(corkBoard);
+
+    // Wall Clock
+    var clockTex = getWallClockTexture();
+    var clockMat = new THREE.MeshBasicMaterial({ map: clockTex });
+    addMesh(new THREE.CircleGeometry(0.24, 24), clockMat, 0, 2.45, -6.95);
+
+    // Filing Cabinets along left wall
+    buildFilingCabinet(-3.85, -6.1, Math.PI / 2);
+    buildFilingCabinet(-3.85, -5.3, Math.PI / 2);
+
+    // Office Shelving with binders
+    buildOfficeShelving(-3.85, -3.2);
+
+    // Water Cooler near entrance right wall
+    buildWaterCooler(3.7, 0.8);
+
+    // Potted Office Plant in corner
+    var plantGroup = new THREE.Group();
+    plantGroup.position.set(3.7, 0, -6.5);
+    var potMat = makeMat(0xc2410c);
+    addMesh(new THREE.CylinderGeometry(0.22, 0.16, 0.38, 14), potMat, 0, 0.19, 0, plantGroup);
+    addMesh(new THREE.CylinderGeometry(0.21, 0.21, 0.02, 14), makeMat(0x382012), 0, 0.38, 0, plantGroup);
+    var leafMat = makeMat(0x15803d);
+    for (var li = 0; li < 7; li++) {
+        var lang = (li / 7) * Math.PI * 2;
+        var leaf = addMesh(new THREE.BoxGeometry(0.18, 0.02, 0.34), leafMat, Math.cos(lang) * 0.12, 0.46 + (li % 3) * 0.06, Math.sin(lang) * 0.12, plantGroup);
+        leaf.rotation.y = -lang;
+        leaf.rotation.x = 0.35;
+    }
+    scene.add(plantGroup);
+    colliders.push({ minX: 3.4, maxX: 4.0, minZ: -6.8, maxZ: -6.2 });
+
+    // ==================== WORKSTATIONS & DESKS ====================
+    // Desk 1: PLAYER'S DESK (x = -1.3, z = -5.0)
+    buildOfficeDesk(-1.3, -5.0, true);
+    buildDetailedComputer(-1.3, -5.0, true);
+
+    // Player's Office Chair
+    var chairMat = makeMat(0x18181b);
+    var chromeMat = makeMat(0x94a3b8);
+    var playerChairGroup = new THREE.Group();
+    playerChairGroup.position.set(-1.3, 0, -4.35);
+    addMesh(new THREE.CylinderGeometry(0.04, 0.05, 0.20, 12), chromeMat, 0, 0.15, 0, playerChairGroup);
+    for (var pci = 0; pci < 5; pci++) {
+        var pang = (pci / 5) * Math.PI * 2;
+        var pwLeg = addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.32), chairMat, Math.cos(pang) * 0.16, 0.06, Math.sin(pang) * 0.16, playerChairGroup);
+        pwLeg.rotation.y = -pang;
+        addMesh(new THREE.CylinderGeometry(0.025, 0.025, 0.03, 8), chairMat, Math.cos(pang) * 0.30, 0.03, Math.sin(pang) * 0.30, playerChairGroup);
+    }
+    var pChairSeat = addMesh(new THREE.BoxGeometry(0.52, 0.08, 0.50), chairMat, 0, 0.48, 0, playerChairGroup);
+    pChairSeat.userData = { name: 'Офисное кресло [F]', type: 'office_chair', sitX: -1.3, sitZ: -4.35, lookX: -1.3, lookZ: -5.3 };
+    interactables.push(pChairSeat);
+    addMesh(new THREE.BoxGeometry(0.06, 0.38, 0.04), chromeMat, 0, 0.68, 0.22, playerChairGroup);
+    var pBackrest = addMesh(new THREE.BoxGeometry(0.48, 0.48, 0.06), chairMat, 0, 0.88, 0.21, playerChairGroup);
+    pBackrest.rotation.x = -0.08;
+    addMesh(new THREE.BoxGeometry(0.06, 0.03, 0.30), chairMat, -0.26, 0.70, 0, playerChairGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.03, 0.30), chairMat,  0.26, 0.70, 0, playerChairGroup);
+    addMesh(new THREE.CylinderGeometry(0.018, 0.018, 0.20, 8), chromeMat, -0.26, 0.60, 0, playerChairGroup);
+    addMesh(new THREE.CylinderGeometry(0.018, 0.018, 0.20, 8), chromeMat,  0.26, 0.60, 0, playerChairGroup);
+    scene.add(playerChairGroup);
+
+    // Yellow physical folder for work (Key quest item)
     var folderMat = makeMat(0xddaa00);
-    var yellowFolder = addMesh(new THREE.BoxGeometry(0.3, 0.02, 0.4), folderMat, -1.0, 0.81, -4.8);
-    yellowFolder.rotation.y = 0.2;
-    yellowFolder.userData = { name: 'Желтая папка (документы)', type: 'yellow_folder' };
+    var yellowFolder = addMesh(new THREE.BoxGeometry(0.32, 0.025, 0.42), folderMat, -0.92, 0.81, -4.92);
+    yellowFolder.rotation.y = 0.22;
+    yellowFolder.userData = { name: 'Желтая папка (документы) [F]', type: 'yellow_folder' };
     interactables.push(yellowFolder);
 
-    // Lighting
-    scene.add(new THREE.AmbientLight(0x0d0d0d, 1.0));
-    roomLight = new THREE.PointLight(0xeeeedd, 0.7, 14);
-    roomLight.position.set(-1, 2.8, -4); scene.add(roomLight);
+    // Desk 2: COWORKER'S DESK (x = 1.3, z = -5.0)
+    buildOfficeDesk(1.3, -5.0, false);
+    buildDetailedComputer(1.3, -5.0, false);
+    // COWORKER (Михаил) sitting at this desk!
+    buildColleague(1.3, -5.0);
+
+    // Desk 3 & 4 (Back row, empty night shift desks)
+    buildOfficeDesk(-1.3, -2.0, false);
+    buildDetailedComputer(-1.3, -2.0, false);
+    var chair3 = addMesh(new THREE.BoxGeometry(0.50, 0.08, 0.48), chairMat, -1.3, 0.48, -1.35);
+    chair3.userData = { name: 'Офисное кресло [F]', type: 'office_chair', sitX: -1.3, sitZ: -1.35, lookX: -1.3, lookZ: -2.3 };
+    interactables.push(chair3);
+
+    buildOfficeDesk(1.3, -2.0, false);
+    buildDetailedComputer(1.3, -2.0, false);
+    var chair4 = addMesh(new THREE.BoxGeometry(0.50, 0.08, 0.48), chairMat, 1.3, 0.48, -1.35);
+    chair4.userData = { name: 'Офисное кресло [F]', type: 'office_chair', sitX: 1.3, sitZ: -1.35, lookX: 1.3, lookZ: -2.3 };
+    interactables.push(chair4);
+
+    // Ambient Lighting
+    scene.add(new THREE.AmbientLight(0x18202a, 1.2));
+
+    // Global room light reference
+    roomLight = new THREE.PointLight(0xf8fafc, 0.65, 16);
+    roomLight.position.set(0, 2.7, -3.0);
+    scene.add(roomLight);
     gameState.lightOn = true;
 
-    camera.position.set(-1, 1.6, -3.5);
-    camera.lookAt(-1, 1.5, -5.5);
+    // Player initial spawn & camera orientation
+    camera.position.set(-1.3, 1.6, -3.6);
+    camera.lookAt(-1.3, 1.45, -5.2);
     setObjective('Перепечатай отчет из желтой папки');
 
     chapterUpdate = function() {
-        // Boundaries (simple box for main room)
-        camera.position.x = Math.max(-3.5, Math.min(3.5, camera.position.x));
+        camera.position.x = Math.max(-3.8, Math.min(3.8, camera.position.x));
         camera.position.z = Math.max(-6.5, Math.min(2.5, camera.position.z));
     };
 }
+
 
 // ==================== INTERACTIONS ====================
 function checkChapter1Goals() {
@@ -5035,13 +6168,31 @@ function handleInteraction(obj) {
             });
         }
     }
+    else if (d.type === 'colleague') {
+        if (!gameState.computerUsed) {
+            showThought('Михаил: "Ты тоже это слышишь за окном?.. Весь вечер сирены выли, а теперь тишина гробовая. Шеф свалил еще в пять, сказал закрыть всё. Доделывай свой отчёт и давай валить отсюда."');
+        } else {
+            showThought('Михаил: "Отправил? Красава. Выходи первым, я пока сервер выключу и свет потушу. До завтра... если оно настанет."');
+        }
+    }
     else if (d.type === 'other_computer') {
-        showThought('Коллега уже ушёл домой. На экране заставка...');
+        showThought('Компьютер коллеги. На экране открыта 1С и зеленый терминал с предупреждением о потере связи.');
     }
     else if (d.type === 'office_switch') {
         gameState.lightOn = !gameState.lightOn;
-        if (roomLight) roomLight.intensity = gameState.lightOn ? 0.7 : 0.0;
+        if (roomLight) roomLight.intensity = gameState.lightOn ? 0.65 : 0.0;
+        if (typeof officeLights !== 'undefined' && officeLights) {
+            for (var oli = 0; oli < officeLights.length; oli++) {
+                officeLights[oli].intensity = gameState.lightOn ? 0.55 : 0.0;
+            }
+        }
         showThought(gameState.lightOn ? 'Свет включен.' : 'Свет выключен.');
+    }
+    else if (d.type === 'water_cooler') {
+        showThought('Кулер для воды. Вода ледяная... Сейчас не до чая.');
+    }
+    else if (d.type === 'office_board') {
+        showThought('Доска объявлений. Записка: "В связи с чрезвычайной ситуацией покинуть офис до 22:00".');
     }
     else if (d.type === 'computer') {
         if (!gameState.computerUsed) {
