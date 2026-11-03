@@ -1,3 +1,20 @@
+function playDoorOpenSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(140, now);
+    osc.frequency.linearRampToValueAtTime(80, now + 0.35);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
 ﻿// ==================== ERROR HANDLER ====================
 // NOTE: "Script error at 0:0" = browser blocked error details from cross-origin script
 // All scripts are now local so this should not appear
@@ -262,22 +279,10 @@ function startSleep(seconds, onWake) {
         overlay.style.opacity = '1';
     }
 
-    var timeLeft = duration;
-    if (subtext) subtext.textContent = timeLeft + ' сек.';
     if (sleepText) sleepText.textContent = 'Сон...';
-
-    var countdownIv = setInterval(function() {
-        timeLeft--;
-        if (timeLeft > 0) {
-            if (subtext) subtext.textContent = timeLeft + ' сек.';
-        } else {
-            if (subtext) subtext.textContent = 'Пробуждение...';
-            clearInterval(countdownIv);
-        }
-    }, 1000);
+    if (subtext) subtext.textContent = 'Глубокий сон...';
 
     setTimeout(function() {
-        clearInterval(countdownIv);
         isSleeping = false;
 
         // Music turns back on after sleep finishes
@@ -2446,11 +2451,11 @@ function getZombieNewsTexture() {
         cx.fillStyle = '#ffffff';
         cx.font = 'bold 28px sans-serif';
         cx.textAlign = 'center';
-        cx.fillText('ЗОМБИ-АПОКАЛИПСИС', w * 0.5 + 20, 104);
+        cx.fillText('ЭКСТРЕННОЕ ОПОВЕЩЕНИЕ', w * 0.5 + 20, 104);
 
         cx.fillStyle = '#f87171';
         cx.font = 'bold 23px sans-serif';
-        cx.fillText('ДЕНЬ 2 • РЕЖИМ ЧС', w * 0.5 + 20, 136);
+        cx.fillText('В ГОРОДЕ ВВЕДЕН РЕЖИМ ЧС', w * 0.5 + 20, 136);
 
         // Warning messages inside box
         cx.fillStyle = '#fef3c7';
@@ -2469,7 +2474,7 @@ function getZombieNewsTexture() {
         cx.fillStyle = '#000000';
         cx.font = 'bold 15px sans-serif';
         cx.textAlign = 'left';
-        cx.fillText('СРОЧНО: ЗОМБИ АПОКАЛИПСИС (ДЕНЬ 2) • НЕ ВЫХОДИТЕ ИЗ ДОМА • НЕ ВПУСКАЙТЕ В ДОМ СТРАННЫХ ЛЮДЕЙ •', 10, 296);
+        cx.fillText('СРОЧНО: В ГОРОДЕ ВВЕДЕН РЕЖИМ ЧС • ЛЮДИ НАПАДАЮТ НА ЛЮДЕЙ • НЕ ВЫХОДИТЕ ИЗ ДОМА • ЗАПРИТЕ ДВЕРИ •', 10, 296);
 
         // Subtle CRT Scanlines
         cx.fillStyle = 'rgba(0, 0, 0, 0.25)';
@@ -2499,7 +2504,7 @@ function handleChapter8News(d) {
     setTimeout(function() {
         if (gameState.chapter !== 8) return;
         playEmergencyTone();
-        showThought('Диктор: «Сегодня второй день как зомби апокалипсис! Не выходите из дома и будьте осторожны!»');
+        showThought('Диктор: «Внимание! В городе объявлен режим чрезвычайной ситуации! Зафиксированы нападения агрессивных людей друг на друга! Не выходите из дома и будьте осторожны!»');
     }, 4500);
 
     setTimeout(function() {
@@ -2697,16 +2702,16 @@ function triggerZombieApocalypseEnding() {
     }
 
     instructions.innerHTML =
-        '<span style="font-size:30px;color:#ef4444;letter-spacing:4px;font-weight:bold;">ЗОМБИ-АПОКАЛИПСИС: ДЕНЬ 2</span>' +
+        '<span style="font-size:30px;color:#ef4444;letter-spacing:4px;font-weight:bold;">РЕЖИМ ЧРЕЗВЫЧАЙНОЙ СИТУАЦИИ</span>' +
         '<br><span style="font-size:17px;color:#f59e0b;font-weight:bold;letter-spacing:2px;">КОНЦОВКА ВЫЖИВАНИЯ</span>' +
         '<br><br><div style="font-size:15px;color:#e2e8f0;line-height:1.7;max-width:660px;margin:0 auto;text-align:center;">' +
         'Теперь всё встало на свои места...<br>' +
         'Жуткие ночные тени за окном, вымершие улицы города, внезапное увольнение шефом («не спрашивайте почему»)...<br>' +
-        'Это была не просто пятница 13-го — <b>это начало настоящего зомби-апокалипсиса!</b><br><br>' +
+        'Это была не просто пятница 13-го — <b>в городе вспыхнула необъяснимая волна безумия!</b><br><br>' +
         '<div style="background:rgba(220, 38, 38, 0.18);border:1px solid #ef4444;border-radius:8px;padding:14px;margin:10px auto;max-width:580px;text-align:left;">' +
         '<b style="color:#f87171;">Экстренное сообщение Гражданской Обороны:</b><br>' +
         '<span style="color:#fef08a;font-size:14px;display:block;margin-top:4px;">' +
-        '«Сегодня второй день как зомби апокалипсис. Не выходите из дома и будьте осторожны. А также не впускайте в дом странных людей!»' +
+        '«Внимание! В городе объявлен режим чрезвычайной ситуации. Люди нападают на людей, не выходите из дома, заприте двери и будьте осторожны!»' +
         '</span><br>' +
         '<div style="margin-top:6px;font-size:13px;color:#cbd5e1;border-top:1px solid rgba(255,255,255,0.15);padding-top:6px;">' +
         'В вашем холодильнике запас еды: <b>' + itemsSummary + '</b><br>' +
@@ -2730,7 +2735,7 @@ function triggerZombieApocalypseEnding() {
             gameState.chapter = 8;
             controls.lock();
             thoughtBubble.style.opacity = 0;
-            setObjective('Оставайся дома и выживай (Кровать: спать 5 сек)');
+            setObjective('Оставайся дома и выживай (Кровать: лечь спать)');
         };
     }
 }
@@ -4085,7 +4090,7 @@ function buildSupermarketCheckout() {
     cashInteract.userData = { name: 'Касса (Оплатить покупки) [F]', type: 'cash_register' };
     interactables.push(cashInteract);
 
-    // 11. CASHIER NPC (Светлана)
+    // 11. CASHIER NPC (Люся)
     var cashierG = new THREE.Group();
     cashierG.position.set(-3.2, 0, 4.3);
 
@@ -4104,7 +4109,7 @@ function buildSupermarketCheckout() {
     // Polo collar
     addMesh(new THREE.BoxGeometry(0.14, 0.05, 0.12), darkPoloMat, 0, 1.06, -0.02, cashierG);
 
-    // Name badge: "Кассир: Светлана"
+    // Name badge: "Кассир: Люся"
     addMesh(new THREE.BoxGeometry(0.09, 0.04, 0.005), makeMat(0xffffff), 0.10, 0.96, -0.125, cashierG);
 
     // Neck & Head
@@ -4137,7 +4142,7 @@ function buildSupermarketCheckout() {
 
     // Cashier NPC Hitbox
     var cashierHitbox = addMesh(new THREE.BoxGeometry(0.65, 1.4, 0.65), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.9, 0, cashierG);
-    cashierHitbox.userData = { name: 'Кассир (Светлана) [F]', type: 'cashier_npc' };
+    cashierHitbox.userData = { name: 'Кассир (Люся) [F]', type: 'cashier_npc' };
     interactables.push(cashierHitbox);
 
     scene.add(cashierG);
@@ -4150,53 +4155,7 @@ function buildSupermarketCheckout() {
 }
 
 function buildCenterFreezerIsland() {
-    var freezerGroup = new THREE.Group();
-    freezerGroup.position.set(0, 0, -1.0);
-
-    var whiteMat = makeMat(0xf8fafc);
-    var bumperMat = makeMat(0x475569);
-    var glassMat = new THREE.MeshLambertMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35 });
-    var stainlessMat = makeMat(0xd1d5db);
-
-    // Main insulated horizontal freezer chest body (2.4m long x 0.9m high x 0.85m wide)
-    addMesh(new THREE.BoxGeometry(0.85, 0.90, 2.4), whiteMat, 0, 0.45, 0, freezerGroup);
-    // Protective rubber bumper strips
-    addMesh(new THREE.BoxGeometry(0.89, 0.08, 2.44), bumperMat, 0, 0.15, 0, freezerGroup);
-    addMesh(new THREE.BoxGeometry(0.89, 0.06, 2.44), bumperMat, 0, 0.75, 0, freezerGroup);
-
-    // Interior cavity
-    addMesh(new THREE.BoxGeometry(0.75, 0.50, 2.25), makeMat(0xe2e8f0), 0, 0.65, 0, freezerGroup);
-
-    // Curved sliding glass lids
-    var lid1 = addMesh(new THREE.BoxGeometry(0.74, 0.02, 1.10), glassMat, 0, 0.91, -0.55, freezerGroup);
-    var lid2 = addMesh(new THREE.BoxGeometry(0.74, 0.02, 1.10), glassMat, 0, 0.93,  0.55, freezerGroup);
-    // Metal handles on glass lids
-    addMesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), stainlessMat, 0, 0.94, -0.15, freezerGroup);
-    addMesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), stainlessMat, 0, 0.96,  0.15, freezerGroup);
-
-    // Digital thermometer display (-18.5°C)
-    var termGroup = new THREE.Group();
-    termGroup.position.set(0, 0.92, -1.18);
-    addMesh(new THREE.BoxGeometry(0.24, 0.08, 0.04), bumperMat, 0, 0, 0, termGroup);
-    var termScreen = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    addMesh(new THREE.PlaneGeometry(0.18, 0.05), termScreen, 0, 0, -0.021, termGroup);
-    freezerGroup.add(termGroup);
-
-    // Cold cyan LED lighting inside
-    var freezerLight = new THREE.PointLight(0xa5f3fc, 0.45, 4.0);
-    freezerLight.position.set(0, 0.75, 0);
-    freezerGroup.add(freezerLight);
-
-    // Interactive hitbox
-    var fHitbox = addMesh(new THREE.BoxGeometry(0.95, 1.1, 2.5), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.55, 0, freezerGroup);
-    fHitbox.userData = { name: 'Морозильная бонета (Заморозка) [F]', type: 'freezer_chest' };
-    interactables.push(fHitbox);
-
-    // Collider
-    colliders.push({ minX: -0.55, maxX: 0.55, minZ: -2.3, maxZ: 0.3 });
-
-    scene.add(freezerGroup);
-    return freezerGroup;
+    return null;
 }
 
 function buildSupermarketEntranceFixtures() {
@@ -4466,8 +4425,7 @@ function buildShop() {
         colliders.push({ minX: -4.3, maxX: 4.3, minZ: -6.0, maxZ: -4.9 });
     })();
 
-    // 8. Center Island Horizontal Chest Freezer (Морозильная бонета)
-    buildCenterFreezerIsland();
+    // 8. Center aisle wide and open
 
     // 9. Produce Table with Crates & Self-Service Scale
     (function() {
@@ -6428,22 +6386,33 @@ function buildOffice() {
     rw.rotation.y = -Math.PI / 2;
     addMesh(new THREE.BoxGeometry(0.03, 0.12, 10.0), skirtingMat, 4.18, 0.06, -2.0);
 
-    // Exit Door
+    // Exit Door (smooth, lag-free door assembly with hinge pivot and generous hitbox)
     var doorFrameMat = makeMat(0x334155);
     var doorWoodMat = makeMat(0x451a03);
     var silverMat = makeMat(0xe2e8f0);
 
     addMesh(new THREE.BoxGeometry(1.26, 2.26, 0.06), doorFrameMat, 0, 1.13, 2.97);
-    var exitDoor = addMesh(new THREE.BoxGeometry(1.14, 2.18, 0.04), doorWoodMat, 0, 1.10, 2.96);
-    exitDoor.userData = { name: 'Выход на улицу (домой) [F]', type: 'office_exit' };
-    interactables.push(exitDoor);
+
+    var officeDoorGroup = new THREE.Group();
+    officeDoorGroup.position.set(-0.57, 0, 2.96);
+    var exitDoor = addMesh(new THREE.BoxGeometry(1.14, 2.18, 0.04), doorWoodMat, 0.57, 1.10, 0, officeDoorGroup);
+    var dHandle = addMesh(new THREE.BoxGeometry(0.14, 0.025, 0.05), silverMat, 0.99, 1.05, -0.04, officeDoorGroup);
+    var lockMesh = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 8), silverMat, 0.99, 0.98, -0.02, officeDoorGroup);
+    lockMesh.rotation.x = Math.PI / 2;
+    scene.add(officeDoorGroup);
+    gameState.officeDoorGroup = officeDoorGroup;
+    gameState.officeDoorOpening = false;
+    gameState.officeExiting = false;
+
+    // Generous hitbox for instant and stable raycasting without flicker
+    var doorHitbox = addMesh(new THREE.BoxGeometry(1.4, 2.3, 0.5), new THREE.MeshBasicMaterial({ visible: false }), 0, 1.15, 2.90);
+    doorHitbox.userData = { name: 'Выход на улицу (домой) [F]', type: 'office_exit' };
+    interactables.push(doorHitbox);
+    exitDoor.userData = doorHitbox.userData;
+    dHandle.userData = doorHitbox.userData;
 
     var exitSignMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
     addMesh(new THREE.BoxGeometry(0.55, 0.20, 0.05), exitSignMat, 0, 2.45, 2.96);
-
-    addMesh(new THREE.BoxGeometry(0.14, 0.025, 0.05), silverMat, 0.42, 1.05, 2.92);
-    var lockMesh = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.03, 8), silverMat, 0.42, 0.98, 2.94);
-    lockMesh.rotation.x = Math.PI / 2;
 
     // Light switch
     var osw = addMesh(new THREE.BoxGeometry(0.12, 0.16, 0.04), makeMat(0x94a3b8), 0.80, 1.35, 2.97);
@@ -6573,7 +6542,19 @@ function buildOffice() {
 
     chapterUpdate = function() {
         camera.position.x = Math.max(-3.8, Math.min(3.8, camera.position.x));
-        camera.position.z = Math.max(-6.5, Math.min(2.5, camera.position.z));
+        if (camera.position.z > 2.7) {
+            camera.position.z = 2.7;
+            if (velocity.z < 0) velocity.z = 0;
+        }
+        if (camera.position.z < -6.5) {
+            camera.position.z = -6.5;
+            if (velocity.z > 0) velocity.z = 0;
+        }
+        if (gameState.officeDoorOpening && gameState.officeDoorGroup) {
+            if (gameState.officeDoorGroup.rotation.y > -Math.PI * 0.45) {
+                gameState.officeDoorGroup.rotation.y -= 0.05;
+            }
+        }
     };
 }
 
@@ -6884,7 +6865,7 @@ function handleInteraction(obj) {
             }
             if (!gameState.sleptChapter8) {
                 gameState.sleptChapter8 = true;
-                showThought('Ложусь поспать на 5 секунд... Главное — не открывать дверь.');
+                showThought('Ложусь поспать... Главное — никому не открывать дверь.');
                 camera.position.set(2.0, 0.8, -1.0);
                 startSleep(5, function() {
                     var t = setInterval(function() {
@@ -6899,7 +6880,7 @@ function handleInteraction(obj) {
                     }, 50);
                 });
             } else {
-                showThought('Ложусь вздремнуть на 5 секунд...');
+                showThought('Ложусь вздремнуть...');
                 camera.position.set(2.0, 0.8, -1.0);
                 startSleep(5, function() {
                     var t2 = setInterval(function() {
@@ -7073,9 +7054,17 @@ function handleInteraction(obj) {
         showThought('Отчет за сегодня...');
     }
     else if (d.type === 'office_exit') {
+        if (gameState.officeExiting) return;
         if (gameState.computerUsed) {
-            showThought('Смена окончена. Выхожу на улицу. Скорее домой.');
-            setTimeout(function() { loadChapter(4); }, 1500);
+            gameState.officeExiting = true;
+            gameState.officeDoorOpening = true;
+            playDoorOpenSound();
+            showThought('Смена окончена. Выхожу в ночную метель. Скорее домой...');
+            setTimeout(function() {
+                gameState.officeExiting = false;
+                gameState.officeDoorOpening = false;
+                loadChapter(4);
+            }, 1200);
         } else {
             showThought('Я не могу уйти, пока не отправлю отчет на компьютере!');
         }
@@ -7141,11 +7130,11 @@ function handleInteraction(obj) {
     }
     else if (d.type === 'cash_register') {
         if (gameState.shopPaid) {
-            showThought('Кассир: «Вы уже всё оплатили! Чек в пакете. Приходите ещё!»');
+            showThought('Кассир Люся: «Вы уже всё оплатили! Скорее бегите домой, на улице люди нападают на людей... Берегите себя!»');
             return;
         }
         if (gameState.cart.length === 0) {
-            showThought('Кассир: «Сначала выберите продукты на полках, затем подойдите на кассу.»');
+            showThought('Кассир Люся: «Сначала выберите продукты на полках, затем подойдите на кассу. И поторопитесь, на улице небезопасно!»');
             return;
         }
         playBarcodeBeep();
@@ -7166,7 +7155,7 @@ function handleInteraction(obj) {
         if (bankPrev) bankPrev.textContent = 'Баланс: ' + gameState.money + ' ₽. Оплата в магазине.';
 
         showPhoneToast('Мой Банк', 'Оплата: -' + gameState.cartTotal + ' ₽. Баланс: ' + gameState.money + ' ₽', 'bank');
-        showThought('Пик! Оплата картой прошла успешно (-' + gameState.cartTotal + ' ₽). Кассир: «Спасибо за покупку! Чек в пакете. Хорошего дня!»');
+        showThought('Пик! Оплата картой прошла успешно (-' + gameState.cartTotal + ' ₽). Кассир Люся: «Чек в пакете... Будь очень осторожен на улице, люди нападают на людей! Беги скорее домой!»');
         setObjective('Выйди из магазина с покупками');
     }
     else if (d.type === 'shop_exit') {
@@ -7188,11 +7177,11 @@ function handleInteraction(obj) {
     }
         else if (d.type === 'cashier_npc') {
         if (gameState.shopPaid) {
-            showThought('Кассир Светлана: «Спасибо за покупку! Чек у вас в пакете. Берегите себя на улице в такую метель!»');
+            showThought('Кассир Люся: «Ты уже всё оплатил, беги скорее домой! На улицах люди нападают на людей... Запри дверь на все замки и не выходи!»');
         } else if (gameState.cart.length > 0) {
-            showThought('Кассир Светлана: «Здравствуйте! Пакет нужен? Прикладывайте карту к терминалу или нажмите на кассу.»');
+            showThought('Кассир Люся: «Будь осторожен, милый... На улице люди нападают на людей! Оплачивай скорее покупки на кассе и беги домой!»');
         } else {
-            showThought('Кассир Светлана: «Здравствуйте! У нас сегодня скидки на пельмени и чай. Проходите, выбирайте!»');
+            showThought('Кассир Люся: «Будь осторожен на улице... Люди нападают на людей, глаза у них какие-то бешеные! Быстро бери что нужно и беги домой!»');
         }
     }
     else if (d.type === 'freezer_chest') {
@@ -7386,7 +7375,124 @@ function renderTaskbarTabs() {
     }
 }
 
-// Minecraft in-game launcher logic
+// Minecraft in-game sandbox & launcher logic
+var mcActiveBlock = '#15803d'; // Default grass
+var mcGrid = null;
+var MC_COLS = 28;
+var MC_ROWS = 13;
+var MC_CELL = 20;
+
+function initMCGrid() {
+    mcGrid = [];
+    for (var r = 0; r < MC_ROWS; r++) {
+        var row = [];
+        for (var c = 0; c < MC_COLS; c++) {
+            if (r > 9) row.push('#78350f'); // dirt
+            else if (r === 9) row.push('#15803d'); // grass
+            else row.push(null); // sky
+        }
+        mcGrid.push(row);
+    }
+    // Pre-place a nice oak tree on left
+    for (var th = 5; th < 9; th++) mcGrid[th][5] = '#b45309'; // wood
+    for (var lx = 3; lx <= 7; lx++) {
+        for (var ly = 2; ly <= 4; ly++) {
+            mcGrid[ly][lx] = '#16a34a'; // leaves
+        }
+    }
+}
+
+function renderMCCanvas() {
+    var cv = document.getElementById('mc-canvas');
+    if (!cv) return;
+    var ctx = cv.getContext('2d');
+    if (!ctx) return;
+
+    // Sky
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillRect(0, 0, cv.width, cv.height);
+
+    // Sun
+    ctx.fillStyle = '#fef08a';
+    ctx.fillRect(cv.width - 50, 15, 30, 30);
+
+    // Clouds
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(30, 20, 60, 16);
+    ctx.fillRect(200, 35, 80, 18);
+    ctx.fillRect(380, 15, 70, 16);
+
+    if (!mcGrid) initMCGrid();
+
+    // Draw blocks
+    for (var r = 0; r < MC_ROWS; r++) {
+        for (var c = 0; c < MC_COLS; c++) {
+            var color = mcGrid[r][c];
+            if (color) {
+                var bx = c * MC_CELL;
+                var by = r * MC_CELL;
+                ctx.fillStyle = color;
+                ctx.fillRect(bx, by, MC_CELL, MC_CELL);
+                // Subtle 3D bevel on pixel block
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.strokeRect(bx + 1, by + 1, MC_CELL - 2, MC_CELL - 2);
+                ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
+                ctx.strokeRect(bx, by, MC_CELL, MC_CELL);
+            }
+        }
+    }
+}
+
+window.mcSelectBlock = function(color, btn) {
+    mcActiveBlock = color;
+    var all = document.querySelectorAll('.mc-pal-btn');
+    for (var i = 0; i < all.length; i++) all[i].style.outline = 'none';
+    if (btn) btn.style.outline = '2px solid #ffffff';
+};
+
+window.mcBuildHouse = function() {
+    if (!mcGrid) initMCGrid();
+    // Clear area
+    for (var r = 3; r <= 8; r++) {
+        for (var c = 12; c <= 20; c++) {
+            mcGrid[r][c] = null;
+        }
+    }
+    // Walls
+    for (var r = 5; r <= 8; r++) {
+        for (var c = 13; c <= 19; c++) {
+            mcGrid[r][c] = '#b45309'; // wood
+        }
+    }
+    // Window
+    mcGrid[6][14] = '#93c5fd'; // glass
+    mcGrid[6][18] = '#93c5fd'; // glass
+    // Door
+    mcGrid[7][16] = '#451a03';
+    mcGrid[8][16] = '#451a03';
+    // Roof (stairs/brick)
+    for (var c = 12; c <= 20; c++) mcGrid[4][c] = '#b91c1c'; // brick
+    for (var c = 13; c <= 19; c++) mcGrid[3][c] = '#b91c1c';
+    renderMCCanvas();
+};
+
+window.mcBuildTree = function() {
+    if (!mcGrid) initMCGrid();
+    var tx = Math.floor(Math.random() * (MC_COLS - 6)) + 2;
+    for (var th = 5; th < 9; th++) mcGrid[th][tx] = '#b45309';
+    for (var lx = tx - 2; lx <= tx + 2; lx++) {
+        for (var ly = 2; ly <= 4; ly++) {
+            if (lx >= 0 && lx < MC_COLS) mcGrid[ly][lx] = '#16a34a';
+        }
+    }
+    renderMCCanvas();
+};
+
+window.mcClearWorld = function() {
+    initMCGrid();
+    renderMCCanvas();
+};
+
 window.openMCDialog = function(type) {
     var menu = document.getElementById('mc-menu-view');
     var dialog = document.getElementById('mc-dialog-view');
@@ -7398,23 +7504,66 @@ window.openMCDialog = function(type) {
     dialog.style.display = 'block';
 
     if (type === 'single') {
-        title.textContent = 'Одиночная игра: Мир «Офис_13_Выживание»';
-        content.innerHTML = '<div style="background:#555;padding:6px;margin:8px 0;border:1px solid #888;"><div style="background:#4ade80;width:100%;height:14px;"></div></div>' +
-            '<p style="color:#fef08a;font-weight:bold;">Генерация ландшафта: 100%</p>' +
-            '<p style="color:#f87171;font-size:13px;line-height:1.4;">⚠️ СТРАННЫЙ ЗВУК: За спиной в темном офисе раздался страшный шорох! Кто-то скребется снаружи... Монстры слишком близко. Сначала отправьте отчет по работе!</p>';
+        title.textContent = '🟩 Minecraft: Творческий режим (Креатив)';
+        content.innerHTML = '<div style="margin-bottom:6px;font-size:12px;color:#a3e635;font-weight:bold;">🟢 Полная свобода творчества! ЛКМ — ставить блок, ПКМ — разрушать блок.</div>' +
+            '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#15803d\', this)" style="background:#15803d;width:24px;height:24px;border:1px solid #000;cursor:pointer;outline:2px solid #fff;" title="Трава"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#78350f\', this)" style="background:#78350f;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Земля"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#64748b\', this)" style="background:#64748b;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Камень"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#b45309\', this)" style="background:#b45309;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Доски"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#16a34a\', this)" style="background:#16a34a;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Листва"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#b91c1c\', this)" style="background:#b91c1c;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Кирпич"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#06b6d4\', this)" style="background:#06b6d4;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Алмазный блок"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#93c5fd\', this)" style="background:#93c5fd;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Стекло"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#facc15\', this)" style="background:#facc15;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Золото"></button>' +
+            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#ef4444\', this)" style="background:#ef4444;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="TNT"></button>' +
+            '</div>' +
+            '<canvas id="mc-canvas" width="560" height="260" style="background:#60a5fa;border:2px solid #333;cursor:crosshair;display:block;margin:0 auto;box-shadow:0 4px 10px rgba(0,0,0,0.5);"></canvas>' +
+            '<div style="display:flex;justify-content:center;gap:8px;margin-top:8px;">' +
+            '<button class="mc-btn mc-btn-small" onclick="window.mcBuildHouse()">🏠 Построить дом</button>' +
+            '<button class="mc-btn mc-btn-small" onclick="window.mcBuildTree()">🌲 Посадить дерево</button>' +
+            '<button class="mc-btn mc-btn-small" onclick="window.mcClearWorld()">🧹 Сброс мира</button>' +
+            '</div>';
+
+        setTimeout(function() {
+            var cv = document.getElementById('mc-canvas');
+            if (cv) {
+                renderMCCanvas();
+                cv.onmousedown = function(e) {
+                    e.preventDefault();
+                    var rect = cv.getBoundingClientRect();
+                    var cx = Math.floor((e.clientX - rect.left) / MC_CELL);
+                    var cy = Math.floor((e.clientY - rect.top) / MC_CELL);
+                    if (cx >= 0 && cx < MC_COLS && cy >= 0 && cy < MC_ROWS) {
+                        if (e.button === 2) {
+                            mcGrid[cy][cx] = null; // break block on right click
+                        } else {
+                            mcGrid[cy][cx] = mcActiveBlock; // place block on left click
+                        }
+                        renderMCCanvas();
+                    }
+                };
+                cv.oncontextmenu = function(e) { e.preventDefault(); };
+            }
+        }, 50);
     } else if (type === 'multi') {
         title.textContent = 'Сетевая игра: Поиск серверов';
         content.innerHTML = '<div style="background:#222;padding:10px;border:1px solid #444;text-align:left;margin-bottom:8px;">' +
-            '<div style="font-weight:bold;color:#60a5fa;">Локальный сервер офиса (192.168.1.13:25565)</div>' +
-            '<div style="color:#aaa;font-size:11px;">Смена до 22:00! Не гриферить склад!</div>' +
-            '<div style="color:#ef4444;font-weight:bold;margin-top:4px;">❌ ОФФЛАЙН (Серверная обесточена)</div>' +
+            '<div style="font-weight:bold;color:#60a5fa;">Hypixel Network (mc.hypixel.net)</div>' +
+            '<div style="color:#aaa;font-size:11px;">Игроков: 48,210 / 60,000 | Режимы: BedWars, SkyWars, Creative</div>' +
+            '<div style="color:#4ade80;font-weight:bold;margin-top:4px;">🟢 СЕРВЕР ДОСТУПЕН (Пинг: 18ms)</div>' +
             '</div>' +
-            '<p style="color:#94a3b8;font-size:12px;">Коллега Михаил отключил центральный хаб сети.</p>';
+            '<div style="background:#222;padding:10px;border:1px solid #444;text-align:left;margin-bottom:8px;">' +
+            '<div style="font-weight:bold;color:#60a5fa;">Сервер друзей (192.168.1.13:25565)</div>' +
+            '<div style="color:#aaa;font-size:11px;">Выживание, свободный креатив, без вайпов</div>' +
+            '<div style="color:#4ade80;font-weight:bold;margin-top:4px;">🟢 ОНЛАЙН (Игроков: 4/20)</div>' +
+            '</div>';
     } else {
-        title.textContent = 'Настройки игры';
-        content.innerHTML = '<p>Поле зрения (FOV): Normal</p>' +
-            '<p>Сложность: ХАРДКОР (Зомби-апокалипсис)</p>' +
-            '<p>Освещение: Минимальное (Тускло)</p>';
+        title.textContent = 'Настройки Minecraft';
+        content.innerHTML = '<p style="color:#facc15;">Поле зрения (FOV): Normal (70°)</p>' +
+            '<p style="color:#4ade80;">Режим игры: Творческий (Креатив / Свобода действий)</p>' +
+            '<p style="color:#60a5fa;">Дальность прорисовки: 16 чанков (Far)</p>' +
+            '<p style="color:#e2e8f0;">Музыка: 100% | Звуки: 100%</p>';
     }
 };
 
@@ -7441,7 +7590,7 @@ window.launchRobloxGame = function(gameName) {
     setTimeout(function() {
         if (modal.style.display === 'flex') {
             title.textContent = '❌ Ошибка подключения 279';
-            desc.textContent = 'Интернет-провайдер заблокировал внешние игровые порты из-за режима Чрезвычайной Ситуации в городе. Доделайте отчет и уходите из здания!';
+            desc.textContent = 'Добро пожаловать в плейс «Roblox»! Сервер загружен, приятной игры!';
         }
     }, 1400);
 };
