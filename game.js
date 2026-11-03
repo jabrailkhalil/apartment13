@@ -3498,66 +3498,845 @@ function getShopTextures() {
     return texs;
 }
 
+// ==================== PROCEDURAL SUPERMARKET TEXTURES ====================
+var cachedShopFloorTex = null;
+var cachedShopCeilTex = null;
+var cachedShopBannerTex = null;
+var cachedAisleSignTex = {};
+var cachedPromoPosterTex = {};
+var cachedPriceRailTex = null;
+var cachedWetFloorTex = null;
+var cachedProduceScaleTex = null;
+var cachedPOSScreenTex = null;
+
+function getSupermarketFloorTexture() {
+    if (cachedShopFloorTex) return cachedShopFloorTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+
+    // Polished commercial light grey ceramic supermarket floor
+    ctx.fillStyle = '#dde1e3';
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (var ty = 0; ty < 4; ty++) {
+        for (var tx = 0; tx < 4; tx++) {
+            var px = tx * 128;
+            var py = ty * 128;
+            var tileTone = ((tx * 3 + ty * 7) % 5 === 0) ? '#e4e8ea' : '#d8dedf';
+            ctx.fillStyle = tileTone;
+            ctx.fillRect(px + 2, py + 2, 124, 124);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            for (var d = 0; d < 50; d++) {
+                ctx.fillRect(px + 4 + Math.random() * 118, py + 4 + Math.random() * 118, 2, 2);
+            }
+            ctx.fillStyle = 'rgba(100, 116, 139, 0.12)';
+            for (var d2 = 0; d2 < 40; d2++) {
+                ctx.fillRect(px + 4 + Math.random() * 118, py + 4 + Math.random() * 118, 2, 2);
+            }
+
+            ctx.strokeStyle = '#b2babc';
+            ctx.lineWidth = 2.5;
+            ctx.strokeRect(px + 1, py + 1, 126, 126);
+        }
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(5, 6);
+    cachedShopFloorTex = tex;
+    return cachedShopFloorTex;
+}
+
+function getSupermarketCeilingTexture() {
+    if (cachedShopCeilTex) return cachedShopCeilTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (var cy = 0; cy < 4; cy++) {
+        for (var cx = 0; cx < 4; cx++) {
+            var x0 = cx * 128;
+            var y0 = cy * 128;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x0 + 2, y0 + 2, 124, 124);
+
+            ctx.fillStyle = 'rgba(148, 163, 184, 0.2)';
+            for (var p = 0; p < 70; p++) {
+                ctx.fillRect(x0 + 6 + Math.random() * 116, y0 + 6 + Math.random() * 116, 2, 2);
+            }
+
+            ctx.strokeStyle = '#cbd5e1';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x0, y0, 128, 128);
+        }
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 5);
+    cachedShopCeilTex = tex;
+    return cachedShopCeilTex;
+}
+
+function getSupermarketBannerTexture() {
+    if (cachedShopBannerTex) return cachedShopBannerTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 1024;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
+
+    var grad = ctx.createLinearGradient(0, 0, 1024, 0);
+    grad.addColorStop(0, '#15803d');
+    grad.addColorStop(0.5, '#16a34a');
+    grad.addColorStop(1, '#15803d');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1024, 256);
+
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 0, 1024, 18);
+    ctx.fillRect(0, 238, 1024, 18);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(20, 30, 984, 196);
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 30, 984, 196);
+
+    ctx.fillStyle = '#16a34a';
+    ctx.beginPath();
+    ctx.arc(100, 128, 55, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 38px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('24', 100, 142);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 54px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('СУПЕРМАРКЕТ «ПРОДУКТЫ 24»', 180, 115);
+
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText('СВЕЖИЕ ПРОДУКТЫ • НИЗКИЕ ЦЕНЫ • КРУГЛОСУТОЧНО', 185, 165);
+
+    ctx.fillStyle = '#64748b';
+    ctx.font = '18px sans-serif';
+    ctx.fillText('Добро пожаловать! Приятных покупок!', 185, 200);
+
+    cachedShopBannerTex = new THREE.CanvasTexture(canvas);
+    return cachedShopBannerTex;
+}
+
+function getAisleSignTexture(num, title1, title2) {
+    var key = num + '_' + title1;
+    if (cachedAisleSignTex[key]) return cachedAisleSignTex[key];
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 160;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(0, 0, 512, 160);
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(4, 4, 504, 152);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(60, 80, 45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#16a34a';
+    ctx.font = 'bold 50px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(String(num), 60, 98);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(title1, 130, 68);
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText(title2, 130, 110);
+
+    var tex = new THREE.CanvasTexture(canvas);
+    cachedAisleSignTex[key] = tex;
+    return tex;
+}
+
+function getPromoPosterTexture(type) {
+    if (cachedPromoPosterTex[type]) return cachedPromoPosterTex[type];
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 384;
+    var ctx = canvas.getContext('2d');
+
+    if (type === 'sale') {
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(0, 0, 256, 384);
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(10, 10, 236, 70);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('АКЦИЯ!', 128, 60);
+
+        ctx.fillStyle = '#991b1b';
+        ctx.font = 'bold 22px sans-serif';
+        ctx.fillText('СКИДКА ДО 30%', 128, 125);
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 15px sans-serif';
+        ctx.fillText('НА ВСЕ КОНСЕРВЫ', 128, 160);
+        ctx.fillText('И КРУПЫ ГОСТ', 128, 185);
+
+        ctx.fillStyle = '#dc2626';
+        ctx.font = 'bold 44px sans-serif';
+        ctx.fillText('-30%', 128, 260);
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '12px sans-serif';
+        ctx.fillText('*Цены указаны с учетом скидки', 128, 330);
+        ctx.fillText('Срок акции: до 15 декабря', 128, 350);
+    } else if (type === 'warning') {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 256, 384);
+        ctx.fillStyle = '#dc2626';
+        ctx.fillRect(0, 0, 256, 50);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ВНИМАНИЕ!', 128, 34);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText('РЕЖИМ ГОРОДСКОЙ ТРЕВОГИ', 128, 85);
+
+        ctx.fillStyle = '#334155';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        var lines = [
+            'Уважаемые граждане!',
+            'В связи со спецрежимом:',
+            '1. Магазин закрывается',
+            '   строго в 21:30.',
+            '2. Отпуск товаров первой',
+            '   необходимости: не более',
+            '   5 единиц в одни руки.',
+            '3. После покупок немедленно',
+            '   следуйте домой и',
+            '   заприте входные двери.',
+            'Штаб Гражданской Обороны'
+        ];
+        for (var i = 0; i < lines.length; i++) {
+            ctx.fillText(lines[i], 22, 120 + i * 19);
+        }
+
+        ctx.strokeStyle = '#dc2626';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(130, 310, 100, 45);
+        ctx.fillStyle = '#dc2626';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('УТВЕРЖДЕНО', 180, 330);
+        ctx.fillText('ШТАБ ГО 2026', 180, 345);
+    } else {
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(0, 0, 256, 384);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ИНФОРМАЦИЯ', 128, 35);
+        ctx.fillText('ДЛЯ ПОТРЕБИТЕЛЕЙ', 128, 60);
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(15, 80, 105, 120);
+        ctx.fillRect(135, 80, 105, 120);
+        ctx.fillRect(15, 220, 105, 120);
+        ctx.fillRect(135, 220, 105, 120);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillText('ЛИЦЕНЗИЯ', 67, 130);
+        ctx.fillText('ЗАКОН О ЗПП', 187, 130);
+        ctx.fillText('ПЛАН ЭВАКУАЦИИ', 67, 270);
+        ctx.fillText('КНИГА ОТЗЫВОВ', 187, 270);
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    cachedPromoPosterTex[type] = tex;
+    return tex;
+}
+
+function getPriceRailTexture() {
+    if (cachedPriceRailTex) return cachedPriceRailTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 32;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(0, 0, 512, 32);
+
+    for (var i = 0; i < 8; i++) {
+        var tx = i * 64 + 4;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(tx, 4, 56, 24);
+
+        ctx.fillStyle = '#dc2626';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(((i * 29 + 35) % 150 + 29) + ' ₽', tx + 4, 18);
+
+        ctx.fillStyle = '#000000';
+        for (var b = 0; b < 10; b++) {
+            if ((b + i) % 2 === 0) {
+                ctx.fillRect(tx + 36 + b * 1.5, 6, 1.2, 14);
+            }
+        }
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(4, 1);
+    cachedPriceRailTex = tex;
+    return cachedPriceRailTex;
+}
+
+function getWetFloorSignTexture() {
+    if (cachedWetFloorTex) return cachedWetFloorTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 384;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(0, 0, 256, 384);
+    ctx.strokeStyle = '#ca8a04';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 244, 372);
+
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 12;
+    ctx.beginPath();
+    ctx.moveTo(128, 50);
+    ctx.lineTo(220, 200);
+    ctx.lineTo(36, 200);
+    ctx.closePath();
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.beginPath();
+    ctx.arc(128, 95, 12, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(128, 110); ctx.lineTo(120, 145);
+    ctx.lineTo(95, 165);
+    ctx.moveTo(120, 145); ctx.lineTo(150, 160);
+    ctx.lineTo(170, 145);
+    ctx.stroke();
+
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ОСТОРОЖНО!', 128, 240);
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('СКОЛЬЗКИЙ ПОЛ', 128, 270);
+    ctx.fillStyle = '#dc2626';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('CAUTION WET FLOOR', 128, 310);
+
+    cachedWetFloorTex = new THREE.CanvasTexture(canvas);
+    return cachedWetFloorTex;
+}
+
+function getProduceScaleTexture() {
+    if (cachedProduceScaleTex) return cachedProduceScaleTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, 256, 256);
+
+    ctx.fillStyle = '#38bdf8';
+    ctx.fillRect(0, 0, 256, 36);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('ВЕСЫ САМООБСЛУЖИВАНИЯ', 128, 24);
+
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(15, 50, 226, 60);
+    ctx.fillStyle = '#22c55e';
+    ctx.font = 'bold 36px monospace';
+    ctx.fillText('0.000 кг', 128, 94);
+
+    var fruits = [
+        { name: '🍎 Яблоки', color: '#ef4444' },
+        { name: '🍊 Апельсины', color: '#f97316' },
+        { name: '🍌 Бананы', color: '#eab308' },
+        { name: '🍋 Лимоны', color: '#84cc16' }
+    ];
+    for (var fi = 0; fi < 4; fi++) {
+        var fx = (fi % 2) * 115 + 15;
+        var fy = Math.floor(fi / 2) * 60 + 125;
+        ctx.fillStyle = fruits[fi].color;
+        ctx.fillRect(fx, fy, 110, 52);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 13px sans-serif';
+        ctx.fillText(fruits[fi].name, fx + 55, fy + 32);
+    }
+
+    cachedProduceScaleTex = new THREE.CanvasTexture(canvas);
+    return cachedProduceScaleTex;
+}
+
+function getPOSScreenTexture() {
+    if (cachedPOSScreenTex) return cachedPOSScreenTex;
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 192;
+    var ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#1e293b';
+    ctx.fillRect(0, 0, 256, 192);
+
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(0, 0, 256, 28);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('КАССА № 1 - [СМЕНА 13]', 10, 19);
+
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(10, 36, 236, 95);
+    ctx.fillStyle = '#e2e8f0';
+    ctx.font = '10px monospace';
+    ctx.fillText('1. ТУШЕНКА ГОВ. ГОСТ       149.00', 16, 56);
+    ctx.fillText('2. ХЛЕБ НАРЕЗНОЙ БАТОН      32.00', 16, 74);
+    ctx.fillText('3. МОЛОКО ПАСТ. 3.2%        58.00', 16, 92);
+    ctx.fillText('4. ЧАЙ ЧЕРНЫЙ 25 ПАК.       65.00', 16, 110);
+
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(10, 140, 236, 42);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('К ОПЛАТЕ: КАРТОЙ', 16, 167);
+
+    cachedPOSScreenTex = new THREE.CanvasTexture(canvas);
+    return cachedPOSScreenTex;
+}
+
+
+// Helper functions for realistic supermarket
+function buildSupermarketLighting() {
+    // 8 Modular Fluorescent Troffers
+    var lightPositions = [
+        [-2.4, 3.25, -3.2], [2.4, 3.25, -3.2],
+        [-2.4, 3.25, -0.6], [2.4, 3.25, -0.6],
+        [-2.4, 3.25,  1.8], [2.4, 3.25,  1.8],
+        [-2.4, 3.25,  4.2], [2.4, 3.25,  4.2]
+    ];
+    var fixtureMat = makeMat(0x64748b);
+    var tubeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    for (var li = 0; li < lightPositions.length; li++) {
+        var lp = lightPositions[li];
+        var trofferGroup = new THREE.Group();
+        trofferGroup.position.set(lp[0], lp[1], lp[2]);
+        // Housing
+        addMesh(new THREE.BoxGeometry(0.85, 0.06, 2.0), fixtureMat, 0, 0, 0, trofferGroup);
+        // Diffuser
+        var dif = addMesh(new THREE.PlaneGeometry(0.75, 1.9), tubeMat, 0, -0.031, 0, trofferGroup);
+        dif.rotation.x = Math.PI / 2;
+        // Fluorescent point light
+        var pl = new THREE.PointLight(0xfffbeb, 0.38, 7.5);
+        pl.position.set(0, -0.2, 0);
+        trofferGroup.add(pl);
+        scene.add(trofferGroup);
+    }
+
+    // Overhead Galvanized HVAC Ducts
+    var ductMat = makeMat(0x94a3b8);
+    var duct1 = addMesh(new THREE.CylinderGeometry(0.16, 0.16, 11.8, 12), ductMat, -2.4, 3.12, 0);
+    duct1.rotation.x = Math.PI / 2;
+    var duct2 = addMesh(new THREE.CylinderGeometry(0.16, 0.16, 11.8, 12), ductMat,  2.4, 3.12, 0);
+    duct2.rotation.x = Math.PI / 2;
+
+    // Hanging Aisle Category Signs
+    function addHangingSign(x, y, z, num, t1, t2) {
+        var signTex = getAisleSignTexture(num, t1, t2);
+        var signMat = new THREE.MeshBasicMaterial({ map: signTex });
+        var signMesh1 = addMesh(new THREE.PlaneGeometry(1.6, 0.5), signMat, x, y, z);
+        var signMesh2 = addMesh(new THREE.PlaneGeometry(1.6, 0.5), signMat, x, y, z);
+        signMesh2.rotation.y = Math.PI;
+
+        // Hanging silver chains from ceiling
+        var chainMat = makeMat(0x64748b);
+        addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.65, 4), chainMat, x - 0.7, y + 0.55, z);
+        addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.65, 4), chainMat, x + 0.7, y + 0.55, z);
+    }
+
+    addHangingSign(-1.6, 2.35, -0.8, 1, 'ХЛЕБ • ВЫПЕЧКА', 'ЧАЙ • КОФЕ • СЛАДОСТИ');
+    addHangingSign( 1.6, 2.35, -0.8, 2, 'БАКАЛЕЯ • КРУПЫ', 'МАКАРОНЫ • КОНСЕРВЫ');
+    addHangingSign( 4.4, 2.35, -0.8, 3, 'СОКИ • ВОДА', 'ЧИПСЫ • СНЕКИ');
+    addHangingSign( 0.0, 2.45, -4.6, 4, 'МОЛОКО • СЫРЫ', 'МЯСНАЯ ГАСТРОНОМИЯ');
+
+    // Security Dome Cameras in ceiling corners
+    var camMat = makeMat(0x1e293b);
+    var redLedMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    function addDomeCamera(cx, cy, cz) {
+        var cg = new THREE.Group();
+        cg.position.set(cx, cy, cz);
+        addMesh(new THREE.CylinderGeometry(0.12, 0.12, 0.02, 12), camMat, 0, 0.01, 0, cg);
+        addMesh(new THREE.SphereGeometry(0.10, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), camMat, 0, 0, 0, cg);
+        addMesh(new THREE.BoxGeometry(0.015, 0.015, 0.015), redLedMat, 0.05, -0.06, 0.05, cg);
+        scene.add(cg);
+    }
+    addDomeCamera(-4.6, 3.28, -5.6);
+    addDomeCamera( 4.6, 3.28,  5.6);
+
+    // Glowing Exit Sign above sliding doors
+    var exitSignMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    addMesh(new THREE.BoxGeometry(0.65, 0.22, 0.06), exitSignMat, 0, 2.75, 5.96);
+}
+
+function buildSupermarketCheckout() {
+    var deskGroup = new THREE.Group();
+    deskGroup.position.set(-3.2, 0, 3.6);
+
+    var counterBodyMat = makeMat(0x334155);
+    var stainlessMat = makeMat(0xd1d5db);
+    var beltMat = makeMat(0x18181b);
+    var screenMat = new THREE.MeshBasicMaterial({ map: getPOSScreenTexture() });
+    var redLaserMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    var acrylicMat = new THREE.MeshLambertMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35 });
+
+    // 1. Counter base and stainless edge
+    addMesh(new THREE.BoxGeometry(2.1, 0.88, 0.95), counterBodyMat, 0, 0.44, 0, deskGroup);
+    addMesh(new THREE.BoxGeometry(2.14, 0.04, 0.99), stainlessMat, 0, 0.89, 0, deskGroup);
+
+    // 2. Black Rubber Conveyor Belt
+    addMesh(new THREE.BoxGeometry(1.25, 0.015, 0.48), beltMat, 0.35, 0.915, -0.15, deskGroup);
+    // Divider bars ("Следующий покупатель")
+    addMesh(new THREE.BoxGeometry(0.025, 0.02, 0.38), makeMat(0xfacc15), 0.70, 0.93, -0.15, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.025, 0.02, 0.38), makeMat(0xfacc15), 0.10, 0.93, -0.15, deskGroup);
+
+    // 3. Barcode Scanner Glass with Red Laser
+    addMesh(new THREE.BoxGeometry(0.24, 0.01, 0.20), makeMat(0x0f172a), -0.32, 0.915, -0.15, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.18, 0.005, 0.01), redLaserMat, -0.32, 0.92, -0.15, deskGroup);
+    var laserGlow = new THREE.PointLight(0xef4444, 0.35, 0.6);
+    laserGlow.position.set(-0.32, 0.95, -0.15);
+    deskGroup.add(laserGlow);
+
+    // 4. Touchscreen POS Register Monitor
+    addMesh(new THREE.CylinderGeometry(0.025, 0.025, 0.22, 8), stainlessMat, -0.32, 1.02, 0.18, deskGroup);
+    var posMon = addMesh(new THREE.BoxGeometry(0.34, 0.24, 0.03), counterBodyMat, -0.32, 1.20, 0.18, deskGroup);
+    posMon.rotation.x = -0.22;
+    var posScr = addMesh(new THREE.PlaneGeometry(0.30, 0.20), screenMat, -0.32, 1.20, 0.198, deskGroup);
+    posScr.rotation.x = -0.22;
+
+    // 5. Customer VFD Pole Display (green glowing numbers)
+    addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.38, 8), stainlessMat, 0.15, 1.10, 0.28, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.22, 0.08, 0.04), counterBodyMat, 0.15, 1.30, 0.28, deskGroup);
+    var vfdMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
+    addMesh(new THREE.PlaneGeometry(0.18, 0.045), vfdMat, 0.15, 1.30, 0.302, deskGroup);
+
+    // 6. Bank Card PIN Pad Terminal (on swivel base)
+    addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 8), stainlessMat, 0.65, 0.96, 0.24, deskGroup);
+    var pinPad = addMesh(new THREE.BoxGeometry(0.11, 0.04, 0.17), makeMat(0x1e293b), 0.65, 1.04, 0.24, deskGroup);
+    pinPad.rotation.x = 0.25;
+    pinPad.rotation.y = 0.15;
+    addMesh(new THREE.PlaneGeometry(0.08, 0.04), new THREE.MeshBasicMaterial({ color: 0x10b981 }), 0.65, 1.07, 0.22, deskGroup).rotation.x = -0.25;
+
+    // 7. Thermal Receipt Printer
+    addMesh(new THREE.BoxGeometry(0.14, 0.12, 0.15), counterBodyMat, -0.65, 0.96, 0.18, deskGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.03, 0.005), makeMat(0xffffff), -0.65, 1.03, 0.12, deskGroup); // receipt paper strip
+
+    // 8. Acrylic Protective Sneeze Guard Screen
+    addMesh(new THREE.BoxGeometry(1.6, 0.65, 0.015), acrylicMat, 0.15, 1.25, 0.08, deskGroup);
+
+    // 9. Impulse Candy & Gum Rack (on counter side)
+    var rackMat = makeMat(0x475569);
+    addMesh(new THREE.BoxGeometry(0.38, 0.55, 0.18), rackMat, 0.95, 1.15, 0.32, deskGroup);
+    for (var gi = 0; gi < 3; gi++) {
+        var gy = 0.98 + gi * 0.15;
+        // Orbit gums
+        addMesh(new THREE.BoxGeometry(0.10, 0.02, 0.06), makeMat(0x38bdf8), 0.86, gy, 0.32, deskGroup);
+        // Dirol gums
+        addMesh(new THREE.BoxGeometry(0.10, 0.02, 0.06), makeMat(0x22c55e), 0.98, gy, 0.32, deskGroup);
+        // Snickers chocolate bar
+        addMesh(new THREE.BoxGeometry(0.08, 0.02, 0.04), makeMat(0x78350f), 1.08, gy, 0.32, deskGroup);
+    }
+
+    // 10. Cash Register Interaction Hitbox
+    var cashInteract = addMesh(new THREE.BoxGeometry(0.9, 0.6, 0.7), new THREE.MeshBasicMaterial({ visible: false }), 0, 1.15, -0.1, deskGroup);
+    cashInteract.userData = { name: 'Касса (Оплатить покупки) [F]', type: 'cash_register' };
+    interactables.push(cashInteract);
+
+    // 11. CASHIER NPC (Светлана)
+    var cashierG = new THREE.Group();
+    cashierG.position.set(-3.2, 0, 4.3);
+
+    var apronMat = makeMat(0x15803d); // green supermarket vest
+    var skinMat = makeMat(0xf8c291);  // female skin tone
+    var darkPoloMat = makeMat(0x1e293b);
+    var hairMat = makeMat(0x451a03);  // brown hair with clip
+
+    // Stool / Chair
+    addMesh(new THREE.CylinderGeometry(0.20, 0.20, 0.06, 12), makeMat(0x1e293b), 0, 0.48, 0, cashierG);
+    addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.46, 8), stainlessMat, 0, 0.24, 0, cashierG);
+
+    // Torso in green uniform vest over dark polo
+    var cTorso = addMesh(new THREE.BoxGeometry(0.38, 0.46, 0.24), apronMat, 0, 0.84, 0, cashierG);
+    cTorso.rotation.x = -0.06;
+    // Polo collar
+    addMesh(new THREE.BoxGeometry(0.14, 0.05, 0.12), darkPoloMat, 0, 1.06, -0.02, cashierG);
+
+    // Name badge: "Кассир: Светлана"
+    addMesh(new THREE.BoxGeometry(0.09, 0.04, 0.005), makeMat(0xffffff), 0.10, 0.96, -0.125, cashierG);
+
+    // Neck & Head
+    addMesh(new THREE.CylinderGeometry(0.05, 0.055, 0.09, 8), skinMat, 0, 1.12, -0.02, cashierG);
+    var cHead = addMesh(new THREE.SphereGeometry(0.13, 12, 12), skinMat, 0, 1.25, -0.02, cashierG);
+    cHead.scale.set(0.9, 1.1, 0.95);
+
+    // Hair with clip / ponytail
+    var cHair = addMesh(new THREE.SphereGeometry(0.14, 12, 12), hairMat, 0, 1.28, 0.02, cashierG);
+    cHair.scale.set(0.95, 1.05, 1.0);
+    // Hair bun / clip at back
+    addMesh(new THREE.SphereGeometry(0.06, 8, 8), hairMat, 0, 1.26, 0.14, cashierG);
+
+    // Face details
+    var cEyeMat = makeMat(0x1e293b);
+    addMesh(new THREE.BoxGeometry(0.03, 0.012, 0.01), cEyeMat, -0.045, 1.26, -0.13, cashierG);
+    addMesh(new THREE.BoxGeometry(0.03, 0.012, 0.01), cEyeMat,  0.045, 1.26, -0.13, cashierG);
+    addMesh(new THREE.BoxGeometry(0.02, 0.03, 0.02), skinMat, 0, 1.23, -0.14, cashierG); // nose
+
+    // Arms resting forward near counter and scanner
+    var lArm = addMesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), apronMat, -0.22, 0.88, -0.06, cashierG);
+    lArm.rotation.x = 0.55;
+    var rArm = addMesh(new THREE.BoxGeometry(0.09, 0.32, 0.09), apronMat,  0.22, 0.88, -0.06, cashierG);
+    rArm.rotation.x = 0.55;
+    // Forearms resting horizontally
+    var lFore = addMesh(new THREE.BoxGeometry(0.08, 0.07, 0.28), skinMat, -0.18, 0.88, -0.22, cashierG);
+    lFore.rotation.y = -0.15;
+    var rFore = addMesh(new THREE.BoxGeometry(0.08, 0.07, 0.28), skinMat,  0.18, 0.88, -0.22, cashierG);
+    rFore.rotation.y = 0.15;
+
+    // Cashier NPC Hitbox
+    var cashierHitbox = addMesh(new THREE.BoxGeometry(0.65, 1.4, 0.65), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.9, 0, cashierG);
+    cashierHitbox.userData = { name: 'Кассир (Светлана) [F]', type: 'cashier_npc' };
+    interactables.push(cashierHitbox);
+
+    scene.add(cashierG);
+
+    // Solid Colliders for Checkout
+    colliders.push({ minX: -4.4, maxX: -2.0, minZ: 3.0, maxZ: 4.8 });
+
+    scene.add(deskGroup);
+    return deskGroup;
+}
+
+function buildCenterFreezerIsland() {
+    var freezerGroup = new THREE.Group();
+    freezerGroup.position.set(0, 0, -1.0);
+
+    var whiteMat = makeMat(0xf8fafc);
+    var bumperMat = makeMat(0x475569);
+    var glassMat = new THREE.MeshLambertMaterial({ color: 0x93c5fd, transparent: true, opacity: 0.35 });
+    var stainlessMat = makeMat(0xd1d5db);
+
+    // Main insulated horizontal freezer chest body (2.4m long x 0.9m high x 0.85m wide)
+    addMesh(new THREE.BoxGeometry(0.85, 0.90, 2.4), whiteMat, 0, 0.45, 0, freezerGroup);
+    // Protective rubber bumper strips
+    addMesh(new THREE.BoxGeometry(0.89, 0.08, 2.44), bumperMat, 0, 0.15, 0, freezerGroup);
+    addMesh(new THREE.BoxGeometry(0.89, 0.06, 2.44), bumperMat, 0, 0.75, 0, freezerGroup);
+
+    // Interior cavity
+    addMesh(new THREE.BoxGeometry(0.75, 0.50, 2.25), makeMat(0xe2e8f0), 0, 0.65, 0, freezerGroup);
+
+    // Curved sliding glass lids
+    var lid1 = addMesh(new THREE.BoxGeometry(0.74, 0.02, 1.10), glassMat, 0, 0.91, -0.55, freezerGroup);
+    var lid2 = addMesh(new THREE.BoxGeometry(0.74, 0.02, 1.10), glassMat, 0, 0.93,  0.55, freezerGroup);
+    // Metal handles on glass lids
+    addMesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), stainlessMat, 0, 0.94, -0.15, freezerGroup);
+    addMesh(new THREE.BoxGeometry(0.16, 0.03, 0.03), stainlessMat, 0, 0.96,  0.15, freezerGroup);
+
+    // Digital thermometer display (-18.5°C)
+    var termGroup = new THREE.Group();
+    termGroup.position.set(0, 0.92, -1.18);
+    addMesh(new THREE.BoxGeometry(0.24, 0.08, 0.04), bumperMat, 0, 0, 0, termGroup);
+    var termScreen = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    addMesh(new THREE.PlaneGeometry(0.18, 0.05), termScreen, 0, 0, -0.021, termGroup);
+    freezerGroup.add(termGroup);
+
+    // Cold cyan LED lighting inside
+    var freezerLight = new THREE.PointLight(0xa5f3fc, 0.45, 4.0);
+    freezerLight.position.set(0, 0.75, 0);
+    freezerGroup.add(freezerLight);
+
+    // Interactive hitbox
+    var fHitbox = addMesh(new THREE.BoxGeometry(0.95, 1.1, 2.5), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.55, 0, freezerGroup);
+    fHitbox.userData = { name: 'Морозильная бонета (Заморозка) [F]', type: 'freezer_chest' };
+    interactables.push(fHitbox);
+
+    // Collider
+    colliders.push({ minX: -0.55, maxX: 0.55, minZ: -2.3, maxZ: 0.3 });
+
+    scene.add(freezerGroup);
+    return freezerGroup;
+}
+
+function buildSupermarketEntranceFixtures() {
+    // 1. Anti-Theft EAS Security Sensor Gates (flanking the exit)
+    var gateMat = makeMat(0xe2e8f0);
+    var ledBlueMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+    function addSecurityGate(gx, gz) {
+        var g = new THREE.Group();
+        g.position.set(gx, 0, gz);
+        // Pedestal base
+        addMesh(new THREE.BoxGeometry(0.16, 0.06, 0.48), makeMat(0x334155), 0, 0.03, 0, g);
+        // Upright acrylic antenna frame
+        addMesh(new THREE.BoxGeometry(0.08, 1.45, 0.42), gateMat, 0, 0.78, 0, g);
+        // Center aperture
+        addMesh(new THREE.BoxGeometry(0.09, 1.15, 0.28), makeMat(0xf8fafc), 0, 0.78, 0, g);
+        // Blue status LED on top
+        addMesh(new THREE.BoxGeometry(0.085, 0.03, 0.08), ledBlueMat, 0, 1.52, 0, g);
+        scene.add(g);
+    }
+    addSecurityGate(-1.3, 5.4);
+    addSecurityGate( 1.3, 5.4);
+
+    // 2. Yellow Caution Wet Floor Folding Sign
+    var wetSignTex = getWetFloorSignTexture();
+    var wetSignMat = new THREE.MeshBasicMaterial({ map: wetSignTex });
+    var wetSignG = new THREE.Group();
+    wetSignG.position.set(0.9, 0, 4.7);
+    var ws1 = addMesh(new THREE.PlaneGeometry(0.28, 0.42), wetSignMat, 0, 0.21, 0.04, wetSignG);
+    ws1.rotation.x = -0.16;
+    var ws2 = addMesh(new THREE.PlaneGeometry(0.28, 0.42), wetSignMat, 0, 0.21, -0.04, wetSignG);
+    ws2.rotation.x = 0.16;
+    ws2.rotation.y = Math.PI;
+    var wsHitbox = addMesh(new THREE.BoxGeometry(0.35, 0.5, 0.35), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.25, 0, wetSignG);
+    wsHitbox.userData = { name: 'Знак «Мокрый пол» [F]', type: 'caution_sign' };
+    interactables.push(wsHitbox);
+    scene.add(wetSignG);
+
+    // 3. Nested Shopping Carts (Тележки для покупок)
+    var cartG = new THREE.Group();
+    cartG.position.set(2.8, 0, 4.8);
+    var wireMat = makeMat(0xcbd5e1);
+    var redCartMat = makeMat(0xdc2626);
+    var wheelMat = makeMat(0x1e293b);
+
+    for (var ci = 0; ci < 3; ci++) {
+        var cz = -ci * 0.32;
+        // Wire basket
+        addMesh(new THREE.BoxGeometry(0.52, 0.42, 0.72), wireMat, 0, 0.62, cz, cartG);
+        // Red handle bar
+        addMesh(new THREE.CylinderGeometry(0.018, 0.018, 0.54, 8), redCartMat, 0, 0.86, cz + 0.36, cartG).rotation.z = Math.PI / 2;
+        // Lower chassis
+        addMesh(new THREE.BoxGeometry(0.48, 0.04, 0.68), wireMat, 0, 0.18, cz, cartG);
+        // 4 Caster wheels
+        addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 8), wheelMat, -0.22, 0.05, cz - 0.28, cartG);
+        addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 8), wheelMat,  0.22, 0.05, cz - 0.28, cartG);
+        addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 8), wheelMat, -0.22, 0.05, cz + 0.28, cartG);
+        addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 8), wheelMat,  0.22, 0.05, cz + 0.28, cartG);
+    }
+    var cartHitbox = addMesh(new THREE.BoxGeometry(0.7, 1.0, 1.4), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.5, -0.3, cartG);
+    cartHitbox.userData = { name: 'Тележки для покупок [F]', type: 'shopping_cart' };
+    interactables.push(cartHitbox);
+    colliders.push({ minX: 2.3, maxX: 3.3, minZ: 3.9, maxZ: 5.3 });
+    scene.add(cartG);
+
+    // 4. Customer Locker Cells (Ячейки для сумок)
+    var lockerMat = makeMat(0x64748b);
+    var lockKeyMat = makeMat(0xfacc15);
+    var lockerG = new THREE.Group();
+    lockerG.position.set(-4.85, 0, 4.8);
+    addMesh(new THREE.BoxGeometry(0.42, 1.65, 1.2), lockerMat, 0, 0.825, 0, lockerG);
+    // 8 Cell doors (2x4)
+    for (var lx = 0; lx < 2; lx++) {
+        for (var ly = 0; ly < 4; ly++) {
+            var lz0 = -0.32 + lx * 0.64;
+            var ly0 = 0.22 + ly * 0.38;
+            addMesh(new THREE.BoxGeometry(0.44, 0.34, 0.58), makeMat(0x475569), 0.01, ly0, lz0, lockerG);
+            // Key / lock
+            addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.02, 6), lockKeyMat, 0.23, ly0, lz0 + 0.22, lockerG).rotation.z = Math.PI / 2;
+        }
+    }
+    colliders.push({ minX: -5.1, maxX: -4.5, minZ: 4.1, maxZ: 5.5 });
+    scene.add(lockerG);
+}
+
+
 // ==================== BUILD: SHOP ====================
 function buildShop() {
-    scene.background = new THREE.Color(0xf2f5f8);
-    scene.fog = new THREE.Fog(0xf2f5f8, 6, 26);
+    scene.background = new THREE.Color(0xf1f5f9);
+    scene.fog = new THREE.Fog(0xf1f5f9, 7, 28);
 
-    // Warm, bright store lighting
-    var ambLight = new THREE.AmbientLight(0xfffaee, 0.95);
+    // 1. Ambient & Directional Lighting
+    var ambLight = new THREE.AmbientLight(0xfffaed, 0.92);
     scene.add(ambLight);
 
-    var mainSun = new THREE.DirectionalLight(0xfffaea, 0.55);
+    var mainSun = new THREE.DirectionalLight(0xfffaea, 0.52);
     mainSun.position.set(0, 8, 2);
     scene.add(mainSun);
 
-    // Ceiling fluorescent lights
-    var lightPositions = [
-        [-2.4, 3.2, -3.0], [2.4, 3.2, -3.0],
-        [-2.4, 3.2, 0.5],  [2.4, 3.2, 0.5],
-        [-2.4, 3.2, 4.0],  [2.4, 3.2, 4.0]
-    ];
-    var fixtureMat = makeMat(0xcccccc);
-    var tubeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    for (var li = 0; li < lightPositions.length; li++) {
-        var lp = lightPositions[li];
-        addMesh(new THREE.BoxGeometry(0.8, 0.08, 2.2), fixtureMat, lp[0], lp[1], lp[2]);
-        addMesh(new THREE.BoxGeometry(0.6, 0.04, 2.0), tubeMat, lp[0], lp[1] - 0.04, lp[2]);
-        var pl = new THREE.PointLight(0xfffbee, 0.4, 8);
-        pl.position.set(lp[0], lp[1] - 0.2, lp[2]);
-        scene.add(pl);
-    }
+    // 2. Realistic Supermarket Fluorescent Troffers, HVAC Ducts, Hanging Signs, Security Cams, Exit Sign
+    buildSupermarketLighting();
 
-    // Floor and Ceiling
-    var floorMat = makeMat(0xdddfdf, { roughness: 0.3 });
+    // 3. Realistic Ceramic Tiled Floor with Entrance Tactile Strip & Subtle Marble Specular
+    var floorTex = getSupermarketFloorTexture();
+    floorTex.wrapS = THREE.RepeatWrapping;
+    floorTex.wrapT = THREE.RepeatWrapping;
+    floorTex.repeat.set(5, 6);
+    var floorMat = makeMat(0xffffff, { map: floorTex, roughness: 0.28 });
     var floorGeo = new THREE.PlaneGeometry(10.2, 12.2);
     var floorMesh = new THREE.Mesh(floorGeo, floorMat);
     floorMesh.rotation.x = -Math.PI / 2;
     floorMesh.position.set(0, 0, 0);
     scene.add(floorMesh);
 
-    // Entrance rubber mat
-    addMesh(new THREE.BoxGeometry(2.6, 0.02, 1.6), makeMat(0x2c3e50), 0, 0.01, 5.0);
+    // Entrance heavy rubber ribbed dirt-trapper mat
+    addMesh(new THREE.BoxGeometry(2.8, 0.02, 1.8), makeMat(0x1e293b), 0, 0.01, 5.0);
 
-    // Ceiling
-    var ceilMat = makeMat(0xfafafa);
+    // 4. Acoustic Grid Suspended Ceiling
+    var ceilTex = getSupermarketCeilingTexture();
+    ceilTex.wrapS = THREE.RepeatWrapping;
+    ceilTex.wrapT = THREE.RepeatWrapping;
+    ceilTex.repeat.set(5, 6);
+    var ceilMat = makeMat(0xffffff, { map: ceilTex, roughness: 0.88 });
     var ceilGeo = new THREE.PlaneGeometry(10.2, 12.2);
     var ceilMesh = new THREE.Mesh(ceilGeo, ceilMat);
     ceilMesh.rotation.x = Math.PI / 2;
     ceilMesh.position.set(0, 3.3, 0);
     scene.add(ceilMesh);
 
-    // Walls
-    var wallMat = makeMat(0xeeeae2);
-    var stripeMat = makeMat(0x27ae60);
+    // 5. Walls & Supermarket Branding
+    var wallMat = makeMat(0xf1f5f9);
+    var stripeMat = makeMat(0x16a34a); // supermarket green accent
 
     // North wall (back)
     addMesh(new THREE.BoxGeometry(10.2, 3.3, 0.2), wallMat, 0, 1.65, -6.1);
     addMesh(new THREE.BoxGeometry(10.2, 0.25, 0.22), stripeMat, 0, 2.5, -6.08);
 
-    // Supermarket banner sign on back wall
-    addMesh(new THREE.BoxGeometry(5.2, 0.65, 0.06), stripeMat, 0, 2.85, -5.98);
-    addMesh(new THREE.BoxGeometry(5.0, 0.5, 0.08), makeMat(0xffffff), 0, 2.85, -5.97);
+    // Back wall large supermarket branding banner
+    var bannerTex = getSupermarketBannerTexture();
+    var bannerMat = new THREE.MeshBasicMaterial({ map: bannerTex });
+    addMesh(new THREE.PlaneGeometry(5.2, 0.8), bannerMat, 0, 2.78, -5.98);
 
     // South wall (entrance/exit wall)
     addMesh(new THREE.BoxGeometry(3.9, 3.3, 0.2), wallMat, -3.15, 1.65, 6.1);
@@ -3573,21 +4352,53 @@ function buildShop() {
     addMesh(new THREE.BoxGeometry(0.2, 3.3, 12.2), wallMat, 5.1, 1.65, 0);
     addMesh(new THREE.BoxGeometry(0.22, 0.25, 12.2), stripeMat, 5.08, 2.5, 0);
 
-    // Shelf helper function
-    var shelfMat = makeMat(0xd8dcd6);
-    var shelfPostMat = makeMat(0xaeb6bf);
+    // Promotional posters on East Wall
+    var promoTex = getPromoPosterTexture('discount');
+    var promoMat = new THREE.MeshBasicMaterial({ map: promoTex });
+    var pMesh1 = addMesh(new THREE.PlaneGeometry(0.85, 1.2), promoMat, 4.98, 1.8, 2.2);
+    pMesh1.rotation.y = -Math.PI / 2;
+
+    // Curfew & Consumer Corner on West Wall
+    var curfewTex = getPromoPosterTexture('curfew');
+    var curfewMat = new THREE.MeshBasicMaterial({ map: curfewTex });
+    var cMesh = addMesh(new THREE.PlaneGeometry(0.8, 1.05), curfewMat, -4.98, 1.8, 1.2);
+    cMesh.rotation.y = Math.PI / 2;
+
+    var consumerTex = getPromoPosterTexture('consumer');
+    var consumerMat = new THREE.MeshBasicMaterial({ map: consumerTex });
+    var conMesh = addMesh(new THREE.PlaneGeometry(1.2, 0.85), consumerMat, -4.98, 1.8, 2.6);
+    conMesh.rotation.y = Math.PI / 2;
+
+    // Wall Clock
+    var clockRimMat = makeMat(0x1e293b);
+    addMesh(new THREE.CylinderGeometry(0.24, 0.24, 0.04, 16), clockRimMat, 3.6, 2.8, -5.98).rotation.x = Math.PI / 2;
+    addMesh(new THREE.CylinderGeometry(0.22, 0.22, 0.042, 16), makeMat(0xffffff), 3.6, 2.8, -5.97).rotation.x = Math.PI / 2;
+    addMesh(new THREE.BoxGeometry(0.012, 0.12, 0.01), clockRimMat, 3.6, 2.84, -5.94);
+    addMesh(new THREE.BoxGeometry(0.08, 0.012, 0.01), clockRimMat, 3.63, 2.8, -5.94);
+
+    // 6. Shelving Units (Gondolas) with Price Tag Rails
+    var shelfMat = makeMat(0xf1f5f9);
+    var shelfPostMat = makeMat(0x64748b);
+    var priceRailMat = new THREE.MeshBasicMaterial({ map: getPriceRailTexture() });
 
     function createAisleGondola(gx, gzStart, gzEnd) {
         var gLen = gzEnd - gzStart;
         var gCenterZ = (gzStart + gzEnd) / 2;
+        // Central perforated back panel
         addMesh(new THREE.BoxGeometry(0.08, 1.7, gLen), shelfPostMat, gx, 0.85, gCenterZ);
+        // Base shelf plinth
         addMesh(new THREE.BoxGeometry(0.9, 0.16, gLen), shelfMat, gx, 0.08, gCenterZ);
         var shelfHeights = [0.52, 0.98, 1.45];
         for (var sh = 0; sh < shelfHeights.length; sh++) {
             var sy = shelfHeights[sh];
             addMesh(new THREE.BoxGeometry(0.42, 0.03, gLen), shelfMat, gx - 0.24, sy, gCenterZ);
             addMesh(new THREE.BoxGeometry(0.42, 0.03, gLen), shelfMat, gx + 0.24, sy, gCenterZ);
+
+            // Red plastic price tag rails on shelf fronts
+            addMesh(new THREE.BoxGeometry(0.015, 0.045, gLen), priceRailMat, gx - 0.45, sy - 0.01, gCenterZ);
+            addMesh(new THREE.BoxGeometry(0.015, 0.045, gLen), priceRailMat, gx + 0.45, sy - 0.01, gCenterZ);
         }
+        // Metal end uprights
         addMesh(new THREE.BoxGeometry(0.92, 1.7, 0.06), shelfPostMat, gx, 0.85, gzStart);
         addMesh(new THREE.BoxGeometry(0.92, 1.7, 0.06), shelfPostMat, gx, 0.85, gzEnd);
 
@@ -3603,6 +4414,17 @@ function buildShop() {
     createAisleGondola(-1.6, -3.2, 1.2);
     createAisleGondola(1.6, -3.2, 1.2);
 
+    // Promotional Endcaps on front of gondolas
+    (function() {
+        var endcapMat = makeMat(0xe2e8f0);
+        // Endcap 1 (west gondola front)
+        addMesh(new THREE.BoxGeometry(0.72, 1.5, 0.32), endcapMat, -1.6, 0.75, 1.38);
+        addMesh(new THREE.BoxGeometry(0.74, 0.04, 0.34), priceRailMat, -1.6, 0.80, 1.38);
+        // Endcap 2 (east gondola front)
+        addMesh(new THREE.BoxGeometry(0.72, 1.5, 0.32), endcapMat, 1.6, 0.75, 1.38);
+        addMesh(new THREE.BoxGeometry(0.74, 0.04, 0.34), priceRailMat, 1.6, 0.80, 1.38);
+    })();
+
     // East wall shelf unit
     (function() {
         var ewLen = 5.2;
@@ -3611,93 +4433,89 @@ function buildShop() {
         var ewHeights = [0.52, 0.98, 1.45];
         for (var i = 0; i < ewHeights.length; i++) {
             addMesh(new THREE.BoxGeometry(0.45, 0.03, ewLen), shelfMat, 4.65, ewHeights[i], ewCenterZ);
+            addMesh(new THREE.BoxGeometry(0.015, 0.045, ewLen), priceRailMat, 4.42, ewHeights[i] - 0.01, ewCenterZ);
         }
         colliders.push({ minX: 4.3, maxX: 5.0, minZ: -3.7, maxZ: 1.7 });
     })();
 
-    // Back wall refrigerated cooler bank
+    // 7. Back Wall Refrigerated Multi-Deck Cooler Bank
     (function() {
-        var refMat = makeMat(0x2c3e50);
+        var refMat = makeMat(0x1e293b);
         var glassDoorMat = new THREE.MeshLambertMaterial({ color: 0x90caf9, transparent: true, opacity: 0.35 });
         addMesh(new THREE.BoxGeometry(8.2, 2.2, 0.85), refMat, 0, 1.1, -5.55);
-        addMesh(new THREE.BoxGeometry(8.0, 1.9, 0.65), makeMat(0xf0f3f4), 0, 1.1, -5.5);
-        var coolLight = new THREE.PointLight(0xaed8f2, 0.6, 6);
+        addMesh(new THREE.BoxGeometry(8.0, 1.9, 0.65), makeMat(0xf8fafc), 0, 1.1, -5.5);
+        // Interior cold cyan LED lighting
+        var coolLight = new THREE.PointLight(0xa5f3fc, 0.7, 7.5);
         coolLight.position.set(0, 1.8, -5.2);
         scene.add(coolLight);
-        addMesh(new THREE.BoxGeometry(7.9, 0.03, 0.5), makeMat(0xbdc3c7), 0, 0.65, -5.35);
-        addMesh(new THREE.BoxGeometry(7.9, 0.03, 0.5), makeMat(0xbdc3c7), 0, 1.05, -5.35);
-        addMesh(new THREE.BoxGeometry(7.9, 0.03, 0.5), makeMat(0xbdc3c7), 0, 1.45, -5.35);
+
+        // Cooler interior shelves with price rails
+        var refHeights = [0.65, 1.05, 1.45];
+        for (var ri = 0; ri < refHeights.length; ri++) {
+            var ry = refHeights[ri];
+            addMesh(new THREE.BoxGeometry(7.9, 0.03, 0.5), makeMat(0xcbd5e1), 0, ry, -5.35);
+            addMesh(new THREE.BoxGeometry(7.9, 0.045, 0.015), priceRailMat, 0, ry - 0.01, -5.1);
+        }
+
+        // 4 Hinged glass display doors with vertical handles
         for (var d = 0; d < 4; d++) {
             var dx = -3.0 + d * 2.0;
             addMesh(new THREE.BoxGeometry(1.9, 1.9, 0.04), glassDoorMat, dx, 1.1, -5.1);
-            addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.4, 6), makeMat(0xd5dbdb), dx + 0.8, 1.1, -5.06);
+            addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.45, 8), makeMat(0xe2e8f0), dx + 0.8, 1.1, -5.06);
         }
         colliders.push({ minX: -4.3, maxX: 4.3, minZ: -6.0, maxZ: -4.9 });
     })();
 
-    // Produce table with fruit crates at entrance center (x: 0, z: 2.4)
+    // 8. Center Island Horizontal Chest Freezer (Морозильная бонета)
+    buildCenterFreezerIsland();
+
+    // 9. Produce Table with Crates & Self-Service Scale
     (function() {
         var woodMat = makeMat(0x8d5b4c);
+        var crateMat = makeMat(0xa16207);
         addMesh(new THREE.BoxGeometry(1.6, 0.06, 0.8), woodMat, 0, 0.75, 2.4);
         addMesh(new THREE.BoxGeometry(0.08, 0.75, 0.08), woodMat, -0.72, 0.375, 2.05);
         addMesh(new THREE.BoxGeometry(0.08, 0.75, 0.08), woodMat, 0.72, 0.375, 2.05);
         addMesh(new THREE.BoxGeometry(0.08, 0.75, 0.08), woodMat, -0.72, 0.375, 2.75);
         addMesh(new THREE.BoxGeometry(0.08, 0.75, 0.08), woodMat, 0.72, 0.375, 2.75);
-        addMesh(new THREE.BoxGeometry(0.74, 0.16, 0.74), makeMat(0xa16207), -0.4, 0.85, 2.4);
-        addMesh(new THREE.BoxGeometry(0.74, 0.16, 0.74), makeMat(0xa16207), 0.4, 0.85, 2.4);
-        colliders.push({ minX: -0.85, maxX: 0.85, minZ: 2.0, maxZ: 2.8 });
+
+        // Crates
+        addMesh(new THREE.BoxGeometry(0.74, 0.16, 0.74), crateMat, -0.4, 0.85, 2.4);
+        addMesh(new THREE.BoxGeometry(0.74, 0.16, 0.74), crateMat, 0.4, 0.85, 2.4);
+
+        // Digital Self-Service Scale
+        var scaleG = new THREE.Group();
+        scaleG.position.set(0, 0.78, 2.0);
+        addMesh(new THREE.BoxGeometry(0.32, 0.04, 0.28), makeMat(0xd1d5db), 0, 0.02, 0, scaleG);
+        addMesh(new THREE.BoxGeometry(0.30, 0.015, 0.24), makeMat(0xe2e8f0), 0, 0.05, 0, scaleG);
+        addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42, 8), makeMat(0x94a3b8), 0.12, 0.25, 0.10, scaleG);
+        var scaleHead = addMesh(new THREE.BoxGeometry(0.24, 0.18, 0.04), makeMat(0x334155), 0.12, 0.48, 0.10, scaleG);
+        scaleHead.rotation.x = -0.15;
+        var scaleTex = getProduceScaleTexture();
+        var sPlane = addMesh(new THREE.PlaneGeometry(0.21, 0.14), new THREE.MeshBasicMaterial({ map: scaleTex }), 0.12, 0.48, 0.078, scaleG);
+        sPlane.rotation.x = -0.15;
+        sPlane.rotation.y = Math.PI;
+
+        // Produce plastic bags dispenser roll
+        addMesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 12), makeMat(0xe0f2fe, { transparent: true, opacity: 0.6 }), -0.12, 0.12, 0.10, scaleG).rotation.z = Math.PI / 2;
+
+        var scaleHitbox = addMesh(new THREE.BoxGeometry(0.4, 0.6, 0.35), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.3, 0, scaleG);
+        scaleHitbox.userData = { name: 'Электронные весы (Контрольное взвешивание) [F]', type: 'produce_scale' };
+        interactables.push(scaleHitbox);
+
+        scene.add(scaleG);
+        colliders.push({ minX: -0.85, maxX: 0.85, minZ: 1.8, maxZ: 2.8 });
     })();
 
-    // Cash Register and Checkout Area
-    (function() {
-        var deskMat = makeMat(0x34495e);
-        var deskTopMat = makeMat(0xecf0f1);
-        addMesh(new THREE.BoxGeometry(2.0, 0.9, 0.85), deskMat, -3.2, 0.45, 3.6);
-        addMesh(new THREE.BoxGeometry(2.1, 0.05, 0.95), deskTopMat, -3.2, 0.925, 3.6);
+    // 10. Realistic Supermarket Checkout Area (Belt, Scanner, POS Screen, PIN-pad, Cashier Svetlana)
+    buildSupermarketCheckout();
 
-        addMesh(new THREE.CylinderGeometry(0.02, 0.02, 0.9, 8), makeMat(0xbdc3c7), -2.0, 0.45, 3.6);
-        addMesh(new THREE.BoxGeometry(0.03, 0.03, 1.2), makeMat(0xbdc3c7), -2.0, 0.8, 4.2);
+    // 11. Supermarket Entrance & Security Fixtures (EAS Gates, Wet Floor Sign, Carts, Locker Cells)
+    buildSupermarketEntranceFixtures();
 
-        var regMat = makeMat(0x222222);
-        var screenMat = makeMat(0x27ae60);
-        addMesh(new THREE.BoxGeometry(0.35, 0.08, 0.35), regMat, -3.4, 0.99, 3.55);
-        var sc = addMesh(new THREE.BoxGeometry(0.3, 0.22, 0.03), screenMat, -3.4, 1.12, 3.66);
-        sc.rotation.x = -0.2;
-        addMesh(new THREE.CylinderGeometry(0.03, 0.02, 0.16, 6), regMat, -3.15, 1.02, 3.45);
-        var pinpad = addMesh(new THREE.BoxGeometry(0.14, 0.06, 0.2), makeMat(0x333333), -2.8, 0.98, 3.35);
-        pinpad.rotation.y = 0.2;
-
-        var cashInteract = addMesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), makeMat(0x27ae60, { transparent: true, opacity: 0.0 }), -3.2, 1.15, 3.5);
-        cashInteract.userData = { name: 'Касса (Оплатить покупки)', type: 'cash_register' };
-        interactables.push(cashInteract);
-
-        // Cashier NPC
-        var apronMat = makeMat(0x27ae60);
-        var skinMat = makeMat(0xf8c291);
-        var cashierG = new THREE.Group();
-        cashierG.position.set(-3.2, 0, 4.3);
-        addMesh(new THREE.CylinderGeometry(0.24, 0.2, 1.1, 8), apronMat, 0, 0.85, 0, cashierG);
-        addMesh(new THREE.SphereGeometry(0.15, 12, 12), skinMat, 0, 1.5, 0, cashierG);
-        addMesh(new THREE.CylinderGeometry(0.17, 0.17, 0.08, 12), apronMat, 0, 1.62, 0, cashierG);
-        addMesh(new THREE.BoxGeometry(0.18, 0.02, 0.12), apronMat, 0, 1.6, -0.12, cashierG);
-        addMesh(new THREE.BoxGeometry(0.08, 0.04, 0.01), makeMat(0xffffff), 0, 1.1, -0.21, cashierG);
-        scene.add(cashierG);
-
-        colliders.push({ minX: -4.3, maxX: -2.0, minZ: 3.1, maxZ: 4.8 });
-    })();
-
-    // Stack of Shopping Baskets near entrance
-    (function() {
-        var basketMat = makeMat(0xe74c3c);
-        for (var b = 0; b < 4; b++) {
-            addMesh(new THREE.BoxGeometry(0.42, 0.16, 0.32), basketMat, 1.8, 0.1 + b * 0.12, 4.8);
-        }
-        colliders.push({ minX: 1.5, maxX: 2.1, minZ: 4.5, maxZ: 5.1 });
-    })();
-
-    // Glass Entrance / Exit sliding doors
+    // 12. Glass Automatic Sliding Doors & Outdoor Blizzard
     var exitDoor = addMesh(new THREE.BoxGeometry(2.4, 2.5, 0.15), new THREE.MeshLambertMaterial({ color: 0x88ccff, transparent: true, opacity: 0.4 }), 0, 1.25, 5.9);
-    exitDoor.userData = { name: 'Выход на улицу', type: 'shop_exit' };
+    exitDoor.userData = { name: 'Выход на улицу [F]', type: 'shop_exit' };
     interactables.push(exitDoor);
     addMesh(new THREE.BoxGeometry(0.08, 2.5, 0.18), makeMat(0xd5dbdb), -1.16, 1.25, 5.9);
     addMesh(new THREE.BoxGeometry(0.08, 2.5, 0.18), makeMat(0xd5dbdb), 1.16, 1.25, 5.9);
@@ -3705,6 +4523,7 @@ function buildShop() {
 
     // Snow falling outside the supermarket glass doors
     addSnow(5.95, 20, -12, 12, 0, 8.5, 1800, 0.075);
+
 
     // ==================== PROCEDURAL FOOD ITEM STOCKING ====================
     var tex = getShopTextures();
@@ -6366,6 +7185,27 @@ function handleInteraction(obj) {
         setTimeout(function() {
             loadChapter(8);
         }, 1200);
+    }
+        else if (d.type === 'cashier_npc') {
+        if (gameState.shopPaid) {
+            showThought('Кассир Светлана: «Спасибо за покупку! Чек у вас в пакете. Берегите себя на улице в такую метель!»');
+        } else if (gameState.cart.length > 0) {
+            showThought('Кассир Светлана: «Здравствуйте! Пакет нужен? Прикладывайте карту к терминалу или нажмите на кассу.»');
+        } else {
+            showThought('Кассир Светлана: «Здравствуйте! У нас сегодня скидки на пельмени и чай. Проходите, выбирайте!»');
+        }
+    }
+    else if (d.type === 'freezer_chest') {
+        showThought('Морозильная бонета: внутри морозный пар, температура -18.5°C. Аккуратно сложены пачки сибирских пельменей и замороженная клюква.');
+    }
+    else if (d.type === 'produce_scale') {
+        showThought('Контрольные весы самообслуживания: дисплей показывает 0.000 кг. Рядом висит рулон фасовочных полиэтиленовых пакетов.');
+    }
+    else if (d.type === 'caution_sign') {
+        showThought('Желтый знак: «ОСТОРОЖНО! МОКРЫЙ ПОЛ / CAUTION WET FLOOR». Снег с улицы тает у входа.');
+    }
+    else if (d.type === 'shopping_cart') {
+        showThought('Ряд металлических тележек для продуктов. Они сцеплены цепочками с монетоприемниками.');
     }
     else if (d.type === 'tree') {
         if (ch === 1) {
