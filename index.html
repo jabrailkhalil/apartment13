@@ -57,10 +57,7 @@
             <!-- Desktop Icons Grid -->
             <div class="comp-icon-grid">
                 <!-- Column 1: System & Documents -->
-                <div class="comp-icon" onclick="openCompApp('mycomp')">
-                    <div class="comp-icon-img icon-mycomp">🗄️</div>
-                    <div class="comp-icon-label">Мой компьютер</div>
-                </div>
+
                 <div class="comp-icon" onclick="openCompApp('report')">
                     <div class="comp-icon-img icon-doc">📄</div>
                     <div class="comp-icon-label">Отчет_13.txt</div>
@@ -75,10 +72,7 @@
                 </div>
 
                 <!-- Column 2: Work Applications -->
-                <div class="comp-icon" onclick="openCompApp('1c')">
-                    <div class="comp-icon-img icon-1c">📊</div>
-                    <div class="comp-icon-label">1С:Предприятие</div>
-                </div>
+
                 <div class="comp-icon" onclick="openCompApp('excel')">
                     <div class="comp-icon-img icon-excel">📈</div>
                     <div class="comp-icon-label">MS Excel</div>
@@ -233,45 +227,6 @@
                 </div>
             </div>
 
-            <!-- WINDOW 4: 📊 1С: ПРЕДПРИЯТИЕ 7.7 -->
-            <div id="comp-win-1c" class="comp-window" style="display: none; width: 660px; top: 11%; left: 20%;">
-                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-1c')">
-                    <div class="comp-win-title">
-                        <span>📊</span>
-                        <span>1С: Бухгалтерия 7.7 - [Сводная ведомость склада]</span>
-                    </div>
-                    <div class="comp-win-controls">
-                        <button onclick="closeCompApp('1c')">X</button>
-                    </div>
-                </div>
-                <div class="comp-win-menubar">
-                    <span>Операции</span><span>Документы</span><span>Журналы</span><span>Отчеты</span><span>Сервис</span><span>Справка</span>
-                </div>
-                <div class="comp-win-content 1c-content">
-                    <div class="app-1c-toolbar">
-                        <button onclick="alert1C('Документ успешно проведен.')">✔ Провести</button>
-                        <button onclick="alert1C('Печать заблокирована: нет бумаги в принтере.')">🖨 Печать</button>
-                        <button onclick="alert1C('Все остатки заморожены приказом штаба ГО.')">🔒 Блокировка</button>
-                    </div>
-                    <table class="table-1c">
-                        <thead>
-                            <tr>
-                                <th>Код</th><th>Номенклатура</th><th>Ед.</th><th>Остаток</th><th>Статус</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr><td>#014</td><td>Консервы мясные говяжьи</td><td>шт</td><td>140</td><td><span class="tag-warn">В РЕЗЕРВЕ</span></td></tr>
-                            <tr><td>#029</td><td>Медицинские аптечки АИ-2</td><td>уп</td><td>85</td><td><span class="tag-ok">ОТГРУЖЕНО</span></td></tr>
-                            <tr><td>#055</td><td>Генератор бензиновый 5.5кВт</td><td>шт</td><td>2</td><td><span class="tag-warn">ДЕФИЦИТ</span></td></tr>
-                            <tr><td>#089</td><td>Топливо дизельное (канистры 20л)</td><td>шт</td><td>60</td><td><span class="tag-crit">ЗАБЛОКИРОВАНО</span></td></tr>
-                            <tr><td>#104</td><td>Доски хвойные обрезные (укрепление)</td><td>м³</td><td>12</td><td><span class="tag-warn">В ОФИС</span></td></tr>
-                            <tr><td>#999</td><td>Спецкомплект «Карантин-ГО»</td><td>ящ</td><td>1</td><td><span class="tag-crit">ОШИБКА СВЯЗИ</span></td></tr>
-                        </tbody>
-                    </table>
-                    <div id="alert-1c-msg" class="app-1c-status">Примечание: Распоряжение шефа — закрыть баланс до 22:00 и покинуть здание.</div>
-                </div>
-            </div>
-
             <!-- WINDOW 5: 📈 MS EXCEL -->
             <div id="comp-win-excel" class="comp-window" style="display: none; width: 640px; top: 13%; left: 24%;">
                 <div class="comp-win-header excel-header" onmousedown="startDragWindow(event, 'comp-win-excel')">
@@ -306,35 +261,105 @@
             </div>
 
             <!-- WINDOW 6: 🌐 INTERNET EXPLORER -->
-            <div id="comp-win-browser" class="comp-window" style="display: none; width: 680px; top: 9%; left: 20%;">
+            <div id="comp-win-browser" class="comp-window" style="display: none; width: 750px; top: 6%; left: 16%;">
                 <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-browser')">
                     <div class="comp-win-title">
                         <span>🌐</span>
-                        <span>Internet Explorer - [Городской Портал Новостей]</span>
+                        <span>Internet Explorer - [Городской Портал Новостей и Объявлений]</span>
                     </div>
                     <div class="comp-win-controls">
                         <button onclick="closeCompApp('browser')">X</button>
                     </div>
                 </div>
                 <div class="browser-address-bar">
+                    <button class="browser-btn" title="Назад">◄</button>
+                    <button class="browser-btn" title="Вперед">►</button>
+                    <button class="browser-btn" title="Остановить">✕</button>
+                    <button class="browser-btn" title="Обновить">↻</button>
+                    <button class="browser-btn" title="Домой">🏠</button>
                     <span>Адрес:</span>
-                    <input type="text" readonly value="http://www.gorod-novosti.local/alert-urgent" class="browser-url">
+                    <input type="text" readonly value="http://www.gorod-portal.ru/news" class="browser-url">
                 </div>
                 <div class="comp-win-content browser-content">
-                    <div class="news-breaking-header">
-                        🚨 ЭКСТРЕННЫЙ ВЫПУСК НОВОСТЕЙ | 21:12
+                    <!-- PORTAL TOP HEADER -->
+                    <div class="portal-header">
+                        <div class="portal-logo">🌐 ГОРОДСКОЙ ПОРТАЛ «СЕВЕРОГРАД ОНЛАЙН»</div>
+                        <div class="portal-sub">Новости • Предупреждения • Реклама • Спецвыпуск 21:30</div>
                     </div>
-                    <div class="news-body">
-                        <h3>В ГОРОДЕ ВВЕДЕНО ЧРЕЗВЫЧАЙНОЕ ПОЛОЖЕНИЕ</h3>
-                        <p class="news-p">По сообщению МЧС и оперативного штаба, в центральном и северном районах зафиксированы массовые нападения зараженных. Электричество подается с перебоями, внешняя мобильная связь отключена.</p>
-                        <div class="news-alert-box">
-                            <strong>ПРАВИЛА БЕЗОПАСНОСТИ ДЛЯ ГРАЖДАН:</strong>
-                            <ul>
-                                <li>Не выходите на улицу после 21:30.</li>
-                                <li>Плотно заприте входные двери и забаррикадируйте окна.</li>
-                                <li>При звуках шагов за дверью или царапанья — соблюдайте полную тишину.</li>
-                                <li>Ждите утреннего оповещения сиренами гражданской обороны.</li>
-                            </ul>
+
+                    <!-- NEWS WINDOW 1: ОПАСНАЯ ИНФЕКЦИЯ И НАПАДЕНИЯ -->
+                    <div class="ie-subwin ie-news-infection">
+                        <div class="ie-subwin-header infection-header">
+                            <div class="ie-subwin-title"><span>🚨</span> ЭКСТРЕННОЕ СООБЩЕНИЕ МИНЗДРАВА И МЧС</div>
+                            <div class="ie-subwin-status">СРОЧНО В НОМЕР</div>
+                        </div>
+                        <div class="ie-subwin-body">
+                            <div class="infection-alert-badge">⚠️ КРАСНЫЙ УРОВЕНЬ ОПАСНОСТИ • ЭПИДЕМИЧЕСКАЯ УГРОЗА</div>
+                            <h3 class="infection-h3">ОПАСНАЯ ИНФЕКЦИЯ: ЛЮДИ ЗАРАЖАЮТСЯ И НАПАДАЮТ ДРУГ НА ДРУГА!</h3>
+                            <p class="infection-text">
+                                По экстренному заявлению городского оперативного штаба, зафиксирована масштабная вспышка неизлечимой инфекции. 
+                                Заражённые люди теряют рассудок, проявляют неконтролируемую агрессию и жестоко нападают друг на друга на улицах города.
+                            </p>
+                            <div class="infection-rules-box">
+                                <strong>ПРАВИЛА БЕЗОПАСНОСТИ ДЛЯ НАСЕЛЕНИЯ:</strong>
+                                <ul>
+                                    <li><strong>БУДЬТЕ ПРЕДЕЛЬНО ОСТОРОЖНЫ И НЕ ПОДХОДИТЕ К СТРАННЫМ ЛЮДЯМ</strong> с помутневшим взглядом, разорванной одеждой или неестественными резкими движениями!</li>
+                                    <li>Немедленно укройтесь в закрытых помещениях, заприте входные двери на все замки и занавесьте окна.</li>
+                                    <li>Ни в коем случае не открывайте дверь незнакомцам, кем бы они ни представлялись.</li>
+                                    <li>Соблюдайте полную тишину, не привлекайте внимание светом фонарей или телевизора.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEWS WINDOW 2: РЕКЛАМА ШОКОЛАДА -->
+                    <div class="ie-subwin ie-ad-chocolate">
+                        <div class="ie-subwin-header choc-header">
+                            <div class="ie-subwin-title"><span>🍫</span> РЕКЛАМА • КОНДИТЕРСКАЯ ФАБРИКА «КРАСНЫЙ ОКТЯБРЬ»</div>
+                            <div class="ie-subwin-tag">ВКУС ГОДА</div>
+                        </div>
+                        <div class="ie-subwin-body choc-body">
+                            <div class="choc-flex">
+                                <div class="choc-icon-box">🍫✨</div>
+                                <div class="choc-info">
+                                    <div class="choc-badge">ХИТ ПРОДАЖ • СКИДКА -30%</div>
+                                    <h3 class="choc-h3">Шоколад «Алёнка» и «Вдохновение» — Настоящее сладкое счастье!</h3>
+                                    <p class="choc-desc">
+                                        Подарите себе минутку уюта и тепла в морозный зимний вечер! Классический молочный шоколад из натуральных какао-бобов, нежнейшее цельное молоко и хрустящий дроблёный фундук.
+                                    </p>
+                                    <div class="choc-price-row">
+                                        <span class="choc-old-price">75 ₽</span>
+                                        <span class="choc-new-price">48 ₽</span>
+                                        <span class="choc-store">Спрашивайте в супермаркетах «Продукты 24»!</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEWS WINDOW 3: РЕКЛАМА ИГРЫ MINECRAFT -->
+                    <div class="ie-subwin ie-ad-minecraft">
+                        <div class="ie-subwin-header mc-ad-header">
+                            <div class="ie-subwin-title"><span>🟩</span> РЕКЛАМА ИГРЫ • ЛЕГЕНДАРНЫЙ МИРОВОЙ ХИТ</div>
+                            <div class="ie-subwin-tag">ВЫБОР ИГРОКОВ</div>
+                        </div>
+                        <div class="ie-subwin-body mc-ad-body">
+                            <div class="mc-ad-flex">
+                                <div class="mc-ad-icon-box">⛏️🟩</div>
+                                <div class="mc-ad-info">
+                                    <div class="mc-ad-badge">ГЛОБАЛЬНЫЙ ХИТ НА ПК • ВЕРСИЯ 1.5.2</div>
+                                    <h3 class="mc-ad-h3">MINECRAFT — Строй, исследуй, выживай!</h3>
+                                    <p class="mc-ad-desc">
+                                        Бесконечный кубический мир ждёт тебя! Добывай полезные ископаемые, возводи неприступные крепости, создавай редкие инструменты и побеждай монстров. Твоя фантазия — единственное ограничение!
+                                    </p>
+                                    <div class="mc-ad-action-row">
+                                        <button class="mc-launch-ad-btn" onclick="openCompApp('minecraft')">
+                                            <span>▶</span> ЗАПУСТИТЬ MINECRAFT (УЖЕ УСТАНОВЛЕН НА ПК)
+                                        </button>
+                                        <span class="mc-ad-free">100% БЕСПЛАТНО • ТВОРЧЕСКИЙ РЕЖИМ</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -440,35 +465,6 @@
                 </div>
             </div>
 
-            <!-- WINDOW 10: 🗄️ МОЙ КОМПЬЮТЕР -->
-            <div id="comp-win-mycomp" class="comp-window" style="display: none; width: 520px; top: 15%; left: 25%;">
-                <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-mycomp')">
-                    <div class="comp-win-title">
-                        <span>🗄️</span>
-                        <span>Мой компьютер</span>
-                    </div>
-                    <div class="comp-win-controls">
-                        <button onclick="closeCompApp('mycomp')">X</button>
-                    </div>
-                </div>
-                <div class="comp-win-content explorer-content">
-                    <div class="drives-grid">
-                        <div class="drive-item" onclick="alert('Диск 3.5 (A:): Дискета не вставлена.')">
-                            <span class="drive-icon">💾</span>
-                            <span>Диск 3.5 (A:)</span>
-                        </div>
-                        <div class="drive-item" onclick="alert('Системный диск (C:): Свободно 1.4 ГБ из 4.0 ГБ.')">
-                            <span class="drive-icon">💽</span>
-                            <span>Система (C:)</span>
-                        </div>
-                        <div class="drive-item" onclick="openCompApp('docs')">
-                            <span class="drive-icon">📁</span>
-                            <span>Документы (D:)</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- WINDOW 11: 🗑️ КОРЗИНА -->
             <div id="comp-win-trash" class="comp-window" style="display: none; width: 480px; top: 20%; left: 32%;">
                 <div class="comp-win-header" onmousedown="startDragWindow(event, 'comp-win-trash')">
@@ -504,7 +500,7 @@
                     <div class="start-item highlight-mc" onclick="openCompApp('minecraft')"><span>🟩</span> Minecraft</div>
                     <div class="start-item highlight-rb" onclick="openCompApp('roblox')"><span>🟥</span> Roblox Player</div>
                     <div class="start-divider"></div>
-                    <div class="start-item" onclick="openCompApp('1c')"><span>📊</span> 1С:Предприятие 7.7</div>
+
                     <div class="start-item" onclick="openCompApp('excel')"><span>📈</span> MS Excel</div>
                     <div class="start-item" onclick="openCompApp('browser')"><span>🌐</span> Internet Explorer</div>
                     <div class="start-item" onclick="openCompApp('mail')"><span>✉️</span> Outlook Express</div>

@@ -5288,79 +5288,64 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.fillStyle = '#008080';
         ctx.fillRect(0, 0, 512, 384);
 
-        // COLUMN 1: System & Documents (x: 12)
-        // 1. My Computer icon
-        ctx.fillStyle = '#94a3b8'; ctx.fillRect(16, 12, 24, 20);
-        ctx.fillStyle = '#38bdf8'; ctx.fillRect(19, 15, 18, 14);
-        ctx.fillStyle = '#475569'; ctx.fillRect(24, 32, 8, 4);
-        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Компьютер', 6, 44);
+        // COLUMN 1: Documents & Work (x: 16)
+        // 1. Отчет_13.txt
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(18, 12, 20, 24);
+        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1; ctx.strokeRect(18, 12, 20, 24);
+        ctx.fillStyle = '#3b82f6'; ctx.fillRect(21, 16, 14, 2); ctx.fillRect(21, 21, 14, 2); ctx.fillRect(21, 26, 10, 2);
+        ctx.fillStyle = '#fef08a'; ctx.font = 'bold 9px sans-serif';
+        ctx.fillText('Отчет_13', 9, 48);
 
-        // 2. 1C: Предприятие 7.7
-        ctx.fillStyle = '#eab308'; ctx.fillRect(16, 56, 24, 20);
-        ctx.fillStyle = '#dc2626'; ctx.fillRect(19, 59, 18, 14);
-        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px monospace';
-        ctx.fillText('1C', 22, 70);
-        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('1С:Склад', 9, 88);
-
-        // 3. MS Excel
-        ctx.fillStyle = '#15803d'; ctx.fillRect(16, 100, 24, 20);
-        ctx.fillStyle = '#22c55e'; ctx.fillRect(19, 103, 10, 14);
+        // 2. MS Excel
+        ctx.fillStyle = '#15803d'; ctx.fillRect(16, 56, 24, 20);
+        ctx.fillStyle = '#22c55e'; ctx.fillRect(19, 59, 10, 14);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('X', 21, 114);
+        ctx.fillText('X', 21, 70);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Excel', 16, 132);
+        ctx.fillText('Excel', 16, 88);
 
-        // 4. Почта (Outlook)
-        ctx.fillStyle = '#f8fafc'; ctx.fillRect(16, 144, 24, 18);
+        // 3. Почта (Outlook)
+        ctx.fillStyle = '#f8fafc'; ctx.fillRect(16, 100, 24, 18);
         ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 1; ctx.beginPath();
-        ctx.moveTo(16, 144); ctx.lineTo(28, 154); ctx.lineTo(40, 144); ctx.stroke();
+        ctx.moveTo(16, 100); ctx.lineTo(28, 110); ctx.lineTo(40, 100); ctx.stroke();
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Почта', 14, 174);
+        ctx.fillText('Почта', 14, 130);
 
-        // 5. Корзина
+        // 4. Корзина
         ctx.fillStyle = '#94a3b8';
         ctx.beginPath();
-        ctx.moveTo(18, 188); ctx.lineTo(38, 188); ctx.lineTo(35, 208); ctx.lineTo(21, 208);
+        ctx.moveTo(18, 144); ctx.lineTo(38, 144); ctx.lineTo(35, 164); ctx.lineTo(21, 164);
         ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#38bdf8'; ctx.fillRect(21, 192, 14, 14);
+        ctx.fillStyle = '#38bdf8'; ctx.fillRect(21, 148, 14, 14);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Корзина', 10, 220);
+        ctx.fillText('Корзина', 10, 176);
 
-        // COLUMN 2: Work Tools (x: 68)
-        // 6. Отчет_13.txt
-        ctx.fillStyle = '#ffffff'; ctx.fillRect(72, 12, 20, 24);
-        ctx.strokeStyle = '#000000'; ctx.lineWidth = 1; ctx.strokeRect(72, 12, 20, 24);
-        ctx.fillStyle = '#3b82f6'; ctx.fillRect(75, 16, 14, 2); ctx.fillRect(75, 21, 14, 2); ctx.fillRect(75, 26, 10, 2);
-        ctx.fillStyle = '#fef08a'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Отчет_13', 63, 48);
-
-        // 7. Internet Explorer (Браузер)
+        // COLUMN 2: Internet & Utilities (x: 68)
+        // 5. Internet Explorer (Браузер)
         ctx.fillStyle = '#0284c7'; ctx.beginPath();
-        ctx.arc(82, 66, 11, 0, Math.PI * 2); ctx.fill();
+        ctx.arc(82, 22, 11, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#fef08a'; ctx.beginPath();
-        ctx.arc(84, 63, 13, 0.4, 2.8); ctx.stroke();
+        ctx.arc(84, 19, 13, 0.4, 2.8); ctx.stroke();
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Браузер', 66, 88);
+        ctx.fillText('Браузер', 66, 44);
 
-        // 8. Калькулятор
-        ctx.fillStyle = '#64748b'; ctx.fillRect(72, 100, 22, 22);
-        ctx.fillStyle = '#94a3b8'; ctx.fillRect(75, 103, 16, 6);
+        // 6. Калькулятор
+        ctx.fillStyle = '#64748b'; ctx.fillRect(72, 56, 22, 22);
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(75, 59, 16, 6);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 8px monospace';
-        ctx.fillText('+-=', 75, 118);
+        ctx.fillText('+-=', 75, 74);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Калькулятор', 55, 134);
+        ctx.fillText('Калькулятор', 55, 90);
 
-        // 9. Заметки (Блокнот)
-        ctx.fillStyle = '#fef08a'; ctx.fillRect(72, 144, 20, 22);
-        ctx.strokeStyle = '#ca8a04'; ctx.strokeRect(72, 144, 20, 22);
-        ctx.fillStyle = '#1e293b'; ctx.fillRect(75, 148, 14, 2); ctx.fillRect(75, 153, 14, 2);
+        // 7. Заметки (Блокнот)
+        ctx.fillStyle = '#fef08a'; ctx.fillRect(72, 100, 20, 22);
+        ctx.strokeStyle = '#ca8a04'; ctx.strokeRect(72, 100, 20, 22);
+        ctx.fillStyle = '#1e293b'; ctx.fillRect(75, 104, 14, 2); ctx.fillRect(75, 109, 14, 2);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
-        ctx.fillText('Заметки', 66, 178);
+        ctx.fillText('Заметки', 66, 134);
 
         // COLUMN 3: GAMES (MINECRAFT & ROBLOX!) (x: 126)
-        // 10. 🟩 MINECRAFT.EXE
+        // 8. 🟩 MINECRAFT.EXE
         ctx.fillStyle = '#4a2e18'; ctx.fillRect(130, 12, 24, 24);
         ctx.fillStyle = '#15803d'; ctx.fillRect(130, 12, 24, 8);
         ctx.fillStyle = '#22c55e';
@@ -5368,7 +5353,7 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.fillStyle = '#facc15'; ctx.font = 'bold 9px sans-serif';
         ctx.fillText('Minecraft', 122, 48);
 
-        // 11. 🟥 ROBLOX PLAYER
+        // 9. 🟥 ROBLOX PLAYER
         ctx.fillStyle = '#e11d48'; ctx.fillRect(130, 56, 24, 24);
         ctx.fillStyle = '#1e293b'; ctx.fillRect(138, 64, 8, 8);
         ctx.fillStyle = '#ffffff'; ctx.font = 'bold 9px sans-serif';
@@ -5504,7 +5489,7 @@ function getOfficeComputerScreenTexture(isPlayer) {
         ctx.fillRect(12, 12, 488, 22);
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 11px sans-serif';
-        ctx.fillText('1C: БУХГАЛТЕРИЯ 7.7 - [Сводная ведомость поставок (Ноябрь)]', 20, 27);
+        ctx.fillText('MS EXCEL 97 - [Сводная ведомость поставок (Ноябрь)]', 20, 27);
 
         // Table headers
         ctx.fillStyle = '#cbd5e1';
@@ -7343,13 +7328,11 @@ function getAppTitle(appId) {
         'report': '📄 Отчет_13.txt',
         'minecraft': '🟩 Minecraft 1.5.2',
         'roblox': '🟥 Roblox Player',
-        '1c': '📊 1С:Бухгалтерия 7.7',
         'excel': '📈 MS Excel',
         'browser': '🌐 Internet Explorer',
         'mail': '✉️ Outlook Express',
         'calc': '🧮 Калькулятор',
         'notepad': '📝 Заметки',
-        'mycomp': '🗄️ Мой компьютер',
         'trash': '🗑️ Корзина'
     };
     return titles[appId] || appId;
@@ -7600,11 +7583,8 @@ window.closeRobloxModal = function() {
     if (modal) modal.style.display = 'none';
 };
 
-// 1C helper
-window.alert1C = function(text) {
-    var el = document.getElementById('alert-1c-msg');
-    if (el) el.textContent = text;
-};
+// 1C helper (neutralized)
+window.alert1C = function() {};
 
 // Outlook Express helper
 window.showMailBody = function(idx) {

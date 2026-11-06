@@ -850,53 +850,316 @@ canvas {
     font-weight: bold;
 }
 
-/* BROWSER IE */
+/* BROWSER IE & 3 NEWS/AD WINDOWS */
 .browser-address-bar {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     background: #c0c0c0;
     padding: 4px 8px;
     border-bottom: 1px solid #808080;
     font-size: 12px;
 }
 
+.browser-btn {
+    background: #c0c0c0;
+    border: 1px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+    padding: 2px 7px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.browser-btn:active {
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
 .browser-url {
     flex: 1;
     background: #ffffff;
     border: 1px solid #808080;
-    padding: 3px 6px;
+    padding: 3px 8px;
     font-family: monospace;
     font-size: 11px;
 }
 
-.news-breaking-header {
-    background: #dc2626;
+.browser-content {
+    background: #d4d8de;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Portal top header banner */
+.portal-header {
+    background: linear-gradient(90deg, #1e3a8a, #2563eb);
     color: #ffffff;
-    padding: 6px 12px;
+    padding: 8px 14px;
+    border: 1px solid #1d4ed8;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+.portal-logo {
+    font-size: 14px;
     font-weight: bold;
-    font-size: 13px;
     letter-spacing: 1px;
 }
 
-.news-body {
+.portal-sub {
+    font-size: 11px;
+    color: #bfdbfe;
+    margin-top: 2px;
+}
+
+/* 3 Retro Sub-Windows inside IE */
+.ie-subwin {
     background: #ffffff;
-    padding: 15px;
-    border: 1px solid #cbd5e1;
-    margin-top: 8px;
+    border: 2px solid;
+    border-color: #ffffff #555555 #555555 #ffffff;
+    box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
 }
 
-.news-body h3 {
-    margin: 0 0 10px 0;
-    color: #991b1b;
+.ie-subwin-header {
+    padding: 5px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #ffffff;
+    letter-spacing: 0.5px;
 }
 
-.news-alert-box {
-    background: #fee2e2;
-    border-left: 4px solid #ef4444;
-    padding: 10px;
-    margin-top: 10px;
+.ie-subwin-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ie-subwin-status, .ie-subwin-tag {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(0,0,0,0.35);
+}
+
+.ie-subwin-body {
+    padding: 12px 14px;
     font-size: 12px;
+    line-height: 1.5;
+}
+
+/* 1. Infection news subwin */
+.infection-header {
+    background: linear-gradient(90deg, #991b1b, #dc2626);
+}
+
+.infection-alert-badge {
+    display: inline-block;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #f87171;
+    font-weight: bold;
+    font-size: 11px;
+    padding: 3px 8px;
+    margin-bottom: 8px;
+}
+
+.infection-h3 {
+    margin: 0 0 8px 0;
+    color: #991b1b;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.infection-text {
+    margin: 0 0 10px 0;
+    color: #1e293b;
+    font-size: 12px;
+}
+
+.infection-rules-box {
+    background: #fff1f2;
+    border-left: 4px solid #dc2626;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #881337;
+}
+
+.infection-rules-box ul {
+    margin: 4px 0 0 16px;
+    padding: 0;
+}
+
+.infection-rules-box li {
+    margin-bottom: 4px;
+}
+
+/* 2. Chocolate Ad subwin */
+.choc-header {
+    background: linear-gradient(90deg, #5c2d11, #854d0e);
+}
+
+.choc-body {
+    background: #fffdf5;
+}
+
+.choc-flex {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.choc-icon-box {
+    font-size: 38px;
+    background: #fef3c7;
+    border: 2px dashed #d97706;
+    padding: 12px 16px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.choc-info {
+    flex: 1;
+}
+
+.choc-badge {
+    display: inline-block;
+    background: #fbbf24;
+    color: #78350f;
+    font-weight: bold;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 4px;
+}
+
+.choc-h3 {
+    margin: 0 0 6px 0;
+    color: #78350f;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.choc-desc {
+    margin: 0 0 8px 0;
+    color: #451a03;
+    font-size: 11px;
+}
+
+.choc-price-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.choc-old-price {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 12px;
+}
+
+.choc-new-price {
+    color: #dc2626;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.choc-store {
+    color: #15803d;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+/* 3. Minecraft Ad subwin */
+.mc-ad-header {
+    background: linear-gradient(90deg, #15803d, #22c55e);
+}
+
+.mc-ad-body {
+    background: #f4fbf7;
+}
+
+.mc-ad-flex {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.mc-ad-icon-box {
+    font-size: 38px;
+    background: #dcfce7;
+    border: 2px solid #16a34a;
+    padding: 12px 16px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.mc-ad-info {
+    flex: 1;
+}
+
+.mc-ad-badge {
+    display: inline-block;
+    background: #15803d;
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    margin-bottom: 4px;
+}
+
+.mc-ad-h3 {
+    margin: 0 0 6px 0;
+    color: #14532d;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.mc-ad-desc {
+    margin: 0 0 8px 0;
+    color: #166534;
+    font-size: 11px;
+}
+
+.mc-ad-action-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.mc-launch-ad-btn {
+    background: #16a34a;
+    color: #ffffff;
+    border: 2px solid;
+    border-color: #86efac #14532d #14532d #86efac;
+    padding: 6px 14px;
+    font-weight: bold;
+    font-size: 11px;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.mc-launch-ad-btn:hover {
+    background: #22c55e;
+}
+
+.mc-launch-ad-btn:active {
+    border-color: #14532d #86efac #86efac #14532d;
+    transform: translateY(1px);
+}
+
+.mc-ad-free {
+    color: #15803d;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 /* OUTLOOK MAIL */
