@@ -2071,3 +2071,46 @@ canvas {
 
 
 
+
+.mc-btn-game {
+    font-size: 11px;
+    padding: 6px 10px;
+}
+
+.mc-btn-attack {
+    background: #b91c1c;
+    border-color: #ef4444 #7f1d1d #7f1d1d #ef4444;
+    color: #ffffff;
+    font-size: 12px;
+}
+
+.mc-btn-attack:hover {
+    background: #dc2626;
+}
+
+.mc-btn-eat {
+    background: #b45309;
+    border-color: #f59e0b #78350f #78350f #f59e0b;
+}
+
+.mc-btn-eat:hover {
+    background: #d97706;
+}
+
+.mc-btn-jump {
+    background: #0284c7;
+    border-color: #38bdf8 #0369a1 #0369a1 #38bdf8;
+}
+
+.mc-btn-jump:hover {
+    background: #0ea5e9;
+}
+
+.mc-btn-respawn {
+    background: #15803d;
+    border-color: #4ade80 #14532d #14532d #4ade80;
+}
+
+.mc-btn-respawn:hover {
+    background: #16a34a;
+}

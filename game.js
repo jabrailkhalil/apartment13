@@ -7300,6 +7300,7 @@ window.openCompApp = function(appId) {
 };
 
 window.closeCompApp = function(appId) {
+    if (appId === 'minecraft' && window.stopMCSurvival) window.stopMCSurvival();
     var winId = (appId === 'report' || appId === 'docs') ? 'comp-window' : ('comp-win-' + appId);
     var el = document.getElementById(winId);
     if (el) el.style.display = 'none';
@@ -7368,122 +7369,675 @@ function renderTaskbarTabs() {
     }
 }
 
-// Minecraft in-game sandbox & launcher logic
-var mcActiveBlock = '#15803d'; // Default grass
-var mcGrid = null;
-var MC_COLS = 28;
-var MC_ROWS = 13;
-var MC_CELL = 20;
+// ==================== MINECRAFT SURVIVAL ZOMBIE COMBAT ENGINE ====================
+var mcSurvivalRunning = false;
+var mcAnimId = null;
+var mcCanvas = null;
+var mcCtx = null;
+var mcSteve = null;
+var mcZombies = [];
+var mcParticles = [];
+var mcSpawnTimer = 0;
+var mcGroanTimer = 0;
+var mcKeys = {};
+var mcKeyboardBound = false;
 
-function initMCGrid() {
-    mcGrid = [];
-    for (var r = 0; r < MC_ROWS; r++) {
-        var row = [];
-        for (var c = 0; c < MC_COLS; c++) {
-            if (r > 9) row.push('#78350f'); // dirt
-            else if (r === 9) row.push('#15803d'); // grass
-            else row.push(null); // sky
-        }
-        mcGrid.push(row);
-    }
-    // Pre-place a nice oak tree on left
-    for (var th = 5; th < 9; th++) mcGrid[th][5] = '#b45309'; // wood
-    for (var lx = 3; lx <= 7; lx++) {
-        for (var ly = 2; ly <= 4; ly++) {
-            mcGrid[ly][lx] = '#16a34a'; // leaves
-        }
+// Audio Synthesizers for Minecraft Combat
+function playMCSwordSwing() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(460, now);
+    osc.frequency.exponentialRampToValueAtTime(130, now + 0.12);
+    g.gain.setValueAtTime(0.2, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.15);
+}
+
+function playMCHitSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(190, now);
+    osc.frequency.linearRampToValueAtTime(75, now + 0.08);
+    g.gain.setValueAtTime(0.25, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.1);
+}
+
+function playMCSteveHurtSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(115, now);
+    osc.frequency.linearRampToValueAtTime(60, now + 0.15);
+    g.gain.setValueAtTime(0.3, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.18);
+}
+
+function playMCZombieGroan() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    var osc = ctx.createOscillator();
+    var g = ctx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(70, now);
+    osc.frequency.linearRampToValueAtTime(52, now + 0.35);
+    g.gain.setValueAtTime(0.14, now);
+    g.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+    osc.connect(g);
+    g.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.4);
+}
+
+function playMCEatSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    var now = ctx.currentTime;
+    for (var i = 0; i < 3; i++) {
+        var t = now + i * 0.08;
+        var osc = ctx.createOscillator();
+        var g = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(260 + i * 50, t);
+        g.gain.setValueAtTime(0.16, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + 0.05);
+        osc.connect(g);
+        g.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.06);
     }
 }
 
-function renderMCCanvas() {
-    var cv = document.getElementById('mc-canvas');
-    if (!cv) return;
-    var ctx = cv.getContext('2d');
-    if (!ctx) return;
+function initMCSurvival() {
+    mcSteve = {
+        x: 275,
+        y: 200,
+        vx: 0,
+        vy: 0,
+        isGrounded: true,
+        facing: 1, // 1: right, -1: left
+        hp: 20, // 10 full hearts (2 HP each)
+        maxHp: 20,
+        kills: 0,
+        level: 1,
+        xp: 0,
+        attacking: false,
+        attackCooldown: 0,
+        hurtTimer: 0,
+        isDead: false,
+        steaks: 3,
+        walkAnim: 0
+    };
+    mcZombies = [];
+    mcParticles = [];
+    mcSpawnTimer = 40;
+    mcGroanTimer = 90;
 
-    // Sky
-    ctx.fillStyle = '#60a5fa';
-    ctx.fillRect(0, 0, cv.width, cv.height);
+    // Spawn 2 starting zombies
+    spawnMCZombie(-25);
+    spawnMCZombie(605);
+}
 
-    // Sun
-    ctx.fillStyle = '#fef08a';
-    ctx.fillRect(cv.width - 50, 15, 30, 30);
+function spawnMCZombie(customX) {
+    var fromLeft = Math.random() < 0.5;
+    var zx = (customX !== undefined) ? customX : (fromLeft ? -25 : 605);
+    mcZombies.push({
+        x: zx,
+        y: 200,
+        hp: 18,
+        maxHp: 18,
+        speed: 1.0 + Math.random() * 0.7,
+        facing: (zx < 275) ? 1 : -1,
+        hurtTimer: 0,
+        attackCooldown: 0,
+        walkAnim: Math.random() * 10
+    });
+}
 
-    // Clouds
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    ctx.fillRect(30, 20, 60, 16);
-    ctx.fillRect(200, 35, 80, 18);
-    ctx.fillRect(380, 15, 70, 16);
+window.mcAttack = function() {
+    if (!mcSteve || mcSteve.isDead || mcSteve.attackCooldown > 0) return;
+    mcSteve.attacking = true;
+    mcSteve.attackCooldown = 15;
+    playMCSwordSwing();
 
-    if (!mcGrid) initMCGrid();
+    var hitAny = false;
+    var reach = 60;
+    for (var i = 0; i < mcZombies.length; i++) {
+        var z = mcZombies[i];
+        var dx = z.x - mcSteve.x;
+        var inFront = (mcSteve.facing === 1) ? (dx > -15 && dx < reach) : (dx < 15 && dx > -reach);
+        if (inFront && Math.abs(z.y - mcSteve.y) < 32) {
+            z.hp -= 7; // Diamond sword damage
+            z.hurtTimer = 10;
+            z.x += mcSteve.facing * 28; // Knockback
+            hitAny = true;
 
-    // Draw blocks
-    for (var r = 0; r < MC_ROWS; r++) {
-        for (var c = 0; c < MC_COLS; c++) {
-            var color = mcGrid[r][c];
-            if (color) {
-                var bx = c * MC_CELL;
-                var by = r * MC_CELL;
-                ctx.fillStyle = color;
-                ctx.fillRect(bx, by, MC_CELL, MC_CELL);
-                // Subtle 3D bevel on pixel block
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
-                ctx.strokeRect(bx + 1, by + 1, MC_CELL - 2, MC_CELL - 2);
-                ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-                ctx.strokeRect(bx, by, MC_CELL, MC_CELL);
+            // Critical hit spark particles
+            for (var p = 0; p < 6; p++) {
+                mcParticles.push({
+                    x: z.x + 8,
+                    y: z.y + 14,
+                    vx: (Math.random() - 0.5) * 4 + mcSteve.facing * 3,
+                    vy: -Math.random() * 3 - 1,
+                    color: '#facc15',
+                    life: 14
+                });
+            }
+
+            if (z.hp <= 0) {
+                mcSteve.kills++;
+                mcSteve.xp += 35;
+                if (mcSteve.xp >= 100) {
+                    mcSteve.level++;
+                    mcSteve.xp -= 100;
+                    mcSteve.hp = Math.min(mcSteve.maxHp, mcSteve.hp + 6);
+                }
+                // Death smoke poof
+                for (var sp = 0; sp < 12; sp++) {
+                    mcParticles.push({
+                        x: z.x + 8,
+                        y: z.y + 16,
+                        vx: (Math.random() - 0.5) * 3,
+                        vy: -Math.random() * 2.5 - 0.5,
+                        color: '#f8fafc',
+                        life: 20
+                    });
+                }
+                if (Math.random() < 0.35) {
+                    mcSteve.steaks++;
+                }
             }
         }
     }
+
+    if (hitAny) {
+        playMCHitSound();
+    }
+};
+
+window.mcEatSteak = function() {
+    if (!mcSteve || mcSteve.isDead || mcSteve.steaks <= 0) return;
+    if (mcSteve.hp >= mcSteve.maxHp) return;
+    mcSteve.steaks--;
+    mcSteve.hp = Math.min(mcSteve.maxHp, mcSteve.hp + 6);
+    playMCEatSound();
+    for (var p = 0; p < 6; p++) {
+        mcParticles.push({
+            x: mcSteve.x + 8,
+            y: mcSteve.y + 8,
+            vx: (Math.random() - 0.5) * 2,
+            vy: -Math.random() * 2 - 1,
+            color: '#ef4444',
+            life: 25
+        });
+    }
+};
+
+window.mcMoveLeft = function(active) {
+    if (mcSteve) {
+        mcKeys['ArrowLeft'] = active;
+        if (active) mcSteve.facing = -1;
+    }
+};
+
+window.mcMoveRight = function(active) {
+    if (mcSteve) {
+        mcKeys['ArrowRight'] = active;
+        if (active) mcSteve.facing = 1;
+    }
+};
+
+window.mcJump = function() {
+    if (mcSteve && !mcSteve.isDead && mcSteve.isGrounded) {
+        mcSteve.vy = -7.5;
+        mcSteve.isGrounded = false;
+    }
+};
+
+window.mcRespawn = function() {
+    initMCSurvival();
+};
+
+function mcKeyDownHandler(e) {
+    if (!mcSurvivalRunning) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        mcKeys['ArrowLeft'] = true;
+        if (mcSteve) mcSteve.facing = -1;
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        mcKeys['ArrowRight'] = true;
+        if (mcSteve) mcSteve.facing = 1;
+    } else if (e.code === 'Space') {
+        e.preventDefault();
+        window.mcAttack();
+    } else if (e.code === 'ArrowUp' || e.code === 'KeyW') {
+        e.preventDefault();
+        window.mcJump();
+    } else if (e.code === 'KeyE') {
+        e.preventDefault();
+        window.mcEatSteak();
+    }
 }
 
-window.mcSelectBlock = function(color, btn) {
-    mcActiveBlock = color;
-    var all = document.querySelectorAll('.mc-pal-btn');
-    for (var i = 0; i < all.length; i++) all[i].style.outline = 'none';
-    if (btn) btn.style.outline = '2px solid #ffffff';
-};
+function mcKeyUpHandler(e) {
+    if (!mcSurvivalRunning) return;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        mcKeys['ArrowLeft'] = false;
+    } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        mcKeys['ArrowRight'] = false;
+    }
+}
 
-window.mcBuildHouse = function() {
-    if (!mcGrid) initMCGrid();
-    // Clear area
-    for (var r = 3; r <= 8; r++) {
-        for (var c = 12; c <= 20; c++) {
-            mcGrid[r][c] = null;
+function mcLoop() {
+    if (!mcSurvivalRunning) return;
+
+    // UPDATE
+    if (mcSteve) {
+        if (!mcSteve.isDead) {
+            // Horizontal speed
+            var speed = 2.8;
+            if (mcKeys['ArrowLeft']) {
+                mcSteve.x -= speed;
+                mcSteve.facing = -1;
+                mcSteve.walkAnim += 0.25;
+            } else if (mcKeys['ArrowRight']) {
+                mcSteve.x += speed;
+                mcSteve.facing = 1;
+                mcSteve.walkAnim += 0.25;
+            } else {
+                mcSteve.walkAnim = 0;
+            }
+
+            // Bounds
+            mcSteve.x = Math.max(10, Math.min(550, mcSteve.x));
+
+            // Gravity & Jump
+            mcSteve.vy += 0.45;
+            mcSteve.y += mcSteve.vy;
+            if (mcSteve.y >= 200) {
+                mcSteve.y = 200;
+                mcSteve.vy = 0;
+                mcSteve.isGrounded = true;
+            }
+
+            // Attack cooldown
+            if (mcSteve.attackCooldown > 0) {
+                mcSteve.attackCooldown--;
+                if (mcSteve.attackCooldown <= 0) mcSteve.attacking = false;
+            }
+
+            // Hurt timer
+            if (mcSteve.hurtTimer > 0) mcSteve.hurtTimer--;
+
+            // Spawn zombies
+            mcSpawnTimer--;
+            if (mcSpawnTimer <= 0) {
+                var maxZ = 3 + Math.floor(mcSteve.kills / 4);
+                if (mcZombies.length < Math.min(8, maxZ)) {
+                    spawnMCZombie();
+                }
+                mcSpawnTimer = Math.max(65, 170 - mcSteve.kills * 4);
+            }
+
+            // Zombie Groans
+            mcGroanTimer--;
+            if (mcGroanTimer <= 0) {
+                if (mcZombies.length > 0) playMCZombieGroan();
+                mcGroanTimer = 160 + Math.floor(Math.random() * 120);
+            }
+        }
+
+        // Update Zombies
+        for (var zi = mcZombies.length - 1; zi >= 0; zi--) {
+            var z = mcZombies[zi];
+            if (z.hp <= 0) {
+                mcZombies.splice(zi, 1);
+                continue;
+            }
+
+            if (z.hurtTimer > 0) z.hurtTimer--;
+            if (z.attackCooldown > 0) z.attackCooldown--;
+
+            if (!mcSteve.isDead) {
+                var dx = mcSteve.x - z.x;
+                z.facing = (dx > 0) ? 1 : -1;
+                z.walkAnim += 0.18;
+
+                if (Math.abs(dx) > 20) {
+                    z.x += z.facing * z.speed;
+                } else {
+                    if (z.attackCooldown <= 0) {
+                        z.attackCooldown = 45;
+                        mcSteve.hp -= 3;
+                        mcSteve.hurtTimer = 14;
+                        mcSteve.x += z.facing * 14;
+                        playMCSteveHurtSound();
+
+                        if (mcSteve.hp <= 0) {
+                            mcSteve.hp = 0;
+                            mcSteve.isDead = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Update Particles
+        for (var pi = mcParticles.length - 1; pi >= 0; pi--) {
+            var part = mcParticles[pi];
+            part.x += part.vx;
+            part.y += part.vy;
+            part.life--;
+            if (part.life <= 0) mcParticles.splice(pi, 1);
         }
     }
-    // Walls
-    for (var r = 5; r <= 8; r++) {
-        for (var c = 13; c <= 19; c++) {
-            mcGrid[r][c] = '#b45309'; // wood
+
+    // RENDER
+    if (mcCtx && mcCanvas) {
+        var ctx = mcCtx;
+        var w = mcCanvas.width;
+        var h = mcCanvas.height;
+
+        // Dark Night Sky
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, w, h);
+
+        // Stars
+        ctx.fillStyle = '#ffffff';
+        var stars = [
+            [25, 20], [70, 40], [115, 15], [175, 45], [235, 25],
+            [305, 35], [365, 18], [425, 42], [485, 22], [545, 50],
+            [45, 65], [145, 80], [285, 70], [405, 85], [515, 75]
+        ];
+        for (var s = 0; s < stars.length; s++) {
+            ctx.fillRect(stars[s][0], stars[s][1], 2, 2);
+        }
+
+        // Square Moon
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(495, 18, 36, 36);
+        ctx.fillStyle = '#cbd5e1';
+        ctx.fillRect(499, 22, 12, 12);
+        ctx.fillRect(515, 36, 10, 10);
+
+        // Mountains silhouette
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.moveTo(0, 236);
+        ctx.lineTo(75, 170); ctx.lineTo(155, 200); ctx.lineTo(255, 150);
+        ctx.lineTo(375, 210); ctx.lineTo(465, 160); ctx.lineTo(580, 236);
+        ctx.closePath(); ctx.fill();
+
+        // Ground: Grass & Dirt Blocks
+        for (var gx = 0; gx < w; gx += 20) {
+            ctx.fillStyle = '#78350f';
+            ctx.fillRect(gx, 236, 20, 44);
+            ctx.fillStyle = '#15803d';
+            ctx.fillRect(gx, 236, 20, 6);
+            ctx.strokeStyle = '#451a03';
+            ctx.strokeRect(gx, 236, 20, 44);
+        }
+
+        // 2 Flickering Torches
+        var torches = [85, 475];
+        for (var ti = 0; ti < torches.length; ti++) {
+            var tx = torches[ti];
+            ctx.fillStyle = '#b45309';
+            ctx.fillRect(tx + 2, 212, 4, 24);
+            var fOff = (Math.random() - 0.5) * 2;
+            ctx.fillStyle = '#f97316';
+            ctx.fillRect(tx + 1 + fOff, 206, 6, 6);
+            ctx.fillStyle = '#fef08a';
+            ctx.fillRect(tx + 2 + fOff, 208, 4, 4);
+        }
+
+        // Draw Zombies
+        for (var zi = 0; zi < mcZombies.length; zi++) {
+            var z = mcZombies[zi];
+            drawMCZombie(ctx, z);
+        }
+
+        // Draw Steve
+        if (mcSteve) {
+            drawMCSteve(ctx, mcSteve);
+        }
+
+        // Draw Particles
+        for (var pi = 0; pi < mcParticles.length; pi++) {
+            var part = mcParticles[pi];
+            ctx.fillStyle = part.color;
+            ctx.fillRect(part.x, part.y, 4, 4);
+        }
+
+        // HUD on Canvas
+        drawMCHUD(ctx);
+
+        // Game Over Overlay
+        if (mcSteve && mcSteve.isDead) {
+            ctx.fillStyle = 'rgba(153, 27, 27, 0.78)';
+            ctx.fillRect(0, 0, w, h);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 24px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('ВЫ ПОГИБЛИ!', w / 2, 105);
+
+            ctx.font = 'bold 14px monospace';
+            ctx.fillStyle = '#fef08a';
+            ctx.fillText('Зомби одолели вас в ночном бою...', w / 2, 135);
+            ctx.fillText('Убито зомби: ' + mcSteve.kills, w / 2, 160);
         }
     }
-    // Window
-    mcGrid[6][14] = '#93c5fd'; // glass
-    mcGrid[6][18] = '#93c5fd'; // glass
-    // Door
-    mcGrid[7][16] = '#451a03';
-    mcGrid[8][16] = '#451a03';
-    // Roof (stairs/brick)
-    for (var c = 12; c <= 20; c++) mcGrid[4][c] = '#b91c1c'; // brick
-    for (var c = 13; c <= 19; c++) mcGrid[3][c] = '#b91c1c';
-    renderMCCanvas();
-};
 
-window.mcBuildTree = function() {
-    if (!mcGrid) initMCGrid();
-    var tx = Math.floor(Math.random() * (MC_COLS - 6)) + 2;
-    for (var th = 5; th < 9; th++) mcGrid[th][tx] = '#b45309';
-    for (var lx = tx - 2; lx <= tx + 2; lx++) {
-        for (var ly = 2; ly <= 4; ly++) {
-            if (lx >= 0 && lx < MC_COLS) mcGrid[ly][lx] = '#16a34a';
+    mcAnimId = requestAnimationFrame(mcLoop);
+}
+
+function drawMCSteve(ctx, s) {
+    var sx = Math.floor(s.x);
+    var sy = Math.floor(s.y);
+    var hurt = (s.hurtTimer > 0);
+
+    ctx.save();
+    if (s.facing === -1) {
+        ctx.translate(sx + 10, sy);
+        ctx.scale(-1, 1);
+        ctx.translate(-(sx + 10), -sy);
+    }
+
+    // Head (14x14)
+    ctx.fillStyle = hurt ? '#ef4444' : '#f8c291';
+    ctx.fillRect(sx + 3, sy, 14, 14);
+    // Hair
+    ctx.fillStyle = hurt ? '#b91c1c' : '#451a03';
+    ctx.fillRect(sx + 3, sy, 14, 4);
+    ctx.fillRect(sx + 3, sy + 4, 4, 4);
+    // Eyes
+    if (!hurt) {
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(sx + 11, sy + 6, 4, 3);
+        ctx.fillStyle = '#2563eb'; ctx.fillRect(sx + 13, sy + 6, 2, 3);
+    }
+
+    // Torso (14x14)
+    ctx.fillStyle = hurt ? '#dc2626' : '#06b6d4';
+    ctx.fillRect(sx + 3, sy + 14, 14, 14);
+
+    // Legs (14x12) with walk swing
+    var legSwing = Math.sin(s.walkAnim) * 4;
+    ctx.fillStyle = hurt ? '#991b1b' : '#1e3a8a';
+    ctx.fillRect(sx + 4 - legSwing, sy + 28, 5, 12);
+    ctx.fillRect(sx + 11 + legSwing, sy + 28, 5, 12);
+
+    // Arms & Diamond Sword
+    // Left arm (back)
+    ctx.fillStyle = hurt ? '#dc2626' : '#0891b2';
+    ctx.fillRect(sx, sy + 14, 4, 13);
+
+    // Right arm holding Diamond Sword
+    ctx.fillStyle = hurt ? '#dc2626' : '#0891b2';
+    ctx.fillRect(sx + 16, sy + 14, 4, 13);
+
+    // Diamond Sword
+    ctx.save();
+    if (s.attacking) {
+        // Attack slash forward
+        ctx.translate(sx + 18, sy + 20);
+        ctx.rotate(0.9);
+        // Diamond Blade
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(0, -22, 5, 22);
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(1, -22, 2, 20);
+        // Guard & Hilt
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(-3, 0, 11, 3);
+        ctx.fillStyle = '#78350f'; ctx.fillRect(1, 3, 3, 5);
+
+        // Slash arc effect
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 26, -1.2, 0.8);
+        ctx.stroke();
+    } else {
+        // Idle / ready stance
+        ctx.translate(sx + 18, sy + 22);
+        ctx.rotate(-0.4);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(0, -20, 5, 20);
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(1, -20, 2, 18);
+        ctx.fillStyle = '#94a3b8'; ctx.fillRect(-3, 0, 11, 3);
+        ctx.fillStyle = '#78350f'; ctx.fillRect(1, 3, 3, 5);
+    }
+    ctx.restore();
+
+    ctx.restore();
+}
+
+function drawMCZombie(ctx, z) {
+    var zx = Math.floor(z.x);
+    var zy = Math.floor(z.y);
+    var hurt = (z.hurtTimer > 0);
+
+    ctx.save();
+    if (z.facing === -1) {
+        ctx.translate(zx + 10, zy);
+        ctx.scale(-1, 1);
+        ctx.translate(-(zx + 10), -zy);
+    }
+
+    // Mini Health Bar above zombie
+    var barW = 20;
+    var hpPct = Math.max(0, z.hp / z.maxHp);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(zx, zy - 8, barW, 4);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(zx + 1, zy - 7, Math.floor((barW - 2) * hpPct), 2);
+
+    // Head (14x14) - Green Skin
+    ctx.fillStyle = hurt ? '#ef4444' : '#15803d';
+    ctx.fillRect(zx + 3, zy, 14, 14);
+    // Dark hair/spots
+    ctx.fillStyle = hurt ? '#b91c1c' : '#166534';
+    ctx.fillRect(zx + 3, zy, 14, 3);
+    // Zombie Eye sockets
+    ctx.fillStyle = '#052e16';
+    ctx.fillRect(zx + 10, zy + 6, 4, 3);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(zx + 12, zy + 7, 2, 2);
+
+    // Torso (14x14) - Blue shirt
+    ctx.fillStyle = hurt ? '#dc2626' : '#0284c7';
+    ctx.fillRect(zx + 3, zy + 14, 14, 14);
+
+    // Outstretched Arms (Classic Zombie pose)
+    ctx.fillStyle = hurt ? '#dc2626' : '#0284c7';
+    ctx.fillRect(zx + 14, zy + 15, 12, 4);
+    ctx.fillStyle = hurt ? '#b91c1c' : '#15803d'; // green hands
+    ctx.fillRect(zx + 24, zy + 15, 4, 4);
+
+    // Legs with walk swing
+    var legSwing = Math.sin(z.walkAnim) * 3;
+    ctx.fillStyle = hurt ? '#991b1b' : '#1e3a8a';
+    ctx.fillRect(zx + 4 - legSwing, zy + 28, 5, 12);
+    ctx.fillRect(zx + 11 + legSwing, zy + 28, 5, 12);
+
+    ctx.restore();
+}
+
+function drawMCHUD(ctx) {
+    if (!mcSteve) return;
+
+    // 10 Hearts (top-left)
+    var hX = 14;
+    var hY = 12;
+    var totalHearts = 10;
+    for (var h = 0; h < totalHearts; h++) {
+        var heartHP = (h + 1) * 2;
+        var bx = hX + h * 13;
+        // Background black heart
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(bx, hY, 11, 10);
+
+        if (mcSteve.hp >= heartHP) {
+            // Full Red Heart
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(bx + 1, hY + 1, 9, 8);
+            ctx.fillStyle = '#f87171';
+            ctx.fillRect(bx + 2, hY + 2, 2, 2); // shine
+        } else if (mcSteve.hp >= heartHP - 1) {
+            // Half Red Heart
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(bx + 1, hY + 1, 4, 8);
         }
     }
-    renderMCCanvas();
-};
 
-window.mcClearWorld = function() {
-    initMCGrid();
-    renderMCCanvas();
+    // Top Stats bar
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 12px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('💀 ЗОМБИ: ' + mcSteve.kills + '  |  ⭐ УР: ' + mcSteve.level + '  |  🥩 СТЕЙК: ' + mcSteve.steaks, 566, 21);
+
+    // Level XP bar
+    var xpW = 120;
+    var xpPct = Math.min(1, mcSteve.xp / 100);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(566 - xpW, 26, xpW, 5);
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(566 - xpW + 1, 27, Math.floor((xpW - 2) * xpPct), 3);
+}
+
+window.stopMCSurvival = function() {
+    mcSurvivalRunning = false;
+    if (mcAnimId) {
+        cancelAnimationFrame(mcAnimId);
+        mcAnimId = null;
+    }
+    if (mcKeyboardBound) {
+        window.removeEventListener('keydown', mcKeyDownHandler);
+        window.removeEventListener('keyup', mcKeyUpHandler);
+        mcKeyboardBound = false;
+    }
 };
 
 window.openMCDialog = function(type) {
@@ -7497,70 +8051,65 @@ window.openMCDialog = function(type) {
     dialog.style.display = 'block';
 
     if (type === 'single') {
-        title.textContent = '🟩 Minecraft: Творческий режим (Креатив)';
-        content.innerHTML = '<div style="margin-bottom:6px;font-size:12px;color:#a3e635;font-weight:bold;">🟢 Полная свобода творчества! ЛКМ — ставить блок, ПКМ — разрушать блок.</div>' +
-            '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#15803d\', this)" style="background:#15803d;width:24px;height:24px;border:1px solid #000;cursor:pointer;outline:2px solid #fff;" title="Трава"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#78350f\', this)" style="background:#78350f;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Земля"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#64748b\', this)" style="background:#64748b;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Камень"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#b45309\', this)" style="background:#b45309;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Доски"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#16a34a\', this)" style="background:#16a34a;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Листва"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#b91c1c\', this)" style="background:#b91c1c;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Кирпич"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#06b6d4\', this)" style="background:#06b6d4;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Алмазный блок"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#93c5fd\', this)" style="background:#93c5fd;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Стекло"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#facc15\', this)" style="background:#facc15;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="Золото"></button>' +
-            '<button class="mc-pal-btn" onclick="window.mcSelectBlock(\'#ef4444\', this)" style="background:#ef4444;width:24px;height:24px;border:1px solid #000;cursor:pointer;" title="TNT"></button>' +
-            '</div>' +
-            '<canvas id="mc-canvas" width="560" height="260" style="background:#60a5fa;border:2px solid #333;cursor:crosshair;display:block;margin:0 auto;box-shadow:0 4px 10px rgba(0,0,0,0.5);"></canvas>' +
-            '<div style="display:flex;justify-content:center;gap:8px;margin-top:8px;">' +
-            '<button class="mc-btn mc-btn-small" onclick="window.mcBuildHouse()">🏠 Построить дом</button>' +
-            '<button class="mc-btn mc-btn-small" onclick="window.mcBuildTree()">🌲 Посадить дерево</button>' +
-            '<button class="mc-btn mc-btn-small" onclick="window.mcClearWorld()">🧹 Сброс мира</button>' +
+        title.textContent = '🟩 Minecraft: Режим Выживания (Бой с зомби)';
+        content.innerHTML = '<div style="margin-bottom:6px;font-size:12px;color:#f87171;font-weight:bold;">⚔️ РЕЖИМ ВЫЖИВАНИЯ: Ночь настала! Отбивайся алмазным мечом от орд зомби!</div>' +
+            '<canvas id="mc-canvas" width="580" height="280" style="background:#090d16;border:3px solid #383838;cursor:crosshair;display:block;margin:0 auto;box-shadow:0 4px 12px rgba(0,0,0,0.6);"></canvas>' +
+            '<div style="display:flex;justify-content:center;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap;">' +
+            '<button class="mc-btn mc-btn-game" onmousedown="window.mcMoveLeft(true)" onmouseup="window.mcMoveLeft(false)" onmouseleave="window.mcMoveLeft(false)">◄ Влево (A)</button>' +
+            '<button class="mc-btn mc-btn-game" onmousedown="window.mcMoveRight(true)" onmouseup="window.mcMoveRight(false)" onmouseleave="window.mcMoveRight(false)">► Вправо (D)</button>' +
+            '<button class="mc-btn mc-btn-game mc-btn-jump" onclick="window.mcJump()">▲ Прыжок (W)</button>' +
+            '<button class="mc-btn mc-btn-game mc-btn-attack" onclick="window.mcAttack()">⚔️ УДАР МЕЧОМ (ЛКМ / Пробел)</button>' +
+            '<button class="mc-btn mc-btn-game mc-btn-eat" onclick="window.mcEatSteak()">🥩 Съесть стейк (+3 ❤️)</button>' +
+            '<button class="mc-btn mc-btn-game mc-btn-respawn" onclick="window.mcRespawn()">🔄 Заново</button>' +
             '</div>';
 
         setTimeout(function() {
-            var cv = document.getElementById('mc-canvas');
-            if (cv) {
-                renderMCCanvas();
-                cv.onmousedown = function(e) {
+            mcCanvas = document.getElementById('mc-canvas');
+            if (mcCanvas) {
+                mcCtx = mcCanvas.getContext('2d');
+                initMCSurvival();
+
+                mcCanvas.onmousedown = function(e) {
                     e.preventDefault();
-                    var rect = cv.getBoundingClientRect();
-                    var cx = Math.floor((e.clientX - rect.left) / MC_CELL);
-                    var cy = Math.floor((e.clientY - rect.top) / MC_CELL);
-                    if (cx >= 0 && cx < MC_COLS && cy >= 0 && cy < MC_ROWS) {
-                        if (e.button === 2) {
-                            mcGrid[cy][cx] = null; // break block on right click
-                        } else {
-                            mcGrid[cy][cx] = mcActiveBlock; // place block on left click
-                        }
-                        renderMCCanvas();
-                    }
+                    window.mcAttack();
                 };
-                cv.oncontextmenu = function(e) { e.preventDefault(); };
+
+                if (!mcKeyboardBound) {
+                    window.addEventListener('keydown', mcKeyDownHandler);
+                    window.addEventListener('keyup', mcKeyUpHandler);
+                    mcKeyboardBound = true;
+                }
+
+                window.stopMCSurvival();
+                mcSurvivalRunning = true;
+                mcLoop();
             }
         }, 50);
     } else if (type === 'multi') {
+        window.stopMCSurvival();
         title.textContent = 'Сетевая игра: Поиск серверов';
         content.innerHTML = '<div style="background:#222;padding:10px;border:1px solid #444;text-align:left;margin-bottom:8px;">' +
             '<div style="font-weight:bold;color:#60a5fa;">Hypixel Network (mc.hypixel.net)</div>' +
-            '<div style="color:#aaa;font-size:11px;">Игроков: 48,210 / 60,000 | Режимы: BedWars, SkyWars, Creative</div>' +
+            '<div style="color:#aaa;font-size:11px;">Игроков: 48,210 / 60,000 | Режимы: Zombie Survival, BedWars, SkyWars</div>' +
             '<div style="color:#4ade80;font-weight:bold;margin-top:4px;">🟢 СЕРВЕР ДОСТУПЕН (Пинг: 18ms)</div>' +
             '</div>' +
             '<div style="background:#222;padding:10px;border:1px solid #444;text-align:left;margin-bottom:8px;">' +
-            '<div style="font-weight:bold;color:#60a5fa;">Сервер друзей (192.168.1.13:25565)</div>' +
-            '<div style="color:#aaa;font-size:11px;">Выживание, свободный креатив, без вайпов</div>' +
+            '<div style="font-weight:bold;color:#60a5fa;">Сервер друзей: Выживание с Зомби (192.168.1.13:25565)</div>' +
+            '<div style="color:#aaa;font-size:11px;">Режим: Хардкор выживание, волны монстров</div>' +
             '<div style="color:#4ade80;font-weight:bold;margin-top:4px;">🟢 ОНЛАЙН (Игроков: 4/20)</div>' +
             '</div>';
     } else {
+        window.stopMCSurvival();
         title.textContent = 'Настройки Minecraft';
         content.innerHTML = '<p style="color:#facc15;">Поле зрения (FOV): Normal (70°)</p>' +
-            '<p style="color:#4ade80;">Режим игры: Творческий (Креатив / Свобода действий)</p>' +
-            '<p style="color:#60a5fa;">Дальность прорисовки: 16 чанков (Far)</p>' +
-            '<p style="color:#e2e8f0;">Музыка: 100% | Звуки: 100%</p>';
+            '<p style="color:#ef4444;font-weight:bold;">Режим игры: ВЫЖИВАНИЕ (Бой с зомби)</p>' +
+            '<p style="color:#60a5fa;">Сложность: Нормальная (Монстры спавнятся ночью)</p>' +
+            '<p style="color:#e2e8f0;">Управление: A/D — движение, Space / ЛКМ — удар мечом, W — прыжок, E — съесть стейк</p>';
     }
 };
 
 window.closeMCDialog = function() {
+    if (window.stopMCSurvival) window.stopMCSurvival();
     var menu = document.getElementById('mc-menu-view');
     var dialog = document.getElementById('mc-dialog-view');
     if (menu && dialog) {
