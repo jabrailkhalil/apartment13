@@ -1079,6 +1079,7 @@ function clearScene() {
     isSitting = false;
     currentInteractable = null;
     interactionPrompt.style.opacity = 0;
+    gameState.doorOpen = false;
     gameState.fridgeOpen = false;
     gameState.fridgeAnimating = false;
     gameState.apartmentFridgeGroup = null;
@@ -6930,52 +6931,61 @@ function handleInteraction(obj) {
     else if (d.type === 'door') {
         if (ch === 1) {
             if (gameState.doorOpen) {
-                showThought('Выхожу...');
-                setTimeout(function() { loadChapter(2); }, 1500);
-            } else if (gameState.hasKey && gameState.watchedTV) {
+                showThought('Выхожу на работу...');
+                return;
+            }
+            if (gameState.hasKey && gameState.watchedTV) {
                 gameState.doorOpen = true;
-                showThought('Ключ подошёл! Пора на работу.');
+                playDoorLockSound();
+                playDoorOpenSound();
+                showThought('Дверь открыта! Выхожу на работу...');
                 var dr = 0;
                 var div2 = setInterval(function() {
-                    d.hingeGroup.rotation.y -= 0.02; dr += 0.02;
-                    if (dr >= Math.PI / 2) { clearInterval(div2); setObjective('Выйди из квартиры'); }
+                    if (d.hingeGroup) d.hingeGroup.rotation.y -= 0.03;
+                    dr += 0.03;
+                    if (dr >= Math.PI / 2) {
+                        clearInterval(div2);
+                    }
                 }, 30);
+                setTimeout(function() {
+                    loadChapter(2);
+                }, 1400);
             } else if (!gameState.hasKey) {
-                showThought('Дверь заперта. Нужен ключ.');
+                showThought('Дверь заперта. Нужно найти ключ.');
             } else {
-                showThought('Может, сначала проверить новости?');
+                showThought('Хм, может включить ТВ перед уходом?');
             }
         } else if (ch === 5) {
-            showThought('Замок не поворачивается. Дверь заклинило!');
+            showThought('Я только что вернулся домой, на улице мороз. Дверь закрыта, никуда больше не пойду.');
         } else if (ch === 6) {
             if (!ch6Phone.sergeyReplied) {
-                showThought('Сначала нужно ответить Сергею в телефоне.');
-                setObjective('Ответь Сергею в телефоне');
+                showThought('Нужно ответить Сергею на телефоне.');
+                setObjective('Ответь на сообщение Сергея');
                 return;
             }
             if (!ch6Phone.moneyChecked) {
-                showThought('На работу идти не надо, меня уволили... Надо сначала проверить в телефоне, сколько осталось денег.');
-                setObjective('Посмотри в телефоне сколько у тебя денег');
+                showThought('Надо проверить баланс карты... Вдруг зарплата пришла, тогда смогу купить продуктов.');
+                setObjective('Проверь баланс в приложении банка');
                 return;
             }
             if (gameState.doorOpen) {
-                showThought('Иду в продуктовый магазин за едой...');
-                setTimeout(function() { loadChapter(7); }, 1000);
+                showThought('Выхожу в подъезд и иду в магазин...');
                 return;
             }
             gameState.doorOpen = true;
-            showThought('На работу больше не надо. Пойду в магазин за едой...');
+            playDoorOpenSound();
+            showThought('Открыл дверь в подъезд. Выхожу в магазин за продуктами...');
             var dr = 0;
             var div6 = setInterval(function() {
-                d.hingeGroup.rotation.y -= 0.02; dr += 0.02;
+                if (d.hingeGroup) d.hingeGroup.rotation.y -= 0.03;
+                dr += 0.03;
                 if (dr >= Math.PI / 2) {
                     clearInterval(div6);
-                    setObjective('Иди в продуктовый магазин');
-                    setTimeout(function() {
-                        loadChapter(7);
-                    }, 1200);
                 }
             }, 30);
+            setTimeout(function() {
+                loadChapter(7);
+            }, 1400);
         } else if (ch === 8) {
             if (!gameState.newsWatched8) {
                 showThought('Дверь закрыта. Сначала нужно разобрать продукты и посмотреть новости.');
@@ -8045,17 +8055,17 @@ function animate() {
         // Per-chapter update (handles boundaries + events)
         if (chapterUpdate) chapterUpdate();
 
-        // Apartment boundary (chapters 1, 5, 6, and 8)
+        // Apartment boundary (chapters 1, 5, 6, and 8) - strictly block passing through door or walls
         if (gameState.chapter === 1 || gameState.chapter === 5 || gameState.chapter === 6 || gameState.chapter === 8) {
             var p = camera.position;
-            p.x = Math.max(-2.5, Math.min(2.5, p.x));
-            p.z = Math.max(-2.5, Math.min(gameState.doorOpen && gameState.chapter !== 8 ? 8 : 2.5, p.z));
-            if (gameState.doorOpen && p.z > 4) {
-                if (gameState.chapter === 1) {
-                    loadChapter(2);
-                } else if (gameState.chapter === 6) {
-                    loadChapter(7);
-                }
+            p.x = Math.max(-2.55, Math.min(2.55, p.x));
+            if (p.z > 2.5) {
+                p.z = 2.5;
+                if (velocity.z < 0) velocity.z = 0; // stop forward motion against door
+            }
+            if (p.z < -2.55) {
+                p.z = -2.55;
+                if (velocity.z > 0) velocity.z = 0;
             }
         }
 
