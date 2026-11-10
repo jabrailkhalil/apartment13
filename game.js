@@ -1261,7 +1261,7 @@ function loadChapter(n) {
         buildApartment(false);
         showChapterCard('ГЛАВА 1', 'Пробуждение', function() {
             controls.lock();
-            camera.position.set(2.6, 0.8, -1.4);
+            camera.position.set(2.4, 0.8, -1.0);
             var t = setInterval(function() {
                 camera.position.y += 0.04;
                 if (camera.position.y >= 1.6) {
@@ -1296,7 +1296,7 @@ function loadChapter(n) {
         buildMorning();
         showChapterCard('ГЛАВА 6', 'Доброе утро', function() {
             controls.lock();
-            camera.position.set(2.6, 0.8, -1.4);
+            camera.position.set(2.4, 0.8, -1.0);
             var t = setInterval(function() {
                 camera.position.y += 0.04;
                 if (camera.position.y >= 1.6) {
@@ -1338,6 +1338,61 @@ function loadChapter(n) {
 
 
 var cachedBathFloorTex = null;
+
+var cachedCarpetTex = null;
+function getApartmentRugTexture() {
+    if (cachedCarpetTex) return cachedCarpetTex;
+    cachedCarpetTex = createProceduralTexture(512, 512, function(ctx, w, h) {
+        // Rich warm burgundy base
+        ctx.fillStyle = '#7f1d1d';
+        ctx.fillRect(0, 0, w, h);
+
+        // Gold & Navy outer border
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(16, 16, w - 32, h - 32);
+
+        ctx.strokeStyle = '#1e3a8a';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(32, 32, w - 64, h - 64);
+
+        // Intricate border geometric dash
+        ctx.fillStyle = '#d4af37';
+        for (var b = 44; b < w - 44; b += 24) {
+            ctx.fillRect(b, 34, 12, 6);
+            ctx.fillRect(b, h - 40, 12, 6);
+        }
+        for (var vb = 44; vb < h - 44; vb += 24) {
+            ctx.fillRect(34, vb, 6, 12);
+            ctx.fillRect(w - 40, vb, 6, 12);
+        }
+
+        // Central diamond medallion
+        ctx.fillStyle = '#1e3a8a';
+        ctx.beginPath();
+        ctx.moveTo(w / 2, 80);
+        ctx.lineTo(w - 80, h / 2);
+        ctx.lineTo(w / 2, h - 80);
+        ctx.lineTo(80, h / 2);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 6;
+        ctx.stroke();
+
+        // Inner medallion ornament
+        ctx.fillStyle = '#b91c1c';
+        ctx.beginPath();
+        ctx.arc(w / 2, h / 2, 60, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#d4af37';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+    });
+    return cachedCarpetTex;
+}
+
 function getBathroomFloorTexture() {
     if (cachedBathFloorTex) return cachedBathFloorTex;
     cachedBathFloorTex = createProceduralTexture(512, 512, function(ctx, w, h) {
@@ -1434,7 +1489,7 @@ function getBathroomMirrorTexture() {
 // ==================== BUILD: APARTMENT ====================
 function buildApartment(isReturn) {
     scene.background = new THREE.Color(0x020202);
-    scene.fog = new THREE.Fog(0x020202, 0.5, 8);
+    scene.fog = new THREE.Fog(0x020202, 1.0, 16);
 
     var tl = new THREE.TextureLoader();
     var wallTex = tl.load(WALLPAPER_B64);
@@ -1450,60 +1505,64 @@ function buildApartment(isReturn) {
     var darkMat = makeMat(0x111111);
     var pillowMat = makeMat(0xd4c8a0);
 
-    // ==================== MAIN ROOM: EXPANDED FLOOR & CEILING ====================
-    // Main room: x from -3.0 to +3.8 (width 6.8, center x=0.4), z from -3.4 to +3.0 (depth 6.4, center z=-0.2)
-    addMesh(new THREE.PlaneGeometry(6.8, 6.4), floorMat, 0.4, 0, -0.2).rotation.x = -Math.PI / 2;
-    var c = addMesh(new THREE.PlaneGeometry(6.8, 6.4), ceilMat, 0.4, 3, -0.2);
+    // ==================== MAIN ROOM: FLOOR & CEILING ====================
+    // Main room: x from -3.0 to +3.6 (width 6.6, center x=0.3), z from -3.2 to +3.0 (depth 6.2, center z=-0.1)
+    addMesh(new THREE.PlaneGeometry(6.6, 6.2), floorMat, 0.3, 0, -0.1).rotation.x = -Math.PI / 2;
+    var c = addMesh(new THREE.PlaneGeometry(6.6, 6.2), ceilMat, 0.3, 3, -0.1);
     c.rotation.x = Math.PI / 2;
 
+    // Cozy Oriental Rug (Ковёр) on floor in front of TV & sofa
+    var rugMat = new THREE.MeshLambertMaterial({ map: getApartmentRugTexture() });
+    var rugMesh = addMesh(new THREE.PlaneGeometry(2.4, 1.6), rugMat, -0.8, 0.008, -1.6);
+    rugMesh.rotation.x = -Math.PI / 2;
+
     // ==================== MAIN ROOM: WALLS ====================
-    // Back wall at z = -3.4 (with window at x = 0.4)
-    addMesh(new THREE.PlaneGeometry(1.9, 3), wallMat, -2.05, 1.5, -3.4);
-    addMesh(new THREE.PlaneGeometry(1.9, 3), wallMat, 2.85, 1.5, -3.4);
-    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.4, 0.375, -3.4);
-    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.4, 2.625, -3.4);
+    // Back wall at z = -3.2 (with window at x = 0.2)
+    addMesh(new THREE.PlaneGeometry(1.8, 3), wallMat, -2.1, 1.5, -3.2);
+    addMesh(new THREE.PlaneGeometry(2.0, 3), wallMat,  2.6, 1.5, -3.2);
+    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.2, 0.375, -3.2);
+    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.2, 2.625, -3.2);
 
     // Front wall at z = 3.0 (with entrance door at x = 0)
     var fwLeft = addMesh(new THREE.PlaneGeometry(2.4, 3), wallMat, -1.8, 1.5, 3.0); fwLeft.rotation.y = Math.PI;
-    var fwRight = addMesh(new THREE.PlaneGeometry(3.2, 3), wallMat, 2.2, 1.5, 3.0); fwRight.rotation.y = Math.PI;
+    var fwRight = addMesh(new THREE.PlaneGeometry(3.0, 3), wallMat,  2.1, 1.5, 3.0); fwRight.rotation.y = Math.PI;
     var fwTop = addMesh(new THREE.PlaneGeometry(1.2, 0.8), wallMat, 0, 2.6, 3.0); fwTop.rotation.y = Math.PI;
 
-    // Right wall at x = 3.8
-    var rw = addMesh(new THREE.PlaneGeometry(6.4, 3), wallMat, 3.8, 1.5, -0.2);
+    // Right wall at x = 3.6
+    var rw = addMesh(new THREE.PlaneGeometry(6.2, 3), wallMat, 3.6, 1.5, -0.1);
     rw.rotation.y = -Math.PI / 2;
 
-    // Left dividing wall at x = -3.0 (between main room and bathroom)
-    // Bathroom doorway widened to 1.15m (z from -0.65 to +0.50) for smooth, lag-free passage
-    var lwBack = addMesh(new THREE.PlaneGeometry(2.75, 3), wallMat, -3.0, 1.5, -2.025);
+    // Left dividing wall at x = -3.0 (dividing main room from bathroom)
+    // Bathroom doorway between sofa (z=-0.8) and kitchen dining table (z=1.8):
+    // Doorway opening from z = 0.20 to z = 1.35 (width 1.15m)
+    var lwBack = addMesh(new THREE.PlaneGeometry(3.4, 3), wallMat, -3.0, 1.5, -1.50);
     lwBack.rotation.y = Math.PI / 2;
-    var lwFront = addMesh(new THREE.PlaneGeometry(2.50, 3), wallMat, -3.0, 1.5, 1.75);
+    var lwFront = addMesh(new THREE.PlaneGeometry(1.65, 3), wallMat, -3.0, 1.5, 2.175);
     lwFront.rotation.y = Math.PI / 2;
-    var lwTop = addMesh(new THREE.PlaneGeometry(1.15, 0.8), wallMat, -3.0, 2.6, -0.075);
+    var lwTop = addMesh(new THREE.PlaneGeometry(1.15, 0.8), wallMat, -3.0, 2.6, 0.775);
     lwTop.rotation.y = Math.PI / 2;
 
-    // Doorway Frame Trim on main room side
+    // Doorway Frame Trim
     var trimMat = makeMat(0x4a3222);
-    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1, -0.65);
-    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1,  0.50);
-    addMesh(new THREE.BoxGeometry(0.04, 0.08, 1.23), trimMat, -2.98, 2.22, -0.075);
+    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1,  0.20);
+    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1,  1.35);
+    addMesh(new THREE.BoxGeometry(0.04, 0.08, 1.23), trimMat, -2.98, 2.22, 0.775);
 
-    // Dividing Wall Colliders (leaving 1.15m open doorway)
-    colliders.push({ minX: -3.20, maxX: -2.80, minZ: -3.40, maxZ: -0.65 });
-    colliders.push({ minX: -3.20, maxX: -2.80, minZ:  0.50, maxZ:  3.00 });
+    // Dividing Wall Colliders (leaving 1.15m free passage)
+    colliders.push({ minX: -3.20, maxX: -2.80, minZ: -3.20, maxZ:  0.20 });
+    colliders.push({ minX: -3.20, maxX: -2.80, minZ:  1.35, maxZ:  3.00 });
 
-    // ==================== DOOR TO BATHROOM (BETWEEN SOFA & KITCHEN TABLE) ====================
+    // ==================== DOOR TO BATHROOM ====================
     var bDoorGroup = new THREE.Group();
-    bDoorGroup.position.set(-3.0, 0, 0.50); // Hinge at x=-3.0, z=0.50
+    bDoorGroup.position.set(-3.0, 0, 1.35); // Hinge at x=-3.0, z=1.35
     scene.add(bDoorGroup);
 
     var bDoorMesh = addMesh(new THREE.BoxGeometry(0.05, 2.15, 1.10), makeMat(0xe8e2d8), -0.025, 1.08, -0.55, bDoorGroup);
-    // Door handles on both sides with latch
     var bKnobMat = makeMat(0xcccccc);
     addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.14, 8), bKnobMat, -0.025, 1.02, -1.02, bDoorGroup);
     addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.10), bKnobMat, 0.03, 1.02, -0.99, bDoorGroup);
     addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.10), bKnobMat, -0.08, 1.02, -0.99, bDoorGroup);
 
-    // Hitbox for bathroom door (conveniently clickable)
     var bDoorHitbox = addMesh(new THREE.BoxGeometry(0.25, 2.20, 1.15), new THREE.MeshBasicMaterial({ visible: false }), -0.025, 1.08, -0.55, bDoorGroup);
     bDoorHitbox.userData = { name: 'Дверь в ванную [F]', type: 'bathroom_door', hingeGroup: bDoorGroup, isOpen: false, animating: false };
     interactables.push(bDoorHitbox);
@@ -1511,37 +1570,300 @@ function buildApartment(isReturn) {
     gameState.bathroomDoorOpen = false;
     gameState.bathroomDoorGroup = bDoorGroup;
     gameState.bathroomDoorMesh = bDoorMesh;
-    // Initial closed door collider
-    var bDoorCol = { minX: -3.15, maxX: -2.85, minZ: -0.65, maxZ: 0.50 };
+    var bDoorCol = { minX: -3.15, maxX: -2.85, minZ: 0.20, maxZ: 1.35 };
     colliders.push(bDoorCol);
     gameState.bathroomDoorCollider = bDoorCol;
 
-    // ==================== KITCHEN TABLE (СТОЛИК) ====================
+    // ==================== ENTRANCE & CORRIDOR ====================
+    var corrWallMat = makeMat(0x556655);
+    var corrFloorMat = makeMat(0x444444);
+    var corrCeilMat = makeMat(0x222222);
+    var cf = addMesh(new THREE.PlaneGeometry(2, 4), corrFloorMat, 0, 0, 5); cf.rotation.x = -Math.PI/2;
+    var cc = addMesh(new THREE.PlaneGeometry(2, 4), corrCeilMat, 0, 3, 5); cc.rotation.x = Math.PI/2;
+    var cwLeft = addMesh(new THREE.PlaneGeometry(4, 3), corrWallMat, -1, 1.5, 5); cwLeft.rotation.y = Math.PI/2;
+    var cwRight = addMesh(new THREE.PlaneGeometry(4, 3), corrWallMat, 1, 1.5, 5); cwRight.rotation.y = -Math.PI/2;
+    var cwEnd = addMesh(new THREE.PlaneGeometry(2, 3), corrWallMat, 0, 1.5, 7); cwEnd.rotation.y = Math.PI;
+    var corrLight = new THREE.PointLight(0xddddaa, 0.5, 5);
+    corrLight.position.set(0, 2.8, 5);
+    scene.add(corrLight);
+
+    // Entrance Door '13'
+    var doorGroup = new THREE.Group();
+    doorGroup.position.set(0.6, 0, 2.99);
+    scene.add(doorGroup);
+    var doorMesh = addMesh(new THREE.BoxGeometry(1.2, 2.2, 0.08), makeMat(0x302010), -0.6, 1.1, 0, doorGroup);
+    var knobMat = makeMat(0xaaaaaa);
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), knobMat, -1.05, 1.0, 0.06, doorGroup);
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), knobMat, -1.05, 1.0, -0.06, doorGroup);
+    var lockMat = makeMat(0x222222);
+    var boltMat = makeMat(0x999999);
+    addMesh(new THREE.BoxGeometry(0.14, 0.09, 0.03), lockMat, -1.02, 1.18, -0.055, doorGroup);
+    var boltMesh = addMesh(new THREE.BoxGeometry(0.12, 0.028, 0.025), boltMat, -1.04, 1.18, -0.068, doorGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.1, 0.03), lockMat, -1.22, 1.18, -0.055, doorGroup);
+    gameState.doorBoltMesh = boltMesh;
+    gameState.doorLocked8 = false;
+    doorMesh.userData = { name: "Дверь '13'", type: 'door', hingeGroup: doorGroup };
+    interactables.push(doorMesh);
+    gameState.apartmentDoorMesh = doorMesh;
+
+    // Coat Rack by the entrance door
+    var coatRackGroup = new THREE.Group();
+    coatRackGroup.position.set(-0.95, 1.6, 2.96);
+    scene.add(coatRackGroup);
+    addMesh(new THREE.BoxGeometry(0.60, 0.16, 0.02), woodMat, 0, 0, 0, coatRackGroup);
+    for (var hk = -0.22; hk <= 0.22; hk += 0.11) {
+        addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 6), tubChromeMat, hk, 0, 0.03, coatRackGroup).rotation.x = Math.PI / 4;
+    }
+    // Winter coat hanging
+    addMesh(new THREE.BoxGeometry(0.32, 0.72, 0.12), makeMat(0x1e293b), 0.11, -0.38, 0.06, coatRackGroup);
+
+    // ==================== WINDOW & CURTAINS ====================
+    var fm = makeMat(0x3e2723);
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0.2, 2.2, -3.2);
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0.2, 0.8, -3.2);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, -1.25, 1.5, -3.2);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, 1.65, 1.5, -3.2);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), fm, 0.2, 1.5, -3.2);
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.1), fm, 0.2, 1.5, -3.2);
+
+    var glassMat = new THREE.MeshLambertMaterial({ color: 0x051020, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
+    var win = addMesh(new THREE.PlaneGeometry(3, 1.5), glassMat, 0.2, 1.5, -3.21);
+    win.userData = { name: 'Окно', type: 'window' };
+    interactables.push(win);
+
+    var rodMat = makeMat(0x222222);
+    var rod = addMesh(new THREE.CylinderGeometry(0.018, 0.018, 3.4, 8), rodMat, 0.2, 2.28, -3.05);
+    rod.rotation.z = Math.PI / 2;
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat, -1.52, 2.28, -3.05);
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat,  1.92, 2.28, -3.05);
+
+    var curtainMat = makeMat(0x331e18);
+    var leftCurtainGroup = new THREE.Group();
+    leftCurtainGroup.position.set(-0.95, 1.5, -3.06);
+    scene.add(leftCurtainGroup);
+    addMesh(new THREE.BoxGeometry(0.55, 1.55, 0.06), curtainMat, 0, 0, 0, leftCurtainGroup);
+    addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat, -0.15, 0, 0.02, leftCurtainGroup);
+    addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat,  0.15, 0, 0.02, leftCurtainGroup);
+
+    var rightCurtainGroup = new THREE.Group();
+    rightCurtainGroup.position.set(1.35, 1.5, -3.06);
+    scene.add(rightCurtainGroup);
+    addMesh(new THREE.BoxGeometry(0.55, 1.55, 0.06), curtainMat, 0, 0, 0, rightCurtainGroup);
+    addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat, -0.15, 0, 0.02, rightCurtainGroup);
+    addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat,  0.15, 0, 0.02, rightCurtainGroup);
+
+    var curtainHitbox = addMesh(new THREE.BoxGeometry(3.1, 1.6, 0.25), new THREE.MeshBasicMaterial({ visible: false }), 0.2, 1.5, -3.04);
+    curtainHitbox.userData = { name: 'Шторы', type: 'curtains' };
+    interactables.push(curtainHitbox);
+
+    gameState.leftCurtainGroup = leftCurtainGroup;
+    gameState.rightCurtainGroup = rightCurtainGroup;
+    gameState.curtainsMesh = curtainHitbox;
+    gameState.curtainsClosed = false;
+
+    // ==================== BED & NIGHTSTAND ====================
+    var bedMesh = addMesh(new THREE.BoxGeometry(1.8, 0.5, 3.6), darkMat, 2.4, 0.25, -1.0);
+    addMesh(new THREE.BoxGeometry(0.7, 0.15, 0.5), pillowMat, 2.4, 0.58, -2.5);
+    bedMesh.userData = { name: 'Кровать (Спать)', type: 'bed' };
+    interactables.push(bedMesh);
+    gameState.apartmentBedMesh = bedMesh;
+    colliders.push({ minX: 1.5, maxX: 3.3, minZ: -2.8, maxZ: 0.8 });
+
+    // Nightstand beside bed
+    var ns = new THREE.Group();
+    ns.position.set(1.0, 0, -2.6);
+    scene.add(ns);
+    addMesh(new THREE.BoxGeometry(0.7, 0.6, 0.8), woodMat, 0, 0.3, 0, ns);
+
+    var drawerGroup = new THREE.Group();
+    drawerGroup.position.set(0, 0.45, 0.1);
+    ns.add(drawerGroup);
+    addMesh(new THREE.BoxGeometry(0.64, 0.04, 0.7), woodMat, 0, -0.11, 0, drawerGroup);
+    var dFront = addMesh(new THREE.BoxGeometry(0.66, 0.26, 0.04), woodMat, 0, 0, 0.35, drawerGroup);
+    var flMesh = addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), makeMat(0x222222), 0, -0.05, 0.05, drawerGroup);
+    flMesh.rotation.x = Math.PI / 2;
+    dFront.userData = { name: 'Тумбочка (ящик)', type: 'nightstand', drawerGroup: drawerGroup, flashMesh: flMesh, isOpen: false, animating: false };
+    interactables.push(dFront);
+    colliders.push({ minX: 0.65, maxX: 1.35, minZ: -3.0, maxZ: -2.2 });
+
+    // Key on nightstand (chapter 1)
+    if (!isReturn) {
+        var keyGroup = new THREE.Group();
+        keyGroup.position.set(1.0, 0.61, -2.6);
+        keyGroup.rotation.x = Math.PI / 2;
+        keyGroup.rotation.z = Math.PI / 4;
+        scene.add(keyGroup);
+        var keyMat = makeMat(0x8a6a3a);
+        var bow = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16), keyMat);
+        bow.position.set(0, 0.07, 0); keyGroup.add(bow);
+        var shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 8), keyMat);
+        shaft.position.set(0, 0, 0); keyGroup.add(shaft);
+        var bit1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.01), keyMat);
+        bit1.position.set(0.02, -0.04, 0); keyGroup.add(bit1);
+        var bit2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.01), keyMat);
+        bit2.position.set(0.015, -0.01, 0); keyGroup.add(bit2);
+        var keyHitbox = addMesh(new THREE.BoxGeometry(0.2, 0.1, 0.2), new THREE.MeshBasicMaterial({visible: false}), 0, 0, 0, keyGroup);
+        keyHitbox.userData = { name: 'Ржавый ключ', type: 'key', group: keyGroup };
+        interactables.push(keyHitbox);
+    }
+
+    // ==================== LARGE WOODEN WARDROBE (ШКАФ-СТЕНКА) ====================
+    var wardrobeGroup = new THREE.Group();
+    wardrobeGroup.position.set(2.4, 0, 0.85);
+    scene.add(wardrobeGroup);
+
+    var richWoodMat = makeMat(0x451a03);
+    var woodDoorMat = makeMat(0x5c2b0d);
+    var brassMat = makeMat(0xd4af37);
+
+    // Main wardrobe body
+    addMesh(new THREE.BoxGeometry(1.6, 2.30, 0.58), richWoodMat, 0, 1.15, 0, wardrobeGroup);
+    // 3 section paneled doors
+    addMesh(new THREE.BoxGeometry(0.48, 2.18, 0.02), woodDoorMat, -0.52, 1.15, 0.30, wardrobeGroup);
+    addMesh(new THREE.BoxGeometry(0.48, 2.18, 0.02), woodDoorMat,  0.0,  1.15, 0.30, wardrobeGroup);
+    addMesh(new THREE.BoxGeometry(0.48, 2.18, 0.02), woodDoorMat,  0.52, 1.15, 0.30, wardrobeGroup);
+    // Vertical brass handles
+    addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.16, 8), brassMat, -0.32, 1.15, 0.32, wardrobeGroup);
+    addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.16, 8), brassMat,  0.22, 1.15, 0.32, wardrobeGroup);
+    // Wardrobe crown cornice top moulding
+    addMesh(new THREE.BoxGeometry(1.66, 0.08, 0.62), richWoodMat, 0, 2.34, 0, wardrobeGroup);
+
+    var wardrobeHitbox = addMesh(new THREE.BoxGeometry(1.65, 2.40, 0.65), new THREE.MeshBasicMaterial({ visible: false }), 0, 1.20, 0, wardrobeGroup);
+    wardrobeHitbox.userData = { name: 'Шкаф для одежды [F]', type: 'wardrobe' };
+    interactables.push(wardrobeHitbox);
+    colliders.push({ minX: 1.55, maxX: 3.25, minZ: 0.55, maxZ: 1.15 });
+
+    // ==================== TV & TV STAND ====================
+    addMesh(new THREE.BoxGeometry(1.5, 0.8, 0.8), woodMat, -2.25, 0.4, -2.5);
+    addMesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), darkMat, -2.25, 1.1, -2.5);
+    var tvTex = tl.load(NEWS_B64);
+    var tvMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+    var tvScreen = addMesh(new THREE.PlaneGeometry(0.65, 0.45), tvMat, -2.25, 1.1, -2.19);
+    tvScreen.userData = { name: 'Старый телевизор', type: 'tv', mat: tvMat, tex: tvTex };
+    interactables.push(tvScreen);
+    gameState.tvScreenMesh = tvScreen;
+
+    var wg = addMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.15, 8),
+        new THREE.MeshLambertMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.6 }),
+        -1.8, 0.875, -2.5);
+    wg.userData = { name: 'Стакан с водой', type: 'water' };
+    interactables.push(wg);
+    colliders.push({ minX: -3.0, maxX: -1.5, minZ: -2.9, maxZ: -2.1 });
+
+    // ==================== SOFA & COFFEE TABLE ====================
+    var sofaMat = makeMat(0x666666);
+    var sofaGroup = new THREE.Group();
+    sofaGroup.position.set(-2.0, 0, -0.8);
+    sofaGroup.rotation.y = Math.PI; // faces TV (-z)
+    scene.add(sofaGroup);
+
+    var sofaSeat = addMesh(new THREE.BoxGeometry(2.0, 0.28, 0.85), sofaMat, 0, 0.32, 0, sofaGroup);
+    sofaSeat.userData = { name: isSitting ? 'Встать [F]' : 'Диван', type: 'sofa' };
+    interactables.push(sofaSeat);
+    addMesh(new THREE.BoxGeometry(2.0, 0.6, 0.14), sofaMat, 0, 0.76, -0.38, sofaGroup);
+    var cushionMat = makeMat(0x555555);
+    addMesh(new THREE.BoxGeometry(0.92, 0.14, 0.78), cushionMat, -0.5, 0.48, 0, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.92, 0.14, 0.78), cushionMat,  0.5, 0.48, 0, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.88, 0.46, 0.1), cushionMat, -0.5, 0.72, -0.32, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.88, 0.46, 0.1), cushionMat,  0.5, 0.72, -0.32, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.16, 0.42, 0.85), sofaMat, -0.92, 0.39, 0, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.16, 0.42, 0.85), sofaMat,  0.92, 0.39, 0, sofaGroup);
+    var legMat = makeMat(0x2a1a0a);
+    addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat, -0.85, 0.1,  0.35, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat,  0.85, 0.1,  0.35, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat, -0.85, 0.1, -0.35, sofaGroup);
+    addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat,  0.85, 0.1, -0.35, sofaGroup);
+    colliders.push({ minX: -3.0, maxX: -1.0, minZ: -1.25, maxZ: -0.35 });
+
+    // Coffee Table between Sofa and TV Table
+    var ctGroup = new THREE.Group();
+    ctGroup.position.set(-2.0, 0, -1.65);
+    scene.add(ctGroup);
+    addMesh(new THREE.BoxGeometry(0.9, 0.04, 0.5), makeMat(0x6b4a33), 0, 0.42, 0, ctGroup);
+    var ctLeg = new THREE.BoxGeometry(0.04, 0.40, 0.04);
+    addMesh(ctLeg, makeMat(0x4a3222), -0.38, 0.20, -0.20, ctGroup);
+    addMesh(ctLeg, makeMat(0x4a3222),  0.38, 0.20, -0.20, ctGroup);
+    addMesh(ctLeg, makeMat(0x4a3222), -0.38, 0.20,  0.20, ctGroup);
+    addMesh(ctLeg, makeMat(0x4a3222),  0.38, 0.20,  0.20, ctGroup);
+    addMesh(new THREE.BoxGeometry(0.24, 0.015, 0.32), makeMat(0xd97706), 0.05, 0.45, 0, ctGroup);
+    colliders.push({ minX: -2.5, maxX: -1.5, minZ: -1.95, maxZ: -1.35 });
+
+    // Bookshelf on wall above sofa
+    var shelfGroup = new THREE.Group();
+    shelfGroup.position.set(-2.0, 1.85, -0.42);
+    scene.add(shelfGroup);
+    addMesh(new THREE.BoxGeometry(1.6, 0.04, 0.24), woodMat, 0, 0, 0, shelfGroup);
+    // Colorful book spines
+    var bookColors = [0xb91c1c, 0x1d4ed8, 0x047857, 0xb45309, 0x6b21a8, 0x0f766e];
+    for (var bk = 0; bk < 10; bk++) {
+        var bCol = bookColors[bk % bookColors.length];
+        var bH = 0.16 + (bk % 3) * 0.03;
+        addMesh(new THREE.BoxGeometry(0.04, bH, 0.18), makeMat(bCol), -0.65 + bk * 0.08, bH / 2 + 0.02, 0, shelfGroup);
+    }
+
+    // Wall Clock above bookshelf
+    var clockGroup = new THREE.Group();
+    clockGroup.position.set(-2.0, 2.45, -0.42);
+    scene.add(clockGroup);
+    addMesh(new THREE.CylinderGeometry(0.18, 0.18, 0.03, 24), makeMat(0x451a03), 0, 0, 0, clockGroup).rotation.x = Math.PI / 2;
+    addMesh(new THREE.CircleGeometry(0.15, 24), makeMat(0xffffff), 0, 0, 0.016, clockGroup);
+    addMesh(new THREE.BoxGeometry(0.01, 0.09, 0.005), makeMat(0x111111), 0, 0.04, 0.018, clockGroup);
+    addMesh(new THREE.BoxGeometry(0.06, 0.01, 0.005), makeMat(0x111111), 0.025, 0, 0.018, clockGroup);
+
+    // ==================== KITCHEN DINING TABLE & CHAIRS ====================
     var tableGroup = new THREE.Group();
-    tableGroup.position.set(-2.4, 0, 1.2);
+    tableGroup.position.set(-2.2, 0, 1.95);
     scene.add(tableGroup);
+
     var tableBaseMat = makeMat(0x3d2817);
     var tableTopMat = makeMat(0xdedad2);
     var tableLegMat = makeMat(0x2d1a0e);
-    addMesh(new THREE.BoxGeometry(0.85, 0.05, 0.75), tableTopMat, 0, 0.85, 0, tableGroup);
-    addMesh(new THREE.BoxGeometry(0.75, 0.06, 0.65), tableBaseMat, 0, 0.80, 0, tableGroup);
+    addMesh(new THREE.BoxGeometry(0.90, 0.05, 0.75), tableTopMat, 0, 0.85, 0, tableGroup);
+    addMesh(new THREE.BoxGeometry(0.80, 0.06, 0.65), tableBaseMat, 0, 0.80, 0, tableGroup);
     var legGeo = new THREE.BoxGeometry(0.05, 0.82, 0.05);
-    addMesh(legGeo, tableLegMat, -0.34, 0.41, -0.29, tableGroup);
-    addMesh(legGeo, tableLegMat,  0.34, 0.41, -0.29, tableGroup);
-    addMesh(legGeo, tableLegMat, -0.34, 0.41,  0.29, tableGroup);
-    addMesh(legGeo, tableLegMat,  0.34, 0.41,  0.29, tableGroup);
-    colliders.push({ minX: -2.85, maxX: -1.95, minZ: 0.80, maxZ: 1.60 });
+    addMesh(legGeo, tableLegMat, -0.36, 0.41, -0.29, tableGroup);
+    addMesh(legGeo, tableLegMat,  0.36, 0.41, -0.29, tableGroup);
+    addMesh(legGeo, tableLegMat, -0.36, 0.41,  0.29, tableGroup);
+    addMesh(legGeo, tableLegMat,  0.36, 0.41,  0.29, tableGroup);
+    colliders.push({ minX: -2.70, maxX: -1.70, minZ: 1.55, maxZ: 2.35 });
     gameState.apartmentTableGroup = tableGroup;
 
-    // ==================== KITCHEN STOVE ====================
+    // 2 Wooden Kitchen Chairs tucked at table
+    var chair1 = new THREE.Group();
+    chair1.position.set(-2.2, 0, 1.52);
+    scene.add(chair1);
+    addMesh(new THREE.BoxGeometry(0.40, 0.04, 0.38), makeMat(0x451a03), 0, 0.46, 0, chair1);
+    addMesh(new THREE.BoxGeometry(0.36, 0.02, 0.34), makeMat(0x1e3a8a), 0, 0.48, 0, chair1);
+    var cLegGeo = new THREE.CylinderGeometry(0.016, 0.014, 0.46, 8);
+    addMesh(cLegGeo, makeMat(0x451a03), -0.16, 0.23, -0.15, chair1);
+    addMesh(cLegGeo, makeMat(0x451a03),  0.16, 0.23, -0.15, chair1);
+    addMesh(cLegGeo, makeMat(0x451a03), -0.16, 0.23,  0.15, chair1);
+    addMesh(cLegGeo, makeMat(0x451a03),  0.16, 0.23,  0.15, chair1);
+    // Backrest
+    addMesh(new THREE.BoxGeometry(0.38, 0.42, 0.03), makeMat(0x451a03), 0, 0.70, -0.16, chair1);
+
+    var chair2 = new THREE.Group();
+    chair2.position.set(-2.2, 0, 2.38);
+    chair2.rotation.y = Math.PI;
+    scene.add(chair2);
+    addMesh(new THREE.BoxGeometry(0.40, 0.04, 0.38), makeMat(0x451a03), 0, 0.46, 0, chair2);
+    addMesh(new THREE.BoxGeometry(0.36, 0.02, 0.34), makeMat(0x1e3a8a), 0, 0.48, 0, chair2);
+    addMesh(cLegGeo, makeMat(0x451a03), -0.16, 0.23, -0.15, chair2);
+    addMesh(cLegGeo, makeMat(0x451a03),  0.16, 0.23, -0.15, chair2);
+    addMesh(cLegGeo, makeMat(0x451a03), -0.16, 0.23,  0.15, chair2);
+    addMesh(cLegGeo, makeMat(0x451a03),  0.16, 0.23,  0.15, chair2);
+    addMesh(new THREE.BoxGeometry(0.38, 0.42, 0.03), makeMat(0x451a03), 0, 0.70, -0.16, chair2);
+
+    // ==================== KITCHEN STOVE & UPPER CABINETS ====================
     var stoveGroup = new THREE.Group();
-    stoveGroup.position.set(-2.55, 0, 2.05);
+    stoveGroup.position.set(-1.35, 0, 2.65);
+    stoveGroup.rotation.y = Math.PI;
     scene.add(stoveGroup);
     var whiteEnamel = makeMat(0xf0ede6);
     var darkMetal = makeMat(0x1a1a1a);
     var ovenGlass = makeMat(0x111827);
     var knobMat = makeMat(0x334155);
-    var chromeMat = makeMat(0xaaaaaa);
+    var chromeMat = tubChromeMat;
 
     addMesh(new THREE.BoxGeometry(0.65, 0.84, 0.65), whiteEnamel, 0, 0.42, 0, stoveGroup);
     addMesh(new THREE.BoxGeometry(0.55, 0.48, 0.03), darkMetal, 0, 0.32, 0.33, stoveGroup);
@@ -1593,7 +1915,7 @@ function buildApartment(isReturn) {
     var stoveHitbox = addMesh(new THREE.BoxGeometry(0.75, 1.0, 0.75), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.5, 0, stoveGroup);
     stoveHitbox.userData = { name: 'Плита (Приготовить еду)', type: 'stove' };
     interactables.push(stoveHitbox);
-    colliders.push({ minX: -2.95, maxX: -2.15, minZ: 1.72, maxZ: 2.38 });
+    colliders.push({ minX: -1.75, maxX: -0.95, minZ: 2.30, maxZ: 3.00 });
 
     gameState.apartmentStoveGroup = stoveGroup;
     gameState.apartmentStoveMesh = stoveHitbox;
@@ -1601,9 +1923,19 @@ function buildApartment(isReturn) {
     gameState.stoveLight = stoveLight;
     gameState.stovePanGroup = panGroup;
 
+    // Upper Kitchen Cabinets on front wall above stove
+    var kitchenCab = new THREE.Group();
+    kitchenCab.position.set(-1.35, 2.2, 2.82);
+    scene.add(kitchenCab);
+    addMesh(new THREE.BoxGeometry(1.2, 0.65, 0.34), makeMat(0xf0ede6), 0, 0, 0, kitchenCab);
+    addMesh(new THREE.BoxGeometry(0.56, 0.61, 0.02), makeMat(0xe2e8f0), -0.29, 0, -0.17, kitchenCab);
+    addMesh(new THREE.BoxGeometry(0.56, 0.61, 0.02), makeMat(0xe2e8f0),  0.29, 0, -0.17, kitchenCab);
+    addMesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), tubChromeMat, -0.06, -0.12, -0.19, kitchenCab);
+    addMesh(new THREE.BoxGeometry(0.02, 0.12, 0.02), tubChromeMat,  0.06, -0.12, -0.19, kitchenCab);
+
     // ==================== KITCHEN FRIDGE ====================
     var fridgeGroup = new THREE.Group();
-    fridgeGroup.position.set(-2.4, 0, 2.7);
+    fridgeGroup.position.set(-2.55, 0, 2.70);
     fridgeGroup.rotation.y = Math.PI / 2;
     scene.add(fridgeGroup);
 
@@ -1627,66 +1959,62 @@ function buildApartment(isReturn) {
     interactables.push(fDoor);
     gameState.apartmentFridgeGroup = fridgeGroup;
     gameState.apartmentFridgeDoor = fDoor;
-    colliders.push({ minX: -2.95, maxX: -1.8, minZ: 2.35, maxZ: 3.0 });
+    colliders.push({ minX: -2.95, maxX: -2.00, minZ: 2.10, maxZ: 3.00 });
 
     // ==================== BATHROOM ROOM (ВАННАЯ КОМНАТА) ====================
     var bathFloorMat = new THREE.MeshLambertMaterial({ map: getBathroomFloorTexture() });
     var bathWallMat = new THREE.MeshLambertMaterial({ map: getBathroomWallTexture() });
     var bathCeilMat = makeMat(0xf1f5f9);
 
-    // Floor & Ceiling (x: -6.0 to -3.0, z: -0.6 to +2.2)
-    var bFloor = addMesh(new THREE.PlaneGeometry(3.0, 2.8), bathFloorMat, -4.5, 0.005, 0.8);
+    // Floor & Ceiling (x: -5.8 to -3.0, z: -0.2 to +2.4)
+    var bFloor = addMesh(new THREE.PlaneGeometry(2.8, 2.6), bathFloorMat, -4.4, 0.005, 1.1);
     bFloor.rotation.x = -Math.PI / 2;
-    var bCeil = addMesh(new THREE.PlaneGeometry(3.0, 2.8), bathCeilMat, -4.5, 2.995, 0.8);
+    var bCeil = addMesh(new THREE.PlaneGeometry(2.8, 2.6), bathCeilMat, -4.4, 2.995, 1.1);
     bCeil.rotation.x = Math.PI / 2;
 
-    // Far Left Wall at x = -6.0
-    var bwLeft = addMesh(new THREE.PlaneGeometry(2.8, 3), bathWallMat, -6.0, 1.5, 0.8);
+    // Far Left Wall at x = -5.8
+    var bwLeft = addMesh(new THREE.PlaneGeometry(2.6, 3), bathWallMat, -5.8, 1.5, 1.1);
     bwLeft.rotation.y = Math.PI / 2;
-    // Back Wall at z = -0.6
-    addMesh(new THREE.PlaneGeometry(3.0, 3), bathWallMat, -4.5, 1.5, -0.6);
-    // Front Wall at z = 2.2
-    var bwFront = addMesh(new THREE.PlaneGeometry(3.0, 3), bathWallMat, -4.5, 1.5, 2.2);
+    // Back Wall at z = -0.2
+    addMesh(new THREE.PlaneGeometry(2.8, 3), bathWallMat, -4.4, 1.5, -0.2);
+    // Front Wall at z = 2.4
+    var bwFront = addMesh(new THREE.PlaneGeometry(2.8, 3), bathWallMat, -4.4, 1.5, 2.4);
     bwFront.rotation.y = Math.PI;
-    // Dividing Wall (bathroom interior side at x = -3.0)
-    var bwDivFront = addMesh(new THREE.PlaneGeometry(1.75, 3), bathWallMat, -3.0, 1.5, 1.325);
+    // Inner dividing wall at x = -3.0
+    var bwDivFront = addMesh(new THREE.PlaneGeometry(1.05, 3), bathWallMat, -3.0, 1.5, 1.875);
     bwDivFront.rotation.y = -Math.PI / 2;
-    var bwDivTop = addMesh(new THREE.PlaneGeometry(1.0, 0.8), bathWallMat, -3.0, 2.6, -0.05);
+    var bwDivBack = addMesh(new THREE.PlaneGeometry(0.40, 3), bathWallMat, -3.0, 1.5, 0.0);
+    bwDivBack.rotation.y = -Math.PI / 2;
+    var bwDivTop = addMesh(new THREE.PlaneGeometry(1.15, 0.8), bathWallMat, -3.0, 2.6, 0.775);
     bwDivTop.rotation.y = -Math.PI / 2;
 
     // Bathroom Lighting
-    var bathLight = new THREE.PointLight(0xfff7ed, 0.85, 7);
-    bathLight.position.set(-4.5, 2.75, 0.8);
+    var bathLight = new THREE.PointLight(0xfff7ed, 0.90, 7);
+    bathLight.position.set(-4.4, 2.75, 1.1);
     scene.add(bathLight);
     gameState.bathroomLight = bathLight;
 
     // Soft Bath Mat in front of bathtub
-    var matMat = makeMat(0x1e3a8a);
-    var bathMatMesh = addMesh(new THREE.PlaneGeometry(0.9, 0.55), matMat, -4.5, 0.01, 1.3);
+    var bathMatMesh = addMesh(new THREE.PlaneGeometry(0.9, 0.55), makeMat(0x1e3a8a), -4.4, 0.01, 1.3);
     bathMatMesh.rotation.x = -Math.PI / 2;
 
-    // Heated Towel Rail (Полотенцесушитель) on wall x = -3.05
-    var towelRailMat = makeMat(0xdddddd);
-    var towelBlueMat = makeMat(0x0284c7);
-    var towelWhiteMat = makeMat(0xf8fafc);
+    // Heated Towel Rail (Полотенцесушитель) on wall
+    var towelRailMat = tubChromeMat;
     var railGroup = new THREE.Group();
-    railGroup.position.set(-3.05, 1.35, 1.3);
+    railGroup.position.set(-3.05, 1.35, 1.85);
     scene.add(railGroup);
-    // S-curve chrome bars
     addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.9, 8), towelRailMat, 0, 0, 0, railGroup);
     addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, 0.35, 0, railGroup).rotation.z = Math.PI / 2;
     addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, 0.0, 0, railGroup).rotation.z = Math.PI / 2;
     addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, -0.35, 0, railGroup).rotation.z = Math.PI / 2;
-    // Folded towels hanging
-    addMesh(new THREE.BoxGeometry(0.04, 0.38, 0.28), towelBlueMat, -0.06, 0.18, 0, railGroup);
-    addMesh(new THREE.BoxGeometry(0.04, 0.32, 0.24), towelWhiteMat, -0.06, -0.18, 0, railGroup);
+    addMesh(new THREE.BoxGeometry(0.04, 0.38, 0.28), makeMat(0x0284c7), -0.06, 0.18, 0, railGroup);
+    addMesh(new THREE.BoxGeometry(0.04, 0.32, 0.24), makeMat(0xf8fafc), -0.06, -0.18, 0, railGroup);
 
     // ==================== 1. ULTRA-REALISTIC BATHTUB (ВАННАЯ КОМНАТА) ====================
     var tubGroup = new THREE.Group();
-    tubGroup.position.set(-5.58, 0, 1.30);
+    tubGroup.position.set(-5.38, 0, 1.30);
     scene.add(tubGroup);
 
-    // High-specular materials for realistic porcelain, chrome, and water
     var porcelainMat = new THREE.MeshPhongMaterial({ color: 0xfcfcfc, specular: 0xffffff, shininess: 95 });
     var porcelainInnerMat = new THREE.MeshPhongMaterial({ color: 0xf4f7f6, specular: 0xffffff, shininess: 85 });
     var tubChromeMat = new THREE.MeshPhongMaterial({ color: 0xe0e0e0, specular: 0xffffff, shininess: 120 });
@@ -1696,72 +2024,49 @@ function buildApartment(isReturn) {
     var teakMat = makeMat(0x854d0e);
     var darkPlinthMat = makeMat(0x334155);
 
-    // 1.1 Tiled Front Apron & Recessed Toe Kick Plinth (Экран под ванну и цоколь)
-    // Recessed toe-kick plinth (allows standing close to tub)
+    // Tiled Front Apron & Toe Kick Plinth
     addMesh(new THREE.BoxGeometry(0.04, 0.08, 1.70), darkPlinthMat, 0.36, 0.04, 0, tubGroup);
-    // Main front apron (smooth ceramic/acrylic finish with subtle grout lines)
     addMesh(new THREE.BoxGeometry(0.04, 0.50, 1.70), porcelainMat, 0.38, 0.33, 0, tubGroup);
-
-    // Inspection Service Hatch (Сантехнический люк для доступа к сифону)
-    var hatchFrame = addMesh(new THREE.BoxGeometry(0.015, 0.32, 0.32), tubChromeMat, 0.405, 0.28, 0.58, tubGroup);
+    addMesh(new THREE.BoxGeometry(0.015, 0.32, 0.32), tubChromeMat, 0.405, 0.28, 0.58, tubGroup);
     addMesh(new THREE.BoxGeometry(0.01, 0.29, 0.29), makeMat(0xe2e8f0), 0.405, 0.28, 0.58, tubGroup);
-    // Chrome pull handle for hatch
     addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.06, 8), tubChromeMat, 0.415, 0.28, 0.68, tubGroup);
 
-    // 1.2 Sanitary Silicone Sealant Bead along the Tile Walls (Белый водостойкий шов)
-    var sealantMat = makeMat(0xf8fafc);
-    var sealWall = addMesh(new THREE.CylinderGeometry(0.008, 0.008, 1.70, 8), sealantMat, -0.41, 0.61, 0, tubGroup);
+    // Silicone Sealant Bead along walls
+    var sealWall = addMesh(new THREE.CylinderGeometry(0.008, 0.008, 1.70, 8), makeMat(0xf8fafc), -0.41, 0.61, 0, tubGroup);
     sealWall.rotation.x = Math.PI / 2;
-    var sealBack = addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.82, 8), sealantMat, 0, 0.61, -0.84, tubGroup);
+    var sealBack = addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.82, 8), makeMat(0xf8fafc), 0, 0.61, -0.84, tubGroup);
     sealBack.rotation.z = Math.PI / 2;
 
-    // 1.3 Contoured Rims (Широкие закруглённые бортики)
-    // Wall side rim (left)
+    // Rims
     addMesh(new THREE.BoxGeometry(0.12, 0.04, 1.70), porcelainMat, -0.35, 0.59, 0, tubGroup);
-    // Outer side rim with rounded lip (right)
     addMesh(new THREE.BoxGeometry(0.12, 0.04, 1.70), porcelainMat, 0.35, 0.59, 0, tubGroup);
     var rollLip = addMesh(new THREE.CylinderGeometry(0.025, 0.025, 1.70, 12, 1, false, 0, Math.PI), porcelainMat, 0.40, 0.58, 0, tubGroup);
     rollLip.rotation.x = Math.PI / 2;
-    // Foot end rim (wide front ledge)
     addMesh(new THREE.BoxGeometry(0.80, 0.04, 0.14), porcelainMat, 0, 0.59, 0.78, tubGroup);
-    // Head end rim (ergonomic back ledge)
     addMesh(new THREE.BoxGeometry(0.80, 0.04, 0.14), porcelainMat, 0, 0.59, -0.78, tubGroup);
-    // Outer end panels
     addMesh(new THREE.BoxGeometry(0.80, 0.58, 0.04), porcelainMat, 0, 0.29, -0.83, tubGroup);
     addMesh(new THREE.BoxGeometry(0.80, 0.58, 0.04), porcelainMat, 0, 0.29,  0.83, tubGroup);
 
-    // 1.4 HOLLOW Inner Basin with Ergonomic Sloped Backrest (Глубокая чаша с анатомическим наклоном)
-    // Flat bottom basin with slight slope
+    // Hollow Inner Basin with Sloped Backrest
     addMesh(new THREE.BoxGeometry(0.56, 0.03, 1.10), porcelainInnerMat, 0, 0.14, 0.16, tubGroup);
-    // Sloped ergonomic backrest (comfortable 38-degree reclining surface)
     var backrest = addMesh(new THREE.BoxGeometry(0.56, 0.03, 0.54), porcelainInnerMat, 0, 0.36, -0.52, tubGroup);
     backrest.rotation.x = -Math.PI * 0.23;
-    // Foot end vertical inner wall
     addMesh(new THREE.BoxGeometry(0.56, 0.45, 0.03), porcelainInnerMat, 0, 0.36, 0.72, tubGroup);
-    // Inner side walls (slanted inwards towards floor)
     var leftInnerWall = addMesh(new THREE.BoxGeometry(0.03, 0.46, 1.48), porcelainInnerMat, -0.28, 0.37, 0.02, tubGroup);
     leftInnerWall.rotation.z = -0.12;
     var rightInnerWall = addMesh(new THREE.BoxGeometry(0.03, 0.46, 1.48), porcelainInnerMat, 0.28, 0.37, 0.02, tubGroup);
     rightInnerWall.rotation.z = 0.12;
 
-    // 1.5 Chrome Drain & Overflow with Plug and Ball Chain (Слив-перелив и пробка на цепочке)
-    // Chrome drain ring
+    // Chrome Drain & Overflow with plug and chain
     addMesh(new THREE.CylinderGeometry(0.042, 0.042, 0.015, 16), tubChromeMat, 0, 0.142, 0.55, tubGroup);
     addMesh(new THREE.CylinderGeometry(0.028, 0.028, 0.02, 16), makeMat(0x0f172a), 0, 0.135, 0.55, tubGroup);
-    // Chrome cross-bars strainer inside drain
     addMesh(new THREE.BoxGeometry(0.05, 0.008, 0.008), tubChromeMat, 0, 0.146, 0.55, tubGroup);
     addMesh(new THREE.BoxGeometry(0.008, 0.008, 0.05), tubChromeMat, 0, 0.146, 0.55, tubGroup);
-
-    // Chrome overflow plate on foot-end inner wall
     var overPlate = addMesh(new THREE.CylinderGeometry(0.036, 0.036, 0.012, 16), tubChromeMat, 0, 0.48, 0.71, tubGroup);
     overPlate.rotation.x = Math.PI / 2;
-    // Overflow slots
     addMesh(new THREE.BoxGeometry(0.04, 0.006, 0.014), makeMat(0x0f172a), 0, 0.48, 0.71, tubGroup);
-
-    // Black rubber plug resting beside drain with chrome ring
     addMesh(new THREE.CylinderGeometry(0.028, 0.022, 0.02, 12), rubberMat, 0.09, 0.15, 0.52, tubGroup);
     addMesh(new THREE.TorusGeometry(0.014, 0.004, 6, 12), tubChromeMat, 0.09, 0.165, 0.52, tubGroup).rotation.x = Math.PI / 2;
-    // Ball chain links from overflow eyelet to plug
     for (var cl = 0; cl < 7; cl++) {
         var cRatio = cl / 6;
         var cx = 0.0 + cRatio * 0.09;
@@ -1770,28 +2075,20 @@ function buildApartment(isReturn) {
         addMesh(new THREE.SphereGeometry(0.0045, 6, 6), tubChromeMat, cx, cy, cz, tubGroup);
     }
 
-    // 1.6 Clear Crystal Water Surface with Floating Soap Foam Clusters (Вода с пеной)
+    // Water Surface & Foam
     var waterMesh = addMesh(new THREE.PlaneGeometry(0.56, 1.44), tubWaterMat, 0, 0.42, 0.04, tubGroup);
     waterMesh.rotation.x = -Math.PI / 2;
     gameState.tubWaterMesh = waterMesh;
 
-    // Iridescent soap foam bubbles clustered near headrest & edges
     var foamGroup = new THREE.Group();
     foamGroup.position.set(0, 0.425, 0);
     tubGroup.add(foamGroup);
     var bubbleCoords = [
-        // Headrest cluster
-        { x: -0.16, z: -0.38, r: 0.036 },
-        { x: -0.06, z: -0.42, r: 0.044 },
-        { x:  0.08, z: -0.40, r: 0.040 },
-        { x:  0.18, z: -0.36, r: 0.032 },
-        { x: -0.10, z: -0.32, r: 0.030 },
-        { x:  0.02, z: -0.30, r: 0.035 },
-        // Side clusters
-        { x: -0.22, z: -0.10, r: 0.026 },
-        { x: -0.20, z:  0.12, r: 0.028 },
-        { x:  0.22, z: -0.05, r: 0.025 },
-        { x:  0.20, z:  0.20, r: 0.024 },
+        { x: -0.16, z: -0.38, r: 0.036 }, { x: -0.06, z: -0.42, r: 0.044 },
+        { x:  0.08, z: -0.40, r: 0.040 }, { x:  0.18, z: -0.36, r: 0.032 },
+        { x: -0.10, z: -0.32, r: 0.030 }, { x:  0.02, z: -0.30, r: 0.035 },
+        { x: -0.22, z: -0.10, r: 0.026 }, { x: -0.20, z:  0.12, r: 0.028 },
+        { x:  0.22, z: -0.05, r: 0.025 }, { x:  0.20, z:  0.20, r: 0.024 },
         { x: -0.12, z:  0.35, r: 0.022 }
     ];
     for (var bi = 0; bi < bubbleCoords.length; bi++) {
@@ -1800,67 +2097,49 @@ function buildApartment(isReturn) {
         bubble.scale.set(1.2, 0.6, 1.2);
     }
 
-    // 1.7 Heavy Chrome Mixer Tap (Двухвентильный смеситель с длинным поворотным изливом)
+    // Mixer Tap & Handles
     var mixerGroup = new THREE.Group();
     mixerGroup.position.set(0, 0.74, 0.78);
     tubGroup.add(mixerGroup);
-
-    // Two wall escutcheons (круглые отражатели у стены)
     var escL = addMesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12), tubChromeMat, -0.09, 0, 0.08, mixerGroup);
     escL.rotation.x = Math.PI / 2;
     var escR = addMesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12), tubChromeMat,  0.09, 0, 0.08, mixerGroup);
     escR.rotation.x = Math.PI / 2;
-
-    // Hexagonal mixer body
     var mBody = addMesh(new THREE.CylinderGeometry(0.024, 0.024, 0.22, 6), tubChromeMat, 0, 0, 0.02, mixerGroup);
     mBody.rotation.z = Math.PI / 2;
-
-    // Long curved swivel spout (гусак)
     var spoutStem = addMesh(new THREE.CylinderGeometry(0.013, 0.013, 0.16, 12), tubChromeMat, 0, 0, -0.06, mixerGroup);
     spoutStem.rotation.x = Math.PI / 2;
     var spoutTip = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 12), tubChromeMat, 0, -0.04, -0.14, mixerGroup);
     spoutTip.rotation.x = -Math.PI / 6;
     addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.02, 12), tubChromeMat, 0, -0.08, -0.16, mixerGroup);
 
-    // Hot Water Cross-Handle (Вентиль с красным индексом)
-    var hotH = new THREE.Group();
-    hotH.position.set(-0.09, 0, 0.02);
-    mixerGroup.add(hotH);
+    var hotH = new THREE.Group(); hotH.position.set(-0.09, 0, 0.02); mixerGroup.add(hotH);
     addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.03, 8), tubChromeMat, 0, 0, -0.02, hotH).rotation.x = Math.PI / 2;
     addMesh(new THREE.BoxGeometry(0.05, 0.012, 0.012), tubChromeMat, 0, 0, -0.035, hotH);
     addMesh(new THREE.BoxGeometry(0.012, 0.05, 0.012), tubChromeMat, 0, 0, -0.035, hotH);
     addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.005, 8), makeMat(0xdc2626), 0, 0, -0.042, hotH).rotation.x = Math.PI / 2;
 
-    // Cold Water Cross-Handle (Вентиль с синим индексом)
-    var coldH = new THREE.Group();
-    coldH.position.set(0.09, 0, 0.02);
-    mixerGroup.add(coldH);
+    var coldH = new THREE.Group(); coldH.position.set(0.09, 0, 0.02); mixerGroup.add(coldH);
     addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.03, 8), tubChromeMat, 0, 0, -0.02, coldH).rotation.x = Math.PI / 2;
     addMesh(new THREE.BoxGeometry(0.05, 0.012, 0.012), tubChromeMat, 0, 0, -0.035, coldH);
     addMesh(new THREE.BoxGeometry(0.012, 0.05, 0.012), tubChromeMat, 0, 0, -0.035, coldH);
     addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.005, 8), makeMat(0x2563eb), 0, 0, -0.042, coldH).rotation.x = Math.PI / 2;
 
-    // Diverter Knob (Кнопка переключателя ванна/душ)
     addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), tubChromeMat, 0, 0.03, 0.02, mixerGroup);
     addMesh(new THREE.SphereGeometry(0.012, 8, 8), tubChromeMat, 0, 0.05, 0.02, mixerGroup);
 
-    // 1.8 Flexible Spiral Metal Shower Hose & Shower Wand on Wall Rail (Душевая штанга и шланг)
+    // Shower Riser Rail & Wand
     var showerRailGroup = new THREE.Group();
     showerRailGroup.position.set(-0.35, 0, 0.78);
     tubGroup.add(showerRailGroup);
-
     var rMountB = addMesh(new THREE.CylinderGeometry(0.02, 0.02, 0.06, 8), tubChromeMat, 0, 0.85, 0.06, showerRailGroup);
     rMountB.rotation.x = Math.PI / 2;
     var rMountT = addMesh(new THREE.CylinderGeometry(0.02, 0.02, 0.06, 8), tubChromeMat, 0, 2.05, 0.06, showerRailGroup);
     rMountT.rotation.x = Math.PI / 2;
-
-    // Chrome vertical slider bar (штанга)
     addMesh(new THREE.CylinderGeometry(0.013, 0.013, 1.25, 12), tubChromeMat, 0, 1.45, 0.02, showerRailGroup);
     addMesh(new THREE.BoxGeometry(0.04, 0.06, 0.06), tubChromeMat, 0, 1.90, 0.02, showerRailGroup);
     var wandCradle = addMesh(new THREE.CylinderGeometry(0.018, 0.014, 0.05, 8), tubChromeMat, 0.04, 1.90, -0.02, showerRailGroup);
     wandCradle.rotation.x = -Math.PI / 4;
-
-    // Ergonomic Hand Shower Wand (Лейка душа)
     var wandGroup = new THREE.Group();
     wandGroup.position.set(0.04, 1.92, -0.02);
     wandGroup.rotation.x = -Math.PI / 4;
@@ -1870,7 +2149,6 @@ function buildApartment(isReturn) {
     wFace.rotation.x = Math.PI / 6;
     addMesh(new THREE.CircleGeometry(0.048, 16), makeMat(0x334155), 0, 0.173, 0.025, wandGroup).rotation.x = -Math.PI / 2.8;
 
-    // Flexible spiral hose hanging down to mixer
     for (var hi = 0; hi < 12; hi++) {
         var hPct = hi / 11;
         var hx = -0.31 + hPct * 0.31;
@@ -1879,23 +2157,20 @@ function buildApartment(isReturn) {
         addMesh(new THREE.SphereGeometry(0.009, 6, 6), tubChromeMat, hx, hy, hz, tubGroup);
     }
 
-    // 1.9 Overhead Stainless Steel Curtain Rod & Translucent Shower Curtain (Карниз и шторка)
+    // Curtain Rod & Shower Curtain
     var rodGroup = new THREE.Group();
     rodGroup.position.set(0, 2.28, 0);
     tubGroup.add(rodGroup);
-
     var rodLong = addMesh(new THREE.CylinderGeometry(0.016, 0.016, 1.72, 12), tubChromeMat, 0.38, 0, 0, rodGroup);
     rodLong.rotation.x = Math.PI / 2;
     var rodTurn = addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.80, 12), tubChromeMat, -0.02, 0, -0.84, rodGroup);
     rodTurn.rotation.z = Math.PI / 2;
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 8), tubChromeMat, 0.38, 0, 0.85, rodGroup).rotation.x = Math.PI / 2;
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 8), tubChromeMat, -0.42, 0, -0.84, rodGroup).rotation.z = Math.PI / 2;
-
     for (var cr = 0; cr < 8; cr++) {
         var rZ = -0.76 + cr * 0.15;
         addMesh(new THREE.TorusGeometry(0.022, 0.004, 6, 12), tubChromeMat, 0.38, -0.025, rZ, rodGroup).rotation.y = Math.PI / 2;
     }
-
     var curtainMat = new THREE.MeshLambertMaterial({ color: 0xf1f5f9, transparent: true, opacity: 0.82, side: THREE.DoubleSide });
     addMesh(new THREE.BoxGeometry(0.08, 1.65, 0.45), curtainMat, 0.37, -0.86, -0.55, rodGroup);
     for (var f = 0; f < 3; f++) {
@@ -1903,108 +2178,69 @@ function buildApartment(isReturn) {
         addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.62, 8), curtainMat, 0.36 + (f % 2) * 0.02, -0.86, foldZ, rodGroup);
     }
 
-    // 1.10 Slatted Wooden Bath Tray with Spa Cosmetics (Деревянная решётка с принадлежностями)
+    // Wooden Bath Tray & Spa Cosmetics
     var trayGroup = new THREE.Group();
     trayGroup.position.set(0, 0.61, -0.05);
     tubGroup.add(trayGroup);
-
     addMesh(new THREE.BoxGeometry(0.78, 0.018, 0.045), teakMat, 0, 0, -0.07, trayGroup);
     addMesh(new THREE.BoxGeometry(0.78, 0.018, 0.045), teakMat, 0, 0,  0.00, trayGroup);
     addMesh(new THREE.BoxGeometry(0.78, 0.018, 0.045), teakMat, 0, 0,  0.07, trayGroup);
     addMesh(new THREE.BoxGeometry(0.03, 0.015, 0.20), teakMat, -0.32, -0.016, 0, trayGroup);
     addMesh(new THREE.BoxGeometry(0.03, 0.015, 0.20), teakMat,  0.32, -0.016, 0, trayGroup);
-
-    // Green Shampoo Bottle with Pump Dispenser
-    var shpMat = makeMat(0x0f766e);
-    addMesh(new THREE.CylinderGeometry(0.024, 0.024, 0.11, 12), shpMat, -0.12, 0.065, -0.03, trayGroup);
+    addMesh(new THREE.CylinderGeometry(0.024, 0.024, 0.11, 12), makeMat(0x0f766e), -0.12, 0.065, -0.03, trayGroup);
     addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 8), porcelainMat, -0.12, 0.13, -0.03, trayGroup);
     addMesh(new THREE.BoxGeometry(0.035, 0.01, 0.01), porcelainMat, -0.13, 0.142, -0.03, trayGroup);
-
-    // Amber Shower Gel Bottle
-    var gelMat = new THREE.MeshLambertMaterial({ color: 0xd97706, transparent: true, opacity: 0.85 });
-    addMesh(new THREE.BoxGeometry(0.038, 0.10, 0.026), gelMat, 0.0, 0.06, -0.02, trayGroup);
+    addMesh(new THREE.BoxGeometry(0.038, 0.10, 0.026), new THREE.MeshLambertMaterial({ color: 0xd97706, transparent: true, opacity: 0.85 }), 0.0, 0.06, -0.02, trayGroup);
     addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.016, 8), makeMat(0x111827), 0.0, 0.118, -0.02, trayGroup);
-
-    // Yellow Sea Sponge
     var spgMesh = addMesh(new THREE.SphereGeometry(0.032, 8, 8), makeMat(0xfef08a), 0.12, 0.032, 0.02, trayGroup);
     spgMesh.scale.set(1.2, 0.75, 1.0);
     addMesh(new THREE.TorusGeometry(0.015, 0.003, 6, 12), makeMat(0xffffff), 0.16, 0.035, 0.02, trayGroup);
-
-    // Ceramic Soap Dish with Lavender Soap Bar
     addMesh(new THREE.BoxGeometry(0.09, 0.014, 0.065), porcelainMat, -0.22, 0.017, 0.02, trayGroup);
     addMesh(new THREE.BoxGeometry(0.065, 0.018, 0.045), makeMat(0xc084fc), -0.22, 0.032, 0.02, trayGroup);
-
-    // Interactive hitbox for bath tray
     var trayHitbox = addMesh(new THREE.BoxGeometry(0.80, 0.22, 0.26), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.08, 0, trayGroup);
     trayHitbox.userData = { name: 'Подставка с шампунем и мочалкой [F]', type: 'bathroom_tray' };
     interactables.push(trayHitbox);
 
-    // 1.11 Corner 3-Tier Chrome Wire Rack on Wall (Угловая трёхъярусная полочка)
-    var caddyGroup = new THREE.Group();
-    caddyGroup.position.set(-0.36, 0, 0.76);
-    tubGroup.add(caddyGroup);
-    addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.85, 8), tubChromeMat, 0, 1.30, 0, caddyGroup);
-    addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.85, 8), tubChromeMat, -0.04, 1.30, 0.04, caddyGroup);
-    for (var tr = 0; tr < 3; tr++) {
-        var tY = 0.95 + tr * 0.28;
-        addMesh(new THREE.CylinderGeometry(0.07, 0.07, 0.025, 8, 1, false, 0, Math.PI / 2), tubChromeMat, -0.02, tY, 0.02, caddyGroup);
-    }
-    addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.08, 6), makeMat(0x0284c7), -0.02, 1.25, 0.02, caddyGroup);
-    addMesh(new THREE.BoxGeometry(0.03, 0.01, 0.012), tubChromeMat, -0.02, 1.29, 0.02, caddyGroup);
-    addMesh(new THREE.CylinderGeometry(0.025, 0.025, 0.04, 12), makeMat(0xf472b6), -0.02, 1.54, 0.02, caddyGroup);
-    addMesh(new THREE.CylinderGeometry(0.027, 0.027, 0.01, 12), makeMat(0xfacc15), -0.02, 1.565, 0.02, caddyGroup);
-
-    // 1.12 Dynamic Running Water Stream & Splash Effect (Анимированная струя из крана)
+    // Dynamic Running Water Stream
     var streamGroup = new THREE.Group();
     streamGroup.position.set(0, 0.55, 0.62);
     tubGroup.add(streamGroup);
     streamGroup.visible = false;
-
     addMesh(new THREE.CylinderGeometry(0.018, 0.028, 0.26, 12),
         new THREE.MeshPhongMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.72, specular: 0xffffff }),
         0, 0, 0, streamGroup);
-
     var splashRing = addMesh(new THREE.TorusGeometry(0.065, 0.014, 6, 16),
         new THREE.MeshPhongMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.85 }),
         0, -0.125, 0, streamGroup);
     splashRing.rotation.x = Math.PI / 2;
-
     gameState.tubWaterRunning = false;
     gameState.tubStreamGroup = streamGroup;
     gameState.tubSplashRing = splashRing;
 
-    // 1.13 Solid Bathtub Hitbox & Obstacle Collider
     var tubHitbox = addMesh(new THREE.BoxGeometry(0.85, 0.75, 1.72), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.35, 0, tubGroup);
     tubHitbox.userData = { name: 'Ванная (Включить воду) [F]', type: 'bathroom_tub' };
     interactables.push(tubHitbox);
-    colliders.push({ minX: -6.0, maxX: -5.05, minZ: 0.44, maxZ: 2.16 });
+    colliders.push({ minX: -5.80, maxX: -4.85, minZ: 0.44, maxZ: 2.16 });
 
     // ==================== 2. ULTRA-REALISTIC TOILET (ТУАЛЕТ С ПОДЪЁМНОЙ КРЫШКОЙ) ====================
     var wcGroup = new THREE.Group();
-    wcGroup.position.set(-4.10, 0, 1.90);
+    wcGroup.position.set(-3.95, 0, 1.95);
     scene.add(wcGroup);
 
     var ceramicMat = porcelainMat;
     var seatMat = new THREE.MeshPhongMaterial({ color: 0xf1f5f9, specular: 0xffffff, shininess: 80 });
 
-    // Sculpted ceramic pedestal base
     addMesh(new THREE.BoxGeometry(0.32, 0.36, 0.44), ceramicMat, 0, 0.18, -0.04, wcGroup);
-    // Ergonomic contoured bowl
     addMesh(new THREE.CylinderGeometry(0.21, 0.17, 0.18, 16), ceramicMat, 0, 0.37, -0.08, wcGroup);
-    // Hollow inner bowl with water pool at bottom
     addMesh(new THREE.CylinderGeometry(0.16, 0.12, 0.14, 16), porcelainInnerMat, 0, 0.37, -0.08, wcGroup);
     var wcWater = addMesh(new THREE.CircleGeometry(0.12, 16), tubWaterMat, 0, 0.31, -0.08, wcGroup);
     wcWater.rotation.x = -Math.PI / 2;
-
-    // Fixed toilet seat rim
     var wcSeatMesh = addMesh(new THREE.TorusGeometry(0.175, 0.024, 8, 16), seatMat, 0, 0.46, -0.08, wcGroup);
     wcSeatMesh.rotation.x = Math.PI / 2;
 
-    // Cistern water tank at back wall
     addMesh(new THREE.BoxGeometry(0.44, 0.44, 0.22), ceramicMat, 0, 0.64, 0.16, wcGroup);
     addMesh(new THREE.BoxGeometry(0.46, 0.04, 0.24), ceramicMat, 0, 0.86, 0.16, wcGroup);
 
-    // Chrome Dual-Flush Push Button on top of tank
     var flushGroup = new THREE.Group();
     flushGroup.position.set(0, 0.88, 0.16);
     wcGroup.add(flushGroup);
@@ -2015,11 +2251,9 @@ function buildApartment(isReturn) {
     flushHitbox.userData = { name: 'Смыть воду [F]', type: 'bathroom_toilet_flush' };
     interactables.push(flushHitbox);
 
-    // Flexible metal braided water inlet hose and valve
     addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.35, 8), tubChromeMat, 0.19, 0.25, 0.16, wcGroup);
     addMesh(new THREE.BoxGeometry(0.03, 0.03, 0.03), tubChromeMat, 0.19, 0.10, 0.16, wcGroup);
 
-    // Stainless steel toilet brush set on floor beside toilet
     var brushGroup = new THREE.Group();
     brushGroup.position.set(0.32, 0, 0.08);
     wcGroup.add(brushGroup);
@@ -2027,33 +2261,26 @@ function buildApartment(isReturn) {
     addMesh(new THREE.CylinderGeometry(0.008, 0.008, 0.18, 8), tubChromeMat, 0, 0.30, 0, brushGroup);
     addMesh(new THREE.SphereGeometry(0.015, 8, 8), tubChromeMat, 0, 0.39, 0, brushGroup);
 
-    // Wall-mounted chrome toilet paper holder with embossed paper roll
     var tpHolderGroup = new THREE.Group();
-    tpHolderGroup.position.set(0.95, 0.68, -0.05);
+    tpHolderGroup.position.set(0.85, 0.68, -0.05);
     wcGroup.add(tpHolderGroup);
     addMesh(new THREE.BoxGeometry(0.02, 0.06, 0.16), tubChromeMat, 0, 0, 0, tpHolderGroup);
     var tpRoll = addMesh(new THREE.CylinderGeometry(0.055, 0.055, 0.12, 16), makeMat(0xffffff), -0.06, 0, 0, tpHolderGroup);
     tpRoll.rotation.x = Math.PI / 2;
     addMesh(new THREE.PlaneGeometry(0.11, 0.16), makeMat(0xf8fafc), -0.06, -0.10, 0.055, tpHolderGroup);
 
-    // HINGED TOILET LID (КРЫШКА УНИТАЗА)
+    // Hinged Toilet Lid
     var wcLidGroup = new THREE.Group();
-    wcLidGroup.position.set(0, 0.47, 0.08); // Exact hinge axis
+    wcLidGroup.position.set(0, 0.47, 0.08);
     wcGroup.add(wcLidGroup);
-
-    // Chrome double hinges
     addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.04, 8), tubChromeMat, -0.09, 0, 0, wcLidGroup).rotation.z = Math.PI / 2;
     addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.04, 8), tubChromeMat,  0.09, 0, 0, wcLidGroup).rotation.z = Math.PI / 2;
+    addMesh(new THREE.BoxGeometry(0.36, 0.024, 0.38), seatMat, 0, 0.012, -0.19, wcLidGroup);
 
-    // Sculpted lid blade
-    var wcLidMesh = addMesh(new THREE.BoxGeometry(0.36, 0.024, 0.38), seatMat, 0, 0.012, -0.19, wcLidGroup);
-
-    // Interactive hitbox for opening/closing lid
     var lidHitbox = addMesh(new THREE.BoxGeometry(0.42, 0.12, 0.44), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.02, -0.19, wcLidGroup);
     lidHitbox.userData = { name: 'Поднять крышку унитаза [F]', type: 'bathroom_toilet_lid', lidGroup: wcLidGroup, isOpen: false, animating: false };
     interactables.push(lidHitbox);
 
-    // Interactive seat hitbox for sitting down (active when lid is open)
     var seatHitbox = addMesh(new THREE.BoxGeometry(0.42, 0.15, 0.44), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.46, -0.08, wcGroup);
     seatHitbox.userData = { name: 'Сесть на унитаз [F]', type: 'bathroom_toilet_seat' };
     interactables.push(seatHitbox);
@@ -2061,11 +2288,11 @@ function buildApartment(isReturn) {
     gameState.toiletLidOpen = false;
     gameState.toiletLidGroup = wcLidGroup;
     gameState.toiletSeatMesh = seatHitbox;
-    colliders.push({ minX: -4.45, maxX: -3.75, minZ: 1.62, maxZ: 2.18 });
+    colliders.push({ minX: -4.30, maxX: -3.60, minZ: 1.65, maxZ: 2.25 });
 
-    // ==================== 3. ULTRA-REALISTIC SINK & BACKLIT MIRROR (РАКОВИНА «МОЙДОДЫР») ====================
+    // ==================== 3. SINK WITH REAL DRAIN HOLE & MIRROR (РАКОВИНА «МОЙДОДЫР») ====================
     var sinkGroup = new THREE.Group();
-    sinkGroup.position.set(-4.60, 0, -0.36);
+    sinkGroup.position.set(-4.40, 0, 0.02);
     scene.add(sinkGroup);
 
     var vanityMat = new THREE.MeshPhongMaterial({ color: 0xf8fafc, specular: 0xffffff, shininess: 85 });
@@ -2084,10 +2311,8 @@ function buildApartment(isReturn) {
 
     // Main Vanity Cabinet Body
     addMesh(new THREE.BoxGeometry(0.78, 0.68, 0.46), vanityMat, 0, 0.44, 0, sinkGroup);
-    // Double front panel doors with recessed groove
     addMesh(new THREE.BoxGeometry(0.36, 0.52, 0.02), makeMat(0xf1f5f9), -0.19, 0.44, 0.24, sinkGroup);
     addMesh(new THREE.BoxGeometry(0.36, 0.52, 0.02), makeMat(0xf1f5f9),  0.19, 0.44, 0.24, sinkGroup);
-    // Polished stainless steel bar handles
     addMesh(new THREE.BoxGeometry(0.016, 0.18, 0.025), tubChromeMat, -0.04, 0.56, 0.255, sinkGroup);
     addMesh(new THREE.BoxGeometry(0.016, 0.18, 0.025), tubChromeMat,  0.04, 0.56, 0.255, sinkGroup);
 
@@ -2096,7 +2321,7 @@ function buildApartment(isReturn) {
     addMesh(new THREE.BoxGeometry(0.26, 0.08, 0.32), towelFoldBlue, -0.16, 0.21, 0, sinkGroup);
     addMesh(new THREE.BoxGeometry(0.26, 0.07, 0.30), towelFoldWhite, 0.16, 0.205, 0, sinkGroup);
 
-    // Glazed Ceramic Sink Countertop & Deep Hollow Basin
+    // Glazed Ceramic Sink Countertop
     addMesh(new THREE.BoxGeometry(0.82, 0.08, 0.52), porcelainMat, 0, 0.81, 0, sinkGroup);
     // Rear anti-splash lip against the wall
     addMesh(new THREE.BoxGeometry(0.82, 0.05, 0.03), porcelainMat, 0, 0.86, -0.24, sinkGroup);
@@ -2112,44 +2337,54 @@ function buildApartment(isReturn) {
     var sInnerR = addMesh(new THREE.BoxGeometry(0.02, 0.11, 0.34), porcelainInnerMat, 0.28, 0.76, 0.02, sinkGroup);
     sInnerR.rotation.z = -0.15;
 
-    // Chrome pop-up drain stopper
-    addMesh(new THREE.CylinderGeometry(0.032, 0.032, 0.015, 16), tubChromeMat, 0, 0.71, 0.02, sinkGroup);
-    addMesh(new THREE.CylinderGeometry(0.022, 0.022, 0.02, 12), tubChromeMat, 0, 0.72, 0.02, sinkGroup);
+    // ==================== REAL VISIBLE HOLLOW DRAIN HOLE (ОТВЕРСТИЕ СЛИВА В РАКОВИНЕ) ====================
+    // 1. Chrome outer circular bezel flange
+    var drainRing = addMesh(new THREE.TorusGeometry(0.036, 0.005, 8, 24), tubChromeMat, 0, 0.716, 0.02, sinkGroup);
+    drainRing.rotation.x = Math.PI / 2;
+    // 2. Deep hollow dark cylindrical cavity going down into siphon pipe (НАСТОЯЩАЯ ДЫРКА СЛИВА)
+    var drainCavity = addMesh(new THREE.CylinderGeometry(0.032, 0.028, 0.06, 16, 1, true),
+        new THREE.MeshBasicMaterial({ color: 0x05070f, side: THREE.BackSide }),
+        0, 0.68, 0.02, sinkGroup);
+    // Dark bottom well of the drain hole
+    var drainBottom = addMesh(new THREE.CircleGeometry(0.028, 16), makeMat(0x020408), 0, 0.65, 0.02, sinkGroup);
+    drainBottom.rotation.x = -Math.PI / 2;
+    // 3. Chrome cross-strainer grid inside drain hole
+    addMesh(new THREE.BoxGeometry(0.056, 0.004, 0.005), tubChromeMat, 0, 0.714, 0.02, sinkGroup);
+    addMesh(new THREE.BoxGeometry(0.005, 0.004, 0.056), tubChromeMat, 0, 0.714, 0.02, sinkGroup);
+    // Central chrome strainer screw
+    addMesh(new THREE.CylinderGeometry(0.006, 0.006, 0.006, 8), tubChromeMat, 0, 0.716, 0.02, sinkGroup);
+
     // Overflow slot below rear rim
     addMesh(new THREE.BoxGeometry(0.035, 0.012, 0.01), tubChromeMat, 0, 0.78, -0.14, sinkGroup);
 
-    // Modern High-Arch Swivel Mixer Faucet (Хромированный смеситель)
+    // High-Arch Swivel Mixer Faucet
     var sFaucetGroup = new THREE.Group();
     sFaucetGroup.position.set(0, 0.85, -0.16);
     sinkGroup.add(sFaucetGroup);
 
-    // Cylindrical faucet base
     addMesh(new THREE.CylinderGeometry(0.024, 0.026, 0.08, 16), tubChromeMat, 0, 0.04, 0, sFaucetGroup);
-    // Single-lever cartridge handle
     var fLever = addMesh(new THREE.BoxGeometry(0.018, 0.012, 0.07), tubChromeMat, 0, 0.085, -0.01, sFaucetGroup);
     fLever.rotation.x = -Math.PI / 8;
     addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.005, 8), makeMat(0xdc2626), -0.005, 0.09, -0.01, sFaucetGroup);
     addMesh(new THREE.CylinderGeometry(0.005, 0.005, 0.005, 8), makeMat(0x2563eb),  0.005, 0.09, -0.01, sFaucetGroup);
 
-    // Curved gooseneck spout extending up and arching over basin
     addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.12, 12), tubChromeMat, 0, 0.12, 0.03, sFaucetGroup);
     var spoutBend = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.09, 12), tubChromeMat, 0, 0.16, 0.09, sFaucetGroup);
     spoutBend.rotation.x = Math.PI / 4;
-    var spoutTip = addMesh(new THREE.CylinderGeometry(0.014, 0.014, 0.03, 12), tubChromeMat, 0, 0.13, 0.14, sFaucetGroup);
+    var spoutTip = addMesh(new THREE.CylinderGeometry(0.014, 0.014, 0.03, 12), tubChromeMat, 0, 0.13, 0.18, sFaucetGroup);
 
-    // Running water stream from sink faucet (when active)
+    // Running water stream straight down into drain hole
     var sinkStreamGroup = new THREE.Group();
-    sinkStreamGroup.position.set(0, 0.05, 0.14);
+    sinkStreamGroup.position.set(0, 0.02, 0.18);
     sFaucetGroup.add(sinkStreamGroup);
     sinkStreamGroup.visible = false;
-    addMesh(new THREE.CylinderGeometry(0.008, 0.014, 0.16, 8),
+    addMesh(new THREE.CylinderGeometry(0.008, 0.016, 0.22, 8),
         new THREE.MeshPhongMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.75, specular: 0xffffff }),
         0, 0, 0, sinkStreamGroup);
     gameState.sinkWaterRunning = false;
     gameState.sinkStreamGroup = sinkStreamGroup;
 
-    // Accessories on Sink Countertop:
-    // 1. Liquid Soap Pump Dispenser (Дозатор жидкого мыла)
+    // Countertop Accessories
     var soapDispGroup = new THREE.Group();
     soapDispGroup.position.set(-0.28, 0.85, -0.08);
     sinkGroup.add(soapDispGroup);
@@ -2157,36 +2392,30 @@ function buildApartment(isReturn) {
     addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.02, 8), tubChromeMat, 0, 0.10, 0, soapDispGroup);
     addMesh(new THREE.BoxGeometry(0.035, 0.008, 0.01), tubChromeMat, -0.01, 0.115, 0, soapDispGroup);
 
-    // 2. Ceramic Tumbler with Toothbrushes & Toothpaste (Стаканчик с зубными щётками)
     var cupGroup = new THREE.Group();
     cupGroup.position.set(0.28, 0.85, -0.08);
     sinkGroup.add(cupGroup);
     addMesh(new THREE.CylinderGeometry(0.028, 0.022, 0.09, 16), porcelainMat, 0, 0.045, 0, cupGroup);
-    // Blue toothbrush
     var tbBlue = addMesh(new THREE.BoxGeometry(0.008, 0.13, 0.005), makeMat(0x0284c7), -0.01, 0.08, -0.005, cupGroup);
     tbBlue.rotation.z = Math.PI / 14;
     addMesh(new THREE.BoxGeometry(0.01, 0.025, 0.008), makeMat(0xffffff), -0.018, 0.14, -0.005, cupGroup);
-    // Pink toothbrush
     var tbPink = addMesh(new THREE.BoxGeometry(0.008, 0.13, 0.005), makeMat(0xec4899), 0.01, 0.08, 0.005, cupGroup);
     tbPink.rotation.z = -Math.PI / 14;
     addMesh(new THREE.BoxGeometry(0.01, 0.025, 0.008), makeMat(0xffffff), 0.018, 0.14, 0.005, cupGroup);
-    // Toothpaste tube
     var tPaste = addMesh(new THREE.CylinderGeometry(0.012, 0.008, 0.11, 8), makeMat(0x22c55e), 0, 0.07, 0.01, cupGroup);
     tPaste.rotation.x = Math.PI / 12;
 
-    // 3. Soap Dish with Hand Soap
     addMesh(new THREE.BoxGeometry(0.10, 0.015, 0.07), porcelainMat, -0.28, 0.86, 0.10, sinkGroup);
     addMesh(new THREE.BoxGeometry(0.07, 0.02, 0.05), makeMat(0xa7f3d0), -0.28, 0.875, 0.10, sinkGroup);
 
-    // Interactive hitbox for Sink
     var sinkHitbox = addMesh(new THREE.BoxGeometry(0.85, 0.95, 0.55), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.48, 0, sinkGroup);
     sinkHitbox.userData = { name: 'Раковина (Включить воду) [F]', type: 'bathroom_sink' };
     interactables.push(sinkHitbox);
-    colliders.push({ minX: -5.05, maxX: -4.15, minZ: -0.62, maxZ: -0.10 });
+    colliders.push({ minX: -4.85, maxX: -3.95, minZ: -0.24, maxZ: 0.28 });
 
-    // ==================== MIRROR (ЗЕРКАЛО НАД РАКОВИНОЙ) ====================
+    // Mirror with Vanity Light Bar
     var mirrorGroup = new THREE.Group();
-    mirrorGroup.position.set(-4.60, 1.58, -0.58);
+    mirrorGroup.position.set(-4.40, 1.58, -0.19);
     scene.add(mirrorGroup);
 
     var mirrorFrameMat = makeMat(0x3e2723);
@@ -2194,7 +2423,6 @@ function buildApartment(isReturn) {
     addMesh(new THREE.BoxGeometry(0.82, 1.04, 0.04), mirrorFrameMat, 0, 0, 0, mirrorGroup);
     addMesh(new THREE.PlaneGeometry(0.74, 0.96), mirrorGlassMat, 0, 0, 0.022, mirrorGroup);
 
-    // Modern Chrome LED Vanity Light Bar (Бра)
     var sSconceMat = tubChromeMat;
     addMesh(new THREE.BoxGeometry(0.54, 0.025, 0.06), sSconceMat, 0, 0.58, 0.04, mirrorGroup);
     addMesh(new THREE.BoxGeometry(0.50, 0.018, 0.02), makeMat(0xfef08a), 0, 0.57, 0.06, mirrorGroup);
@@ -2217,16 +2445,16 @@ function buildApartment(isReturn) {
 
     scene.add(new THREE.AmbientLight(0x1a1a1a, 1.0));
     var winLight = new THREE.PointLight(0x4488ff, 1.0, 15);
-    winLight.position.set(0.4, 1.5, -2.8);
+    winLight.position.set(0.2, 1.5, -2.6);
     scene.add(winLight);
-    roomLight = new THREE.PointLight(0xffeedd, 0, 16);
-    roomLight.position.set(0.4, 2.9, -0.2);
+    roomLight = new THREE.PointLight(0xffeedd, 0, 18);
+    roomLight.position.set(0.2, 2.9, -0.1);
     scene.add(roomLight);
 
     // Snow outside window
-    addSnow(-22, -3.45, -16, 16, 0, 9.5, 2600, 0.075);
+    addSnow(-22, -3.25, -16, 16, 0, 9.5, 2600, 0.075);
 
-    // Christmas tree in corner
+    // Christmas tree with decorations and wrapped gift boxes
     buildChristmasTree();
 
     // Chapter-specific setup
@@ -2237,14 +2465,14 @@ function buildApartment(isReturn) {
         camera.lookAt(0, 1.5, 0);
         setObjective('Закажи пиццу');
 
-        var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.2, 0.61, -3.0);
+        var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.0, 0.61, -2.6);
         phone.userData = { name: 'Телефон (Заказать пиццу)', type: 'phone' };
         interactables.push(phone);
         gameState.apartmentPhoneMesh = phone;
 
         chapterUpdate = function() {};
     } else {
-        camera.position.set(2.6, 0.8, -1.4);
+        camera.position.set(2.4, 0.8, -1.0);
     }
 }
 
@@ -2642,7 +2870,7 @@ function buildMorning() {
     buildApartment(false); // build standard apartment
     
     // Add phone on nightstand for morning messages
-    var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.2, 0.61, -3.0);
+    var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.0, 0.61, -2.6);
     phone.userData = { name: 'Телефон', type: 'phone' };
     interactables.push(phone);
 
@@ -3343,7 +3571,7 @@ function buildUnpackApartment() {
 
     // Supermarket grocery bag on the kitchen table
     var bagGroup = new THREE.Group();
-    bagGroup.position.set(-2.4, 0.875, 1.20);
+    bagGroup.position.set(-2.2, 0.875, 1.95);
     scene.add(bagGroup);
 
     var bagTex = createProceduralTexture(256, 256, function(cx, w, h) {
@@ -7350,7 +7578,11 @@ function handleInteraction(obj) {
         }
     }
 
-        else if (d.type === 'switch') {
+        else if (d.type === 'wardrobe') {
+        playClickSound();
+        showThought('Большой деревянный шкаф для одежды. Внутри висят зимнее пальто, куртка и лежат тёплые вещи.');
+    }
+    else if (d.type === 'switch') {
         gameState.lightOn = !gameState.lightOn;
         if (roomLight) roomLight.intensity = gameState.lightOn ? 1.0 : 0.0;
         showThought(gameState.lightOn ? 'Щелк. Тусклая лампа немного разогнала тьму.' : 'Щелк. Снова темнота.');
@@ -7558,7 +7790,7 @@ function handleInteraction(obj) {
             if (!gameState.sleptChapter8) {
                 gameState.sleptChapter8 = true;
                 showThought('Ложусь поспать... Главное — никому не открывать дверь.');
-                camera.position.set(2.6, 0.8, -1.4);
+                camera.position.set(2.4, 0.8, -1.0);
                 startSleep(5, function() {
                     var t = setInterval(function() {
                         camera.position.y += 0.04;
@@ -7573,7 +7805,7 @@ function handleInteraction(obj) {
                 });
             } else {
                 showThought('Ложусь вздремнуть...');
-                camera.position.set(2.6, 0.8, -1.4);
+                camera.position.set(2.4, 0.8, -1.0);
                 startSleep(5, function() {
                     var t2 = setInterval(function() {
                         camera.position.y += 0.04;
@@ -9316,15 +9548,15 @@ function animate() {
             var p = camera.position;
             // Compound room outer perimeter clamp:
             if (p.x > -2.95) {
-                // In main room
-                p.x = Math.min(3.55, p.x);
-                if (p.z < -3.15) { p.z = -3.15; if (velocity.z < 0) velocity.z = 0; }
+                // In main room (x: -2.95 to 3.45, z: -3.05 to 2.75)
+                p.x = Math.min(3.45, p.x);
+                if (p.z < -3.05) { p.z = -3.05; if (velocity.z < 0) velocity.z = 0; }
                 if (p.z > 2.75)  { p.z = 2.75;  if (velocity.z > 0) velocity.z = 0; }
             } else {
-                // In bathroom
-                p.x = Math.max(-5.75, p.x);
-                if (p.z < -0.45) { p.z = -0.45; if (velocity.z < 0) velocity.z = 0; }
-                if (p.z > 2.05)  { p.z = 2.05;  if (velocity.z > 0) velocity.z = 0; }
+                // In bathroom (x: -5.65 to -2.95, z: -0.10 to 2.25)
+                p.x = Math.max(-5.65, p.x);
+                if (p.z < -0.10) { p.z = -0.10; if (velocity.z < 0) velocity.z = 0; }
+                if (p.z > 2.25)  { p.z = 2.25;  if (velocity.z > 0) velocity.z = 0; }
             }
         }
 
