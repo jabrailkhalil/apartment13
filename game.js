@@ -1,3 +1,74 @@
+
+function playWaterStreamSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    try {
+        var bufferSize = ctx.sampleRate * 1.5;
+        var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        var data = buffer.getChannelData(0);
+        for (var i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.15;
+        }
+        var noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        var filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, ctx.currentTime);
+        filter.Q.setValueAtTime(1.8, ctx.currentTime);
+        var gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.01, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.1);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.45);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(ctx.currentTime);
+        noise.stop(ctx.currentTime + 1.5);
+    } catch (e) {}
+}
+
+function playToiletFlushSound() {
+    var ctx = getAudioCtx();
+    if (!ctx) return;
+    try {
+        var now = ctx.currentTime;
+        var osc = ctx.createOscillator();
+        var gClick = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.linearRampToValueAtTime(120, now + 0.05);
+        gClick.gain.setValueAtTime(0.3, now);
+        gClick.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gClick);
+        gClick.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.07);
+
+        var bufferSize = ctx.sampleRate * 2.2;
+        var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        var data = buffer.getChannelData(0);
+        for (var i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.2;
+        }
+        var noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        var filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(450, now);
+        filter.frequency.linearRampToValueAtTime(850, now + 0.6);
+        filter.frequency.exponentialRampToValueAtTime(250, now + 2.1);
+        var gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.01, now);
+        gain.gain.linearRampToValueAtTime(0.35, now + 0.3);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 2.15);
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start(now + 0.05);
+        noise.stop(now + 2.2);
+    } catch (e) {}
+}
+
 function playDoorOpenSound() {
     var ctx = getAudioCtx();
     if (!ctx) return;
@@ -64,6 +135,11 @@ var gameState = {
     apartmentTableGroup: null,
     curtainsClosed: false,
     doorLocked8: false,
+    bathroomDoorOpen: false,
+    bathroomDoorGroup: null,
+    bathroomDoorMesh: null,
+    bathroomDoorCollider: null,
+    bathroomLight: null,
     leftCurtainGroup: null,
     rightCurtainGroup: null,
     curtainsMesh: null,
@@ -1098,6 +1174,11 @@ function clearScene() {
     gameState.apartmentTableGroup = null;
     gameState.curtainsClosed = false;
     gameState.doorLocked8 = false;
+    gameState.bathroomDoorOpen = false;
+    gameState.bathroomDoorGroup = null;
+    gameState.bathroomDoorMesh = null;
+    gameState.bathroomDoorCollider = null;
+    gameState.bathroomLight = null;
     gameState.leftCurtainGroup = null;
     gameState.rightCurtainGroup = null;
     gameState.curtainsMesh = null;
@@ -1164,7 +1245,7 @@ function loadChapter(n) {
         buildApartment(false);
         showChapterCard('ГЛАВА 1', 'Пробуждение', function() {
             controls.lock();
-            camera.position.set(2.0, 0.8, -1.0);
+            camera.position.set(2.6, 0.8, -1.4);
             var t = setInterval(function() {
                 camera.position.y += 0.04;
                 if (camera.position.y >= 1.6) {
@@ -1199,7 +1280,7 @@ function loadChapter(n) {
         buildMorning();
         showChapterCard('ГЛАВА 6', 'Доброе утро', function() {
             controls.lock();
-            camera.position.set(2.0, 0.8, -1.0);
+            camera.position.set(2.6, 0.8, -1.4);
             var t = setInterval(function() {
                 camera.position.y += 0.04;
                 if (camera.position.y >= 1.6) {
@@ -1230,8 +1311,8 @@ function loadChapter(n) {
         buildUnpackApartment();
         showChapterCard('ГЛАВА 8', 'Домашний уют', function() {
             controls.lock();
-            camera.position.set(-0.2, 1.6, 1.6);
-            camera.lookAt(-2.45, 1.2, 1.6);
+            camera.position.set(0.0, 1.6, 1.2);
+            camera.lookAt(-2.4, 1.2, 1.2);
             showThought('Я вернулся домой с покупками. Нужно открыть холодильник и разложить продукты по полкам.');
             setObjective('Открой холодильник и разложи продукты по полкам');
             updateFridgePrompt();
@@ -1239,16 +1320,111 @@ function loadChapter(n) {
     }
 }
 
+
+var cachedBathFloorTex = null;
+function getBathroomFloorTexture() {
+    if (cachedBathFloorTex) return cachedBathFloorTex;
+    cachedBathFloorTex = createProceduralTexture(512, 512, function(ctx, w, h) {
+        ctx.fillStyle = '#e2e8f0';
+        ctx.fillRect(0, 0, w, h);
+        var tileSize = 64;
+        for (var y = 0; y < h; y += tileSize) {
+            for (var x = 0; x < w; x += tileSize) {
+                var isAlt = ((x / tileSize) + (y / tileSize)) % 2 === 0;
+                ctx.fillStyle = isAlt ? '#cbd5e1' : '#f1f5f9';
+                ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+                // Subtle ceramic gloss sheen
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.fillRect(x + 4, y + 4, tileSize - 8, 8);
+            }
+        }
+    });
+    cachedBathFloorTex.wrapS = THREE.RepeatWrapping;
+    cachedBathFloorTex.wrapT = THREE.RepeatWrapping;
+    cachedBathFloorTex.repeat.set(4, 4);
+    return cachedBathFloorTex;
+}
+
+var cachedBathWallTex = null;
+function getBathroomWallTexture() {
+    if (cachedBathWallTex) return cachedBathWallTex;
+    cachedBathWallTex = createProceduralTexture(512, 512, function(ctx, w, h) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillRect(0, 0, w, h);
+        var tileW = 64;
+        var tileH = 32;
+        var row = 0;
+        for (var y = 0; y < h; y += tileH) {
+            var xOffset = (row % 2 === 0) ? 0 : tileW / 2;
+            for (var x = -tileW; x < w + tileW; x += tileW) {
+                var rx = x + xOffset;
+                ctx.fillStyle = '#f8fafc';
+                ctx.fillRect(rx + 2, y + 2, tileW - 4, tileH - 4);
+                // Gentle cyan glaze accent
+                ctx.fillStyle = 'rgba(207, 250, 254, 0.45)';
+                ctx.fillRect(rx + 2, y + 2, tileW - 4, tileH - 4);
+                // Highlight bevel
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.fillRect(rx + 3, y + 3, tileW - 6, 4);
+            }
+            row++;
+        }
+    });
+    cachedBathWallTex.wrapS = THREE.RepeatWrapping;
+    cachedBathWallTex.wrapT = THREE.RepeatWrapping;
+    cachedBathWallTex.repeat.set(4, 3);
+    return cachedBathWallTex;
+}
+
+var cachedMirrorTex = null;
+function getBathroomMirrorTexture() {
+    if (cachedMirrorTex) return cachedMirrorTex;
+    cachedMirrorTex = createProceduralTexture(512, 512, function(ctx, w, h) {
+        var grad = ctx.createLinearGradient(0, 0, w, h);
+        grad.addColorStop(0, '#94a3b8');
+        grad.addColorStop(0.3, '#cbd5e1');
+        grad.addColorStop(0.6, '#e2e8f0');
+        grad.addColorStop(1, '#64748b');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Reflection light sheen diagonal
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath();
+        ctx.moveTo(w * 0.2, 0);
+        ctx.lineTo(w * 0.4, 0);
+        ctx.lineTo(w * 0.1, h);
+        ctx.lineTo(0, h);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.beginPath();
+        ctx.moveTo(w * 0.5, 0);
+        ctx.lineTo(w * 0.75, 0);
+        ctx.lineTo(w * 0.35, h);
+        ctx.lineTo(w * 0.1, h);
+        ctx.closePath();
+        ctx.fill();
+
+        // Subtle misted frame edge
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(4, 4, w - 8, h - 8);
+    });
+    return cachedMirrorTex;
+}
+
 // ==================== BUILD: APARTMENT ====================
 function buildApartment(isReturn) {
     scene.background = new THREE.Color(0x020202);
-    scene.fog = new THREE.Fog(0x020202, 0.5, 6);
+    scene.fog = new THREE.Fog(0x020202, 0.5, 8);
 
     var tl = new THREE.TextureLoader();
     var wallTex = tl.load(WALLPAPER_B64);
     wallTex.wrapS = THREE.RepeatWrapping;
     wallTex.wrapT = THREE.RepeatWrapping;
-    wallTex.repeat.set(3, 1.5);
+    wallTex.repeat.set(4, 1.5);
 
     var wallMat = new THREE.MeshLambertMaterial({ color: 0x888888, map: wallTex });
     var floorMat = makeMat(0x3d352b);
@@ -1258,88 +1434,100 @@ function buildApartment(isReturn) {
     var darkMat = makeMat(0x111111);
     var pillowMat = makeMat(0xd4c8a0);
 
-    // Floor / Ceiling
-    addMesh(new THREE.PlaneGeometry(6, 6), floorMat, 0, 0, 0).rotation.x = -Math.PI / 2;
-    var c = addMesh(new THREE.PlaneGeometry(6, 6), ceilMat, 0, 3, 0);
+    // ==================== MAIN ROOM: EXPANDED FLOOR & CEILING ====================
+    // Main room: x from -3.0 to +3.8 (width 6.8, center x=0.4), z from -3.4 to +3.0 (depth 6.4, center z=-0.2)
+    addMesh(new THREE.PlaneGeometry(6.8, 6.4), floorMat, 0.4, 0, -0.2).rotation.x = -Math.PI / 2;
+    var c = addMesh(new THREE.PlaneGeometry(6.8, 6.4), ceilMat, 0.4, 3, -0.2);
     c.rotation.x = Math.PI / 2;
 
-    // Walls
-    // Back wall parts (with window hole)
-    addMesh(new THREE.PlaneGeometry(1.5, 3), wallMat, -2.25, 1.5, -3);
-    addMesh(new THREE.PlaneGeometry(1.5, 3), wallMat, 2.25, 1.5, -3);
-    addMesh(new THREE.PlaneGeometry(3, 0.75), wallMat, 0, 0.375, -3);
-    addMesh(new THREE.PlaneGeometry(3, 0.75), wallMat, 0, 2.625, -3);
-    // Front wall (with hole for door)
-    // Left piece
-    var fwLeft = addMesh(new THREE.PlaneGeometry(2.4, 3), wallMat, -1.8, 1.5, 3); fwLeft.rotation.y = Math.PI;
-    // Right piece
-    var fwRight = addMesh(new THREE.PlaneGeometry(2.4, 3), wallMat, 1.8, 1.5, 3); fwRight.rotation.y = Math.PI;
-    // Top piece
-    var fwTop = addMesh(new THREE.PlaneGeometry(1.2, 0.8), wallMat, 0, 2.6, 3); fwTop.rotation.y = Math.PI;
-    
-    // Corridor outside the door
-    var corrWallMat = makeMat(0x556655); // dingy hallway paint
-    var corrFloorMat = makeMat(0x444444); // concrete floor
+    // ==================== MAIN ROOM: WALLS ====================
+    // Back wall at z = -3.4 (with window at x = 0.4)
+    addMesh(new THREE.PlaneGeometry(1.9, 3), wallMat, -2.05, 1.5, -3.4);
+    addMesh(new THREE.PlaneGeometry(1.9, 3), wallMat, 2.85, 1.5, -3.4);
+    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.4, 0.375, -3.4);
+    addMesh(new THREE.PlaneGeometry(3.0, 0.75), wallMat, 0.4, 2.625, -3.4);
+
+    // Front wall at z = 3.0 (with entrance door at x = 0)
+    var fwLeft = addMesh(new THREE.PlaneGeometry(2.4, 3), wallMat, -1.8, 1.5, 3.0); fwLeft.rotation.y = Math.PI;
+    var fwRight = addMesh(new THREE.PlaneGeometry(3.2, 3), wallMat, 2.2, 1.5, 3.0); fwRight.rotation.y = Math.PI;
+    var fwTop = addMesh(new THREE.PlaneGeometry(1.2, 0.8), wallMat, 0, 2.6, 3.0); fwTop.rotation.y = Math.PI;
+
+    // Right wall at x = 3.8
+    var rw = addMesh(new THREE.PlaneGeometry(6.4, 3), wallMat, 3.8, 1.5, -0.2);
+    rw.rotation.y = -Math.PI / 2;
+
+    // Left dividing wall at x = -3.0 (between main room and bathroom)
+    // Bathroom doorway is located at z = -0.05, width 1.0 (z from -0.55 to +0.45)
+    // Back segment of left wall (living room side, z: -3.4 to -0.55)
+    var lwBack = addMesh(new THREE.PlaneGeometry(2.85, 3), wallMat, -3.0, 1.5, -1.975);
+    lwBack.rotation.y = Math.PI / 2;
+    // Front segment of left wall (kitchen side, z: +0.45 to +3.0)
+    var lwFront = addMesh(new THREE.PlaneGeometry(2.55, 3), wallMat, -3.0, 1.5, 1.725);
+    lwFront.rotation.y = Math.PI / 2;
+    // Wall header above the bathroom doorway (z: -0.55 to +0.45, y: 2.2 to 3.0)
+    var lwTop = addMesh(new THREE.PlaneGeometry(1.0, 0.8), wallMat, -3.0, 2.6, -0.05);
+    lwTop.rotation.y = Math.PI / 2;
+
+    // Doorway Frame Trim on main room side
+    var trimMat = makeMat(0x4a3222);
+    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1, -0.55);
+    addMesh(new THREE.BoxGeometry(0.04, 2.25, 0.08), trimMat, -2.98, 1.1,  0.45);
+    addMesh(new THREE.BoxGeometry(0.04, 0.08, 1.08), trimMat, -2.98, 2.22, -0.05);
+
+    // Solid Colliders for the dividing wall
+    colliders.push({ minX: -3.15, maxX: -2.85, minZ: -3.4, maxZ: -0.55 });
+    colliders.push({ minX: -3.15, maxX: -2.85, minZ:  0.45, maxZ:  3.0 });
+
+    // ==================== CORRIDOR OUTSIDE ENTRANCE ====================
+    var corrWallMat = makeMat(0x556655);
+    var corrFloorMat = makeMat(0x444444);
     var corrCeilMat = makeMat(0x222222);
-    // Corridor floor & ceiling
     var cf = addMesh(new THREE.PlaneGeometry(2, 4), corrFloorMat, 0, 0, 5); cf.rotation.x = -Math.PI/2;
     var cc = addMesh(new THREE.PlaneGeometry(2, 4), corrCeilMat, 0, 3, 5); cc.rotation.x = Math.PI/2;
-    // Corridor left & right walls
     var cwLeft = addMesh(new THREE.PlaneGeometry(4, 3), corrWallMat, -1, 1.5, 5); cwLeft.rotation.y = Math.PI/2;
     var cwRight = addMesh(new THREE.PlaneGeometry(4, 3), corrWallMat, 1, 1.5, 5); cwRight.rotation.y = -Math.PI/2;
-    // Corridor end wall
     var cwEnd = addMesh(new THREE.PlaneGeometry(2, 3), corrWallMat, 0, 1.5, 7); cwEnd.rotation.y = Math.PI;
-    // Add a dim light in the corridor
     var corrLight = new THREE.PointLight(0xddddaa, 0.5, 5);
     corrLight.position.set(0, 2.8, 5);
     scene.add(corrLight);
 
-    // Left wall
-    var lw = addMesh(new THREE.PlaneGeometry(6, 3), wallMat, -3, 1.5, 0);
-    lw.rotation.y = Math.PI / 2;
-    // Right wall
-    var rw = addMesh(new THREE.PlaneGeometry(6, 3), wallMat, 3, 1.5, 0);
-    rw.rotation.y = -Math.PI / 2;
-
-    // Window frame
+    // ==================== WINDOW & CURTAINS ====================
     var fm = makeMat(0x3e2723);
-    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0, 2.2, -3);
-    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0, 0.8, -3);
-    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, -1.45, 1.5, -3);
-    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, 1.45, 1.5, -3);
-    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), fm, 0, 1.5, -3);
-    addMesh(new THREE.BoxGeometry(3, 0.1, 0.1), fm, 0, 1.5, -3);
-    // Window glass
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0.4, 2.2, -3.4);
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.2), fm, 0.4, 0.8, -3.4);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, -1.05, 1.5, -3.4);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.2), fm, 1.85, 1.5, -3.4);
+    addMesh(new THREE.BoxGeometry(0.1, 1.5, 0.1), fm, 0.4, 1.5, -3.4);
+    addMesh(new THREE.BoxGeometry(3, 0.1, 0.1), fm, 0.4, 1.5, -3.4);
+
     var glassMat = new THREE.MeshLambertMaterial({ color: 0x051020, transparent: true, opacity: 0.3, side: THREE.DoubleSide });
-    var win = addMesh(new THREE.PlaneGeometry(3, 1.5), glassMat, 0, 1.5, -3.01);
+    var win = addMesh(new THREE.PlaneGeometry(3, 1.5), glassMat, 0.4, 1.5, -3.41);
     win.userData = { name: 'Окно', type: 'window' };
     interactables.push(win);
 
-    // Curtain Rod (Карниз)
+    // Curtain Rod
     var rodMat = makeMat(0x222222);
-    var rod = addMesh(new THREE.CylinderGeometry(0.018, 0.018, 3.4, 8), rodMat, 0, 2.28, -2.85);
+    var rod = addMesh(new THREE.CylinderGeometry(0.018, 0.018, 3.4, 8), rodMat, 0.4, 2.28, -3.25);
     rod.rotation.z = Math.PI / 2;
-    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat, -1.72, 2.28, -2.85);
-    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat,  1.72, 2.28, -2.85);
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat, -1.32, 2.28, -3.25);
+    addMesh(new THREE.SphereGeometry(0.04, 8, 8), rodMat,  2.12, 2.28, -3.25);
 
-    // Curtains (Left and Right panels)
-    var curtainMat = makeMat(0x331e18); // rich dark warm fabric
+    var curtainMat = makeMat(0x331e18);
     var leftCurtainGroup = new THREE.Group();
-    leftCurtainGroup.position.set(-1.15, 1.5, -2.86);
+    leftCurtainGroup.position.set(-0.75, 1.5, -3.26);
     scene.add(leftCurtainGroup);
     addMesh(new THREE.BoxGeometry(0.55, 1.55, 0.06), curtainMat, 0, 0, 0, leftCurtainGroup);
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat, -0.15, 0, 0.02, leftCurtainGroup);
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat,  0.15, 0, 0.02, leftCurtainGroup);
 
     var rightCurtainGroup = new THREE.Group();
-    rightCurtainGroup.position.set(1.15, 1.5, -2.86);
+    rightCurtainGroup.position.set(1.55, 1.5, -3.26);
     scene.add(rightCurtainGroup);
     addMesh(new THREE.BoxGeometry(0.55, 1.55, 0.06), curtainMat, 0, 0, 0, rightCurtainGroup);
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat, -0.15, 0, 0.02, rightCurtainGroup);
     addMesh(new THREE.CylinderGeometry(0.035, 0.035, 1.55, 6), curtainMat,  0.15, 0, 0.02, rightCurtainGroup);
 
-    // Responsive curtain hitbox in front of window
-    var curtainHitbox = addMesh(new THREE.BoxGeometry(3.1, 1.6, 0.25), new THREE.MeshBasicMaterial({ visible: false }), 0, 1.5, -2.84);
+    var curtainHitbox = addMesh(new THREE.BoxGeometry(3.1, 1.6, 0.25), new THREE.MeshBasicMaterial({ visible: false }), 0.4, 1.5, -3.24);
     curtainHitbox.userData = { name: 'Шторы', type: 'curtains' };
     interactables.push(curtainHitbox);
 
@@ -1348,18 +1536,16 @@ function buildApartment(isReturn) {
     gameState.curtainsMesh = curtainHitbox;
     gameState.curtainsClosed = false;
 
-    // Door (with hinge group)
+    // ==================== ENTRANCE DOOR ====================
     var doorGroup = new THREE.Group();
     doorGroup.position.set(0.6, 0, 2.99);
     scene.add(doorGroup);
     var doorMesh = addMesh(new THREE.BoxGeometry(1.2, 2.2, 0.08), makeMat(0x302010), -0.6, 1.1, 0, doorGroup);
-    
-    // Doorknobs (both sides)
+
     var knobMat = makeMat(0xaaaaaa);
     addMesh(new THREE.SphereGeometry(0.04, 8, 8), knobMat, -1.05, 1.0, 0.06, doorGroup);
     addMesh(new THREE.SphereGeometry(0.04, 8, 8), knobMat, -1.05, 1.0, -0.06, doorGroup);
 
-    // Deadbolt / latch lock (on interior side)
     var lockMat = makeMat(0x222222);
     var boltMat = makeMat(0x999999);
     addMesh(new THREE.BoxGeometry(0.14, 0.09, 0.03), lockMat, -1.02, 1.18, -0.055, doorGroup);
@@ -1367,141 +1553,180 @@ function buildApartment(isReturn) {
     addMesh(new THREE.BoxGeometry(0.05, 0.1, 0.03), lockMat, -1.22, 1.18, -0.055, doorGroup);
     gameState.doorBoltMesh = boltMesh;
     gameState.doorLocked8 = false;
-    
+
     doorMesh.userData = { name: "Дверь '13'", type: 'door', hingeGroup: doorGroup };
     interactables.push(doorMesh);
     gameState.apartmentDoorMesh = doorMesh;
 
-    // Bed + pillow
-    var bedMesh = addMesh(new THREE.BoxGeometry(2, 0.5, 4), darkMat, 2.0, 0.25, -1.0);
-    addMesh(new THREE.BoxGeometry(0.7, 0.15, 0.5), pillowMat, 2.0, 0.58, -2.6);
+    // ==================== BED & NIGHTSTAND ====================
+    var bedMesh = addMesh(new THREE.BoxGeometry(2, 0.5, 4), darkMat, 2.6, 0.25, -1.4);
+    addMesh(new THREE.BoxGeometry(0.7, 0.15, 0.5), pillowMat, 2.6, 0.58, -3.0);
     bedMesh.userData = { name: 'Кровать (Спать)', type: 'bed' };
     interactables.push(bedMesh);
     gameState.apartmentBedMesh = bedMesh;
+    colliders.push({ minX: 1.6, maxX: 3.6, minZ: -3.4, maxZ: 0.6 });
 
-    // Table
-    addMesh(new THREE.BoxGeometry(1.5, 0.8, 1), woodMat, -2.25, 0.4, -2.5);
+    // Nightstand beside bed
+    var ns = new THREE.Group();
+    ns.position.set(1.2, 0, -3.0);
+    scene.add(ns);
+    addMesh(new THREE.BoxGeometry(0.8, 0.6, 0.8), woodMat, 0, 0.3, 0, ns);
 
-    // TV body
-    addMesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), darkMat, -2.25, 1.1, -2.5);
-    // TV screen
+    var drawerGroup = new THREE.Group();
+    drawerGroup.position.set(0, 0.45, 0.1);
+    ns.add(drawerGroup);
+    addMesh(new THREE.BoxGeometry(0.74, 0.04, 0.7), woodMat, 0, -0.11, 0, drawerGroup);
+    var dFront = addMesh(new THREE.BoxGeometry(0.76, 0.26, 0.04), woodMat, 0, 0, 0.35, drawerGroup);
+    var flMesh = addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), makeMat(0x222222), 0, -0.05, 0.05, drawerGroup);
+    flMesh.rotation.x = Math.PI / 2;
+    dFront.userData = { name: 'Тумбочка (ящик)', type: 'nightstand', drawerGroup: drawerGroup, flashMesh: flMesh, isOpen: false, animating: false };
+    interactables.push(dFront);
+    colliders.push({ minX: 0.8, maxX: 1.6, minZ: -3.4, maxZ: -2.5 });
+
+    // Key on nightstand (chapter 1)
+    if (!isReturn) {
+        var keyGroup = new THREE.Group();
+        keyGroup.position.set(1.2, 0.61, -3.0);
+        keyGroup.rotation.x = Math.PI / 2;
+        keyGroup.rotation.z = Math.PI / 4;
+        scene.add(keyGroup);
+        var keyMat = makeMat(0x8a6a3a);
+        var bow = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16), keyMat);
+        bow.position.set(0, 0.07, 0); keyGroup.add(bow);
+        var shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 8), keyMat);
+        shaft.position.set(0, 0, 0); keyGroup.add(shaft);
+        var bit1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.01), keyMat);
+        bit1.position.set(0.02, -0.04, 0); keyGroup.add(bit1);
+        var bit2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.01), keyMat);
+        bit2.position.set(0.015, -0.01, 0); keyGroup.add(bit2);
+        var keyHitbox = addMesh(new THREE.BoxGeometry(0.2, 0.1, 0.2), new THREE.MeshBasicMaterial({visible: false}), 0, 0, 0, keyGroup);
+        keyHitbox.userData = { name: 'Ржавый ключ', type: 'key', group: keyGroup };
+        interactables.push(keyHitbox);
+    }
+
+    // ==================== TV & TV STAND ====================
+    addMesh(new THREE.BoxGeometry(1.5, 0.8, 0.8), woodMat, -2.25, 0.4, -2.7);
+    addMesh(new THREE.BoxGeometry(0.8, 0.6, 0.6), darkMat, -2.25, 1.1, -2.7);
     var tvTex = tl.load(NEWS_B64);
     var tvMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
-    var tvScreen = addMesh(new THREE.PlaneGeometry(0.65, 0.45), tvMat, -2.25, 1.1, -2.19);
+    var tvScreen = addMesh(new THREE.PlaneGeometry(0.65, 0.45), tvMat, -2.25, 1.1, -2.39);
     tvScreen.userData = { name: 'Старый телевизор', type: 'tv', mat: tvMat, tex: tvTex };
     interactables.push(tvScreen);
     gameState.tvScreenMesh = tvScreen;
 
-    // Clean water glass
     var wg = addMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.15, 8),
         new THREE.MeshLambertMaterial({ color: 0xadd8e6, transparent: true, opacity: 0.6 }),
-        -1.8, 0.875, -2.5);
+        -1.8, 0.875, -2.7);
     wg.userData = { name: 'Стакан с водой', type: 'water' };
     interactables.push(wg);
+    colliders.push({ minX: -3.0, maxX: -1.5, minZ: -3.3, maxZ: -2.2 });
 
-    // Sofa OPPOSITE the TV — facing the TV (TV is at x=-2.25, z=-2.5, faces +z)
-    // Sofa sits at z=-0.5, facing -z (toward TV), centered on x=-2.25
+    // ==================== COFFEE TABLE (ЖУРНАЛЬНЫЙ СТОЛИК) ====================
+    var coffeeMat = makeMat(0x4a3222);
+    var coffeeTopMat = makeMat(0x6b4a33);
+    var ctGroup = new THREE.Group();
+    ctGroup.position.set(-2.0, 0, -2.05);
+    scene.add(ctGroup);
+    addMesh(new THREE.BoxGeometry(0.9, 0.04, 0.5), coffeeTopMat, 0, 0.42, 0, ctGroup);
+    var ctLeg = new THREE.BoxGeometry(0.04, 0.40, 0.04);
+    addMesh(ctLeg, coffeeMat, -0.38, 0.20, -0.20, ctGroup);
+    addMesh(ctLeg, coffeeMat,  0.38, 0.20, -0.20, ctGroup);
+    addMesh(ctLeg, coffeeMat, -0.38, 0.20,  0.20, ctGroup);
+    addMesh(ctLeg, coffeeMat,  0.38, 0.20,  0.20, ctGroup);
+    // Magazine on coffee table
+    addMesh(new THREE.BoxGeometry(0.24, 0.015, 0.32), makeMat(0xd97706), 0.05, 0.45, 0, ctGroup);
+    colliders.push({ minX: -2.5, maxX: -1.5, minZ: -2.32, maxZ: -1.78 });
+
+    // ==================== SOFA ====================
     var sofaMat = makeMat(0x666666);
     var sofaGroup = new THREE.Group();
-    sofaGroup.position.set(-2.0, 0, -0.5);
-    sofaGroup.rotation.y = Math.PI; // face toward the TV (-z direction)
+    sofaGroup.position.set(-2.0, 0, -1.4);
+    sofaGroup.rotation.y = Math.PI; // faces TV (-z)
     scene.add(sofaGroup);
 
-    // Base / seat (clickable)
     var sofaSeat = addMesh(new THREE.BoxGeometry(2.0, 0.28, 0.85), sofaMat, 0, 0.32, 0, sofaGroup);
     sofaSeat.userData = { name: isSitting ? 'Встать [F]' : 'Диван', type: 'sofa' };
     interactables.push(sofaSeat);
-    // Back cushion (tall)
     addMesh(new THREE.BoxGeometry(2.0, 0.6, 0.14), sofaMat, 0, 0.76, -0.38, sofaGroup);
-    // Seat cushions (two separate to look more realistic)
     var cushionMat = makeMat(0x555555);
     addMesh(new THREE.BoxGeometry(0.92, 0.14, 0.78), cushionMat, -0.5, 0.48, 0, sofaGroup);
     addMesh(new THREE.BoxGeometry(0.92, 0.14, 0.78), cushionMat,  0.5, 0.48, 0, sofaGroup);
-    // Back pillows
     addMesh(new THREE.BoxGeometry(0.88, 0.46, 0.1), cushionMat, -0.5, 0.72, -0.32, sofaGroup);
     addMesh(new THREE.BoxGeometry(0.88, 0.46, 0.1), cushionMat,  0.5, 0.72, -0.32, sofaGroup);
-    // Left arm
     addMesh(new THREE.BoxGeometry(0.16, 0.42, 0.85), sofaMat, -0.92, 0.39, 0, sofaGroup);
-    // Right arm
     addMesh(new THREE.BoxGeometry(0.16, 0.42, 0.85), sofaMat,  0.92, 0.39, 0, sofaGroup);
-    // Legs
     var legMat = makeMat(0x2a1a0a);
     addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat, -0.85, 0.1,  0.35, sofaGroup);
     addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat,  0.85, 0.1,  0.35, sofaGroup);
     addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat, -0.85, 0.1, -0.35, sofaGroup);
     addMesh(new THREE.BoxGeometry(0.07, 0.2, 0.07), legMat,  0.85, 0.1, -0.35, sofaGroup);
+    colliders.push({ minX: -3.0, maxX: -1.0, minZ: -1.85, maxZ: -0.95 });
 
-    // ---- APARTMENT COLLIDERS (AABB in world space) ----
-    // Bed: world pos (2.0, 0.25, -1.0), size 2x4
-    colliders.push({ minX: 1.0,  maxX: 3.0,  minZ: -3.0, maxZ:  1.0 });
-    // Table: world pos (-2.25, 0.4, -2.5), size 1.5x1
-    colliders.push({ minX: -3.0, maxX: -1.5, minZ: -3.0, maxZ: -2.0 });
-    // Fridge group at (-2.45, 0, 2.45) rotated 90deg: width 1.2 swaps to z-axis
-    colliders.push({ minX: -3.0, maxX: -1.8, minZ:  1.8, maxZ:  3.0 });
-    // Nightstand: world pos (0.6, 0, -2.6), size 0.8x1.2
-    colliders.push({ minX:  0.2, maxX:  1.0, minZ: -3.0, maxZ: -2.1 });
-    // Sofa: group at (-2.0, 0, -0.5) rotated 180deg; seat width=2.0, depth=0.85
-    // With PI rotation: local +x→world -x, local +z→world -z
-    // World x: [-2.0-1.0, -2.0+1.0]=[-3.0,-1.0], world z: [-0.5-0.425,-0.5+0.425]=[-0.925,-0.075]
-    colliders.push({ minX: -3.0, maxX: -0.8, minZ: -1.0, maxZ:  0.1 });
+    // ==================== DOOR TO BATHROOM (BETWEEN SOFA & KITCHEN TABLE) ====================
+    var bDoorGroup = new THREE.Group();
+    bDoorGroup.position.set(-3.0, 0, 0.45); // hinge at x=-3.0, z=0.45
+    scene.add(bDoorGroup);
 
-    // Kitchen table (stands in apartment throughout the whole game)
+    var bDoorMesh = addMesh(new THREE.BoxGeometry(0.05, 2.15, 0.96), makeMat(0xe8e2d8), -0.025, 1.08, -0.48, bDoorGroup);
+    // Door handles on both sides
+    var bKnobMat = makeMat(0xcccccc);
+    addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.14, 8), bKnobMat, -0.025, 1.02, -0.88, bDoorGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.10), bKnobMat, 0.03, 1.02, -0.85, bDoorGroup);
+    addMesh(new THREE.BoxGeometry(0.03, 0.025, 0.10), bKnobMat, -0.08, 1.02, -0.85, bDoorGroup);
+
+    // Hitbox for bathroom door
+    var bDoorHitbox = addMesh(new THREE.BoxGeometry(0.3, 2.2, 1.05), new THREE.MeshBasicMaterial({ visible: false }), -0.025, 1.08, -0.48, bDoorGroup);
+    bDoorHitbox.userData = { name: 'Дверь в ванную [F]', type: 'bathroom_door', hingeGroup: bDoorGroup, isOpen: false, animating: false };
+    interactables.push(bDoorHitbox);
+
+    gameState.bathroomDoorOpen = false;
+    gameState.bathroomDoorGroup = bDoorGroup;
+    gameState.bathroomDoorMesh = bDoorMesh;
+    // Initial closed door collider
+    var bDoorCol = { minX: -3.15, maxX: -2.85, minZ: -0.55, maxZ: 0.45 };
+    colliders.push(bDoorCol);
+    gameState.bathroomDoorCollider = bDoorCol;
+
+    // ==================== KITCHEN TABLE (СТОЛИК) ====================
     var tableGroup = new THREE.Group();
-    tableGroup.position.set(-2.5, 0, 0.70);
+    tableGroup.position.set(-2.4, 0, 1.2);
     scene.add(tableGroup);
-
     var tableBaseMat = makeMat(0x3d2817);
     var tableTopMat = makeMat(0xdedad2);
     var tableLegMat = makeMat(0x2d1a0e);
-
-    // Tabletop
     addMesh(new THREE.BoxGeometry(0.85, 0.05, 0.75), tableTopMat, 0, 0.85, 0, tableGroup);
-    // Table frame
     addMesh(new THREE.BoxGeometry(0.75, 0.06, 0.65), tableBaseMat, 0, 0.80, 0, tableGroup);
-    // 4 legs
     var legGeo = new THREE.BoxGeometry(0.05, 0.82, 0.05);
     addMesh(legGeo, tableLegMat, -0.34, 0.41, -0.29, tableGroup);
     addMesh(legGeo, tableLegMat,  0.34, 0.41, -0.29, tableGroup);
     addMesh(legGeo, tableLegMat, -0.34, 0.41,  0.29, tableGroup);
     addMesh(legGeo, tableLegMat,  0.34, 0.41,  0.29, tableGroup);
-
-    colliders.push({ minX: -2.9, maxX: -2.1, minZ: 0.32, maxZ: 1.08 });
+    colliders.push({ minX: -2.85, maxX: -1.95, minZ: 0.80, maxZ: 1.60 });
     gameState.apartmentTableGroup = tableGroup;
 
-    // Kitchen stove (stands in apartment throughout the whole game)
+    // ==================== KITCHEN STOVE ====================
     var stoveGroup = new THREE.Group();
-    stoveGroup.position.set(-2.6, 0, 1.42);
+    stoveGroup.position.set(-2.55, 0, 2.05);
     scene.add(stoveGroup);
-
     var whiteEnamel = makeMat(0xf0ede6);
     var darkMetal = makeMat(0x1a1a1a);
     var ovenGlass = makeMat(0x111827);
     var knobMat = makeMat(0x334155);
     var chromeMat = makeMat(0xaaaaaa);
 
-    // Stove body
     addMesh(new THREE.BoxGeometry(0.65, 0.84, 0.65), whiteEnamel, 0, 0.42, 0, stoveGroup);
-
-    // Oven door with glass window
     addMesh(new THREE.BoxGeometry(0.55, 0.48, 0.03), darkMetal, 0, 0.32, 0.33, stoveGroup);
     addMesh(new THREE.BoxGeometry(0.42, 0.32, 0.04), ovenGlass, 0, 0.32, 0.33, stoveGroup);
-    // Oven handle
     addMesh(new THREE.BoxGeometry(0.46, 0.03, 0.04), chromeMat, 0, 0.52, 0.36, stoveGroup);
-
-    // Control panel (knobs)
     addMesh(new THREE.BoxGeometry(0.58, 0.12, 0.03), whiteEnamel, 0, 0.72, 0.33, stoveGroup);
     for (var k = 0; k < 4; k++) {
         var kx = -0.21 + k * 0.14;
         var knob = addMesh(new THREE.CylinderGeometry(0.022, 0.022, 0.025, 8), knobMat, kx, 0.72, 0.34, stoveGroup);
         knob.rotation.x = Math.PI / 2;
     }
-
-    // Cooktop surface
     addMesh(new THREE.BoxGeometry(0.67, 0.04, 0.67), whiteEnamel, 0, 0.86, 0, stoveGroup);
-    // Back splash lip
     addMesh(new THREE.BoxGeometry(0.67, 0.10, 0.03), whiteEnamel, 0, 0.91, -0.32, stoveGroup);
 
-    // 4 Burners
     var burnerMat = makeMat(0x222222);
     var burnerCoords = [
         { x: -0.16, z: -0.14, r: 0.08 },
@@ -1514,7 +1739,6 @@ function buildApartment(isReturn) {
         addMesh(new THREE.CylinderGeometry(bc.r, bc.r, 0.015, 12), burnerMat, bc.x, 0.885, bc.z, stoveGroup);
     }
 
-    // Glowing burner ring (active when cooking)
     var glowMat = new THREE.MeshBasicMaterial({ color: 0xff3b10, visible: false });
     var burnerGlow = addMesh(new THREE.TorusGeometry(0.065, 0.012, 8, 16), glowMat, 0.16, 0.895, 0.14, stoveGroup);
     burnerGlow.rotation.x = Math.PI / 2;
@@ -1523,29 +1747,24 @@ function buildApartment(isReturn) {
     stoveLight.position.set(0.16, 1.0, 0.14);
     stoveGroup.add(stoveLight);
 
-    // Frying Pan on front-right burner
     var panGroup = new THREE.Group();
     panGroup.position.set(0.16, 0.895, 0.14);
     stoveGroup.add(panGroup);
-
     var panMat = makeMat(0x2a2a2a);
     addMesh(new THREE.CylinderGeometry(0.10, 0.085, 0.035, 16), panMat, 0, 0.018, 0, panGroup);
     var panHandle = addMesh(new THREE.BoxGeometry(0.025, 0.018, 0.14), makeMat(0x111111), 0, 0.03, 0.14, panGroup);
     panHandle.rotation.x = -Math.PI / 18;
 
-    // Food inside pan (sausages)
     var foodMat = makeMat(0xb91c1c);
     var sausage1 = addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.10, 8), foodMat, -0.03, 0.025, 0, panGroup);
     sausage1.rotation.z = Math.PI / 2;
     var sausage2 = addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.10, 8), foodMat, 0.03, 0.025, 0, panGroup);
     sausage2.rotation.z = Math.PI / 2;
 
-    // Stove hitbox
     var stoveHitbox = addMesh(new THREE.BoxGeometry(0.75, 1.0, 0.75), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.5, 0, stoveGroup);
     stoveHitbox.userData = { name: 'Плита (Приготовить еду)', type: 'stove' };
     interactables.push(stoveHitbox);
-
-    colliders.push({ minX: -2.95, maxX: -2.25, minZ: 1.09, maxZ: 1.75 });
+    colliders.push({ minX: -2.95, maxX: -2.15, minZ: 1.72, maxZ: 2.38 });
 
     gameState.apartmentStoveGroup = stoveGroup;
     gameState.apartmentStoveMesh = stoveHitbox;
@@ -1553,26 +1772,24 @@ function buildApartment(isReturn) {
     gameState.stoveLight = stoveLight;
     gameState.stovePanGroup = panGroup;
 
-    // Fridge (hollow, in corner against left wall)
+    // ==================== KITCHEN FRIDGE ====================
     var fridgeGroup = new THREE.Group();
-    fridgeGroup.position.set(-2.45, 0, 2.45);
+    fridgeGroup.position.set(-2.4, 0, 2.7);
     fridgeGroup.rotation.y = Math.PI / 2;
     scene.add(fridgeGroup);
 
     var fi = makeMat(0xdddddd);
-    addMesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), fi, 0, 1.1, -0.55, fridgeGroup);  // back
-    addMesh(new THREE.BoxGeometry(0.1, 2.2, 1.0), fi, -0.55, 1.1, 0, fridgeGroup);  // left
-    addMesh(new THREE.BoxGeometry(0.1, 2.2, 1.0), fi, 0.55, 1.1, 0, fridgeGroup);   // right
-    addMesh(new THREE.BoxGeometry(1.0, 0.1, 1.0), fi, 0, 2.15, 0, fridgeGroup);     // top
-    addMesh(new THREE.BoxGeometry(1.0, 0.1, 1.0), fi, 0, 0.05, 0, fridgeGroup);     // bottom
-    // Shelves
+    addMesh(new THREE.BoxGeometry(1.2, 2.2, 0.1), fi, 0, 1.1, -0.55, fridgeGroup);
+    addMesh(new THREE.BoxGeometry(0.1, 2.2, 1.0), fi, -0.55, 1.1, 0, fridgeGroup);
+    addMesh(new THREE.BoxGeometry(0.1, 2.2, 1.0), fi, 0.55, 1.1, 0, fridgeGroup);
+    addMesh(new THREE.BoxGeometry(1.0, 0.1, 1.0), fi, 0, 2.15, 0, fridgeGroup);
+    addMesh(new THREE.BoxGeometry(1.0, 0.1, 1.0), fi, 0, 0.05, 0, fridgeGroup);
     var shelfMat = new THREE.MeshLambertMaterial({ color: 0xaaaacc, transparent: true, opacity: 0.7 });
     addMesh(new THREE.BoxGeometry(0.9, 0.04, 0.9), shelfMat, 0, 0.6, 0, fridgeGroup);
     addMesh(new THREE.BoxGeometry(0.9, 0.04, 0.9), shelfMat, 0, 1.2, 0, fridgeGroup);
     addMesh(new THREE.BoxGeometry(0.9, 0.04, 0.9), shelfMat, 0, 1.8, 0, fridgeGroup);
-    // Apple
     addMesh(new THREE.SphereGeometry(0.07, 8, 8), makeMat(0xcc2222), 0.15, 1.3, 0.1, fridgeGroup);
-    // Fridge door hinge
+
     var fDoorGroup = new THREE.Group();
     fDoorGroup.position.set(0.6, 0, 0.5);
     fridgeGroup.add(fDoorGroup);
@@ -1581,66 +1798,190 @@ function buildApartment(isReturn) {
     interactables.push(fDoor);
     gameState.apartmentFridgeGroup = fridgeGroup;
     gameState.apartmentFridgeDoor = fDoor;
+    colliders.push({ minX: -2.95, maxX: -1.8, minZ: 2.35, maxZ: 3.0 });
 
-    // Key on nightstand (only chapter 1)
-    if (!isReturn) {
-        var keyGroup = new THREE.Group();
-        keyGroup.position.set(0.6, 0.61, -2.6);
-        keyGroup.rotation.x = Math.PI / 2;
-        keyGroup.rotation.z = Math.PI / 4;
-        scene.add(keyGroup);
+    // ==================== BATHROOM ROOM (ВАННАЯ КОМНАТА) ====================
+    var bathFloorMat = new THREE.MeshLambertMaterial({ map: getBathroomFloorTexture() });
+    var bathWallMat = new THREE.MeshLambertMaterial({ map: getBathroomWallTexture() });
+    var bathCeilMat = makeMat(0xf1f5f9);
 
-        var keyMat = makeMat(0x8a6a3a); // dark golden/rusty
+    // Floor & Ceiling (x: -6.0 to -3.0, z: -0.6 to +2.2)
+    var bFloor = addMesh(new THREE.PlaneGeometry(3.0, 2.8), bathFloorMat, -4.5, 0.005, 0.8);
+    bFloor.rotation.x = -Math.PI / 2;
+    var bCeil = addMesh(new THREE.PlaneGeometry(3.0, 2.8), bathCeilMat, -4.5, 2.995, 0.8);
+    bCeil.rotation.x = Math.PI / 2;
 
-        // Bow (ring handle)
-        var bow = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.01, 8, 16), keyMat);
-        bow.position.set(0, 0.07, 0);
-        keyGroup.add(bow);
+    // Far Left Wall at x = -6.0
+    var bwLeft = addMesh(new THREE.PlaneGeometry(2.8, 3), bathWallMat, -6.0, 1.5, 0.8);
+    bwLeft.rotation.y = Math.PI / 2;
+    // Back Wall at z = -0.6
+    addMesh(new THREE.PlaneGeometry(3.0, 3), bathWallMat, -4.5, 1.5, -0.6);
+    // Front Wall at z = 2.2
+    var bwFront = addMesh(new THREE.PlaneGeometry(3.0, 3), bathWallMat, -4.5, 1.5, 2.2);
+    bwFront.rotation.y = Math.PI;
+    // Dividing Wall (bathroom interior side at x = -3.0)
+    var bwDivFront = addMesh(new THREE.PlaneGeometry(1.75, 3), bathWallMat, -3.0, 1.5, 1.325);
+    bwDivFront.rotation.y = -Math.PI / 2;
+    var bwDivTop = addMesh(new THREE.PlaneGeometry(1.0, 0.8), bathWallMat, -3.0, 2.6, -0.05);
+    bwDivTop.rotation.y = -Math.PI / 2;
 
-        // Shaft
-        var shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.12, 8), keyMat);
-        shaft.position.set(0, 0, 0);
-        keyGroup.add(shaft);
+    // Bathroom Lighting
+    var bathLight = new THREE.PointLight(0xfff7ed, 0.85, 7);
+    bathLight.position.set(-4.5, 2.75, 0.8);
+    scene.add(bathLight);
+    gameState.bathroomLight = bathLight;
 
-        // Bits (teeth)
-        var bit1 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.02, 0.01), keyMat);
-        bit1.position.set(0.02, -0.04, 0);
-        keyGroup.add(bit1);
-        
-        var bit2 = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.02, 0.01), keyMat);
-        bit2.position.set(0.015, -0.01, 0);
-        keyGroup.add(bit2);
+    // Soft Bath Mat in front of bathtub
+    var matMat = makeMat(0x1e3a8a);
+    var bathMatMesh = addMesh(new THREE.PlaneGeometry(0.9, 0.55), matMat, -4.5, 0.01, 1.3);
+    bathMatMesh.rotation.x = -Math.PI / 2;
 
-        // Invisible interaction box covering the whole key
-        var keyHitbox = addMesh(new THREE.BoxGeometry(0.2, 0.1, 0.2), new THREE.MeshBasicMaterial({visible: false}), 0, 0, 0, keyGroup);
-        keyHitbox.userData = { name: 'Ржавый ключ', type: 'key', group: keyGroup };
-        interactables.push(keyHitbox);
-    }
+    // Heated Towel Rail (Полотенцесушитель) on wall x = -3.05
+    var towelRailMat = makeMat(0xdddddd);
+    var towelBlueMat = makeMat(0x0284c7);
+    var towelWhiteMat = makeMat(0xf8fafc);
+    var railGroup = new THREE.Group();
+    railGroup.position.set(-3.05, 1.35, 1.3);
+    scene.add(railGroup);
+    // S-curve chrome bars
+    addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.9, 8), towelRailMat, 0, 0, 0, railGroup);
+    addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, 0.35, 0, railGroup).rotation.z = Math.PI / 2;
+    addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, 0.0, 0, railGroup).rotation.z = Math.PI / 2;
+    addMesh(new THREE.CylinderGeometry(0.016, 0.016, 0.45, 8), towelRailMat, -0.05, -0.35, 0, railGroup).rotation.z = Math.PI / 2;
+    // Folded towels hanging
+    addMesh(new THREE.BoxGeometry(0.04, 0.38, 0.28), towelBlueMat, -0.06, 0.18, 0, railGroup);
+    addMesh(new THREE.BoxGeometry(0.04, 0.32, 0.24), towelWhiteMat, -0.06, -0.18, 0, railGroup);
 
-    // Nightstand
-    var ns = new THREE.Group();
-    ns.position.set(0.6, 0, -2.6);
-    scene.add(ns);
-    addMesh(new THREE.BoxGeometry(0.8, 0.6, 1.2), woodMat, 0, 0.3, 0, ns);
+    // ==================== 1. BATHTUB (ВАННАЯ) ====================
+    var tubGroup = new THREE.Group();
+    tubGroup.position.set(-5.5, 0, 1.3);
+    scene.add(tubGroup);
 
-    var drawerGroup = new THREE.Group();
-    drawerGroup.position.set(0, 0.45, 0.1);
-    ns.add(drawerGroup);
+    var tubWhite = makeMat(0xf8fafc);
+    var tubRim = makeMat(0xe2e8f0);
+    // Outer tub walls
+    addMesh(new THREE.BoxGeometry(0.80, 0.60, 1.60), tubWhite, 0, 0.30, 0, tubGroup);
+    // Inner water surface
+    var waterMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.65 });
+    var waterMesh = addMesh(new THREE.PlaneGeometry(0.64, 1.44), waterMat, 0, 0.45, 0, tubGroup);
+    waterMesh.rotation.x = -Math.PI / 2;
+    // Drain hole
+    addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.01, 12), makeMat(0x334155), 0, 0.46, 0.55, tubGroup);
+    // Chrome faucet mixer & shower riser
+    var tubTapGroup = new THREE.Group();
+    tubTapGroup.position.set(0, 0.62, 0.74);
+    tubGroup.add(tubTapGroup);
+    addMesh(new THREE.BoxGeometry(0.14, 0.06, 0.06), chromeMat, 0, 0.03, 0, tubTapGroup);
+    addMesh(new THREE.CylinderGeometry(0.015, 0.015, 0.12, 8), chromeMat, 0, 0.03, -0.06, tubTapGroup).rotation.x = Math.PI / 2;
+    // Hot and cold cross-knobs
+    addMesh(new THREE.BoxGeometry(0.05, 0.05, 0.015), chromeMat, -0.08, 0.03, 0, tubTapGroup);
+    addMesh(new THREE.BoxGeometry(0.05, 0.05, 0.015), chromeMat,  0.08, 0.03, 0, tubTapGroup);
+    // Shower pipe going up
+    addMesh(new THREE.CylinderGeometry(0.012, 0.012, 1.4, 8), chromeMat, 0, 0.72, 0, tubTapGroup);
+    // Shower head angled down
+    var sHead = addMesh(new THREE.CylinderGeometry(0.07, 0.04, 0.03, 16), chromeMat, 0, 1.42, -0.10, tubTapGroup);
+    sHead.rotation.x = Math.PI / 4;
 
-    // Drawer walls (for visible volume)
-    addMesh(new THREE.BoxGeometry(0.74, 0.04, 1.1), woodMat, 0, -0.11, 0, drawerGroup);  // bottom
-    var dFront = addMesh(new THREE.BoxGeometry(0.76, 0.26, 0.04), woodMat, 0, 0, 0.55, drawerGroup);
-    addMesh(new THREE.BoxGeometry(0.74, 0.22, 0.04), woodMat, 0, 0.02, -0.53, drawerGroup); // back
-    addMesh(new THREE.BoxGeometry(0.04, 0.22, 1.06), woodMat, -0.36, 0.02, 0, drawerGroup); // left
-    addMesh(new THREE.BoxGeometry(0.04, 0.22, 1.06), woodMat, 0.36, 0.02, 0, drawerGroup);  // right
-    // Flashlight inside
-    var flMesh = addMesh(new THREE.CylinderGeometry(0.03, 0.03, 0.2, 8), makeMat(0x222222), 0, -0.05, 0.1, drawerGroup);
-    flMesh.rotation.x = Math.PI / 2;
+    var tubHitbox = addMesh(new THREE.BoxGeometry(0.85, 0.7, 1.65), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.35, 0, tubGroup);
+    tubHitbox.userData = { name: 'Ванная [F]', type: 'bathroom_tub' };
+    interactables.push(tubHitbox);
+    colliders.push({ minX: -5.95, maxX: -5.05, minZ: 0.45, maxZ: 2.15 });
 
-    dFront.userData = { name: 'Тумбочка (ящик)', type: 'nightstand', drawerGroup: drawerGroup, flashMesh: flMesh, isOpen: false, animating: false };
-    interactables.push(dFront);
+    // ==================== 2. TOILET (ТУАЛЕТ / УНИТАЗ) ====================
+    var wcGroup = new THREE.Group();
+    wcGroup.position.set(-4.1, 0, 1.92);
+    scene.add(wcGroup);
 
-    // Light switch (placed right beside entrance door at x=0.80, safely away from tree)
+    var ceramicMat = makeMat(0xf8fafc);
+    var seatMat = makeMat(0xe2e8f0);
+    // Pedestal base
+    addMesh(new THREE.BoxGeometry(0.32, 0.36, 0.44), ceramicMat, 0, 0.18, -0.04, wcGroup);
+    // Bowl top
+    addMesh(new THREE.CylinderGeometry(0.20, 0.16, 0.16, 16), ceramicMat, 0, 0.36, -0.08, wcGroup);
+    // Cistern tank at back wall
+    addMesh(new THREE.BoxGeometry(0.44, 0.42, 0.22), ceramicMat, 0, 0.62, 0.16, wcGroup);
+    // Cistern lid
+    addMesh(new THREE.BoxGeometry(0.46, 0.04, 0.24), ceramicMat, 0, 0.84, 0.16, wcGroup);
+    // Dual-flush chrome button on lid
+    addMesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 12), chromeMat, 0, 0.87, 0.16, wcGroup);
+    // Toilet seat & lid
+    addMesh(new THREE.TorusGeometry(0.17, 0.025, 8, 16), seatMat, 0, 0.45, -0.08, wcGroup).rotation.x = Math.PI / 2;
+    var wcLid = addMesh(new THREE.BoxGeometry(0.36, 0.025, 0.40), seatMat, 0, 0.48, -0.08, wcGroup);
+
+    // Toilet Paper Holder on adjacent dividing wall (x = -3.1)
+    var tpHolderGroup = new THREE.Group();
+    tpHolderGroup.position.set(0.95, 0.68, -0.05);
+    wcGroup.add(tpHolderGroup);
+    addMesh(new THREE.BoxGeometry(0.02, 0.06, 0.16), chromeMat, 0, 0, 0, tpHolderGroup);
+    var tpRoll = addMesh(new THREE.CylinderGeometry(0.05, 0.05, 0.12, 12), makeMat(0xffffff), -0.06, 0, 0, tpHolderGroup);
+    tpRoll.rotation.x = Math.PI / 2;
+
+    var wcHitbox = addMesh(new THREE.BoxGeometry(0.55, 0.9, 0.65), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.45, 0.05, wcGroup);
+    wcHitbox.userData = { name: 'Туалет (Смыть) [F]', type: 'bathroom_toilet' };
+    interactables.push(wcHitbox);
+    colliders.push({ minX: -4.45, maxX: -3.75, minZ: 1.62, maxZ: 2.18 });
+
+    // ==================== 3. SINK WITH MIRROR (РАКОВИНА С ЗЕРКАЛОМ) ====================
+    var sinkGroup = new THREE.Group();
+    sinkGroup.position.set(-4.6, 0, -0.38);
+    scene.add(sinkGroup);
+
+    var vanityMat = makeMat(0xf1f5f9);
+    // Vanity base cabinet
+    addMesh(new THREE.BoxGeometry(0.74, 0.78, 0.44), vanityMat, 0, 0.39, 0, sinkGroup);
+    // Cabinet handles
+    addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.14, 8), chromeMat, -0.16, 0.42, 0.23, sinkGroup);
+    addMesh(new THREE.CylinderGeometry(0.01, 0.01, 0.14, 8), chromeMat,  0.16, 0.42, 0.23, sinkGroup);
+    // Washbasin top
+    addMesh(new THREE.BoxGeometry(0.78, 0.08, 0.48), ceramicMat, 0, 0.82, 0, sinkGroup);
+    // Sink hollow basin
+    var basinMat = makeMat(0xe2e8f0);
+    addMesh(new THREE.BoxGeometry(0.56, 0.05, 0.32), basinMat, 0, 0.81, 0.02, sinkGroup);
+    // Sink drain
+    addMesh(new THREE.CylinderGeometry(0.025, 0.025, 0.01, 12), makeMat(0x334155), 0, 0.84, 0.02, sinkGroup);
+    // Chrome faucet
+    var sTapGroup = new THREE.Group();
+    sTapGroup.position.set(0, 0.86, -0.14);
+    sinkGroup.add(sTapGroup);
+    addMesh(new THREE.CylinderGeometry(0.018, 0.022, 0.12, 8), chromeMat, 0, 0.06, 0, sTapGroup);
+    var spout = addMesh(new THREE.CylinderGeometry(0.012, 0.012, 0.10, 8), chromeMat, 0, 0.12, 0.04, sTapGroup);
+    spout.rotation.x = Math.PI / 4;
+    addMesh(new THREE.BoxGeometry(0.02, 0.06, 0.015), chromeMat, 0, 0.14, 0, sTapGroup);
+    // Soap dish with soap bar
+    addMesh(new THREE.BoxGeometry(0.11, 0.018, 0.08), ceramicMat, -0.26, 0.87, -0.06, sinkGroup);
+    addMesh(new THREE.BoxGeometry(0.08, 0.022, 0.055), makeMat(0xa7f3d0), -0.26, 0.89, -0.06, sinkGroup);
+
+    var sinkHitbox = addMesh(new THREE.BoxGeometry(0.82, 0.95, 0.52), new THREE.MeshBasicMaterial({ visible: false }), 0, 0.48, 0, sinkGroup);
+    sinkHitbox.userData = { name: 'Раковина (Включить воду) [F]', type: 'bathroom_sink' };
+    interactables.push(sinkHitbox);
+    colliders.push({ minX: -5.05, maxX: -4.15, minZ: -0.60, maxZ: -0.10 });
+
+    // ==================== MIRROR (ЗЕРКАЛО НАД РАКОВИНОЙ) ====================
+    var mirrorGroup = new THREE.Group();
+    mirrorGroup.position.set(-4.6, 1.58, -0.58);
+    scene.add(mirrorGroup);
+
+    var mirrorFrameMat = makeMat(0x3e2723);
+    var mirrorGlassMat = new THREE.MeshLambertMaterial({ map: getBathroomMirrorTexture() });
+    // Mirror Frame
+    addMesh(new THREE.BoxGeometry(0.80, 1.02, 0.04), mirrorFrameMat, 0, 0, 0, mirrorGroup);
+    // Mirror Glass Surface
+    var mirrorGlass = addMesh(new THREE.PlaneGeometry(0.72, 0.94), mirrorGlassMat, 0, 0, 0.022, mirrorGroup);
+
+    // Vanity Light Fixture (Бра) above the mirror
+    var sSconceMat = makeMat(0xdddddd);
+    var sGlobeMat = makeMat(0xfef08a);
+    addMesh(new THREE.BoxGeometry(0.36, 0.03, 0.08), sSconceMat, 0, 0.58, 0.04, mirrorGroup);
+    addMesh(new THREE.SphereGeometry(0.055, 12, 12), sGlobeMat, 0, 0.58, 0.09, mirrorGroup);
+    var mirrorLight = new THREE.PointLight(0xffedd5, 0.5, 3.5);
+    mirrorLight.position.set(0, 0.58, 0.15);
+    mirrorGroup.add(mirrorLight);
+
+    var mirrorHitbox = addMesh(new THREE.BoxGeometry(0.85, 1.05, 0.15), new THREE.MeshBasicMaterial({ visible: false }), 0, 0, 0.05, mirrorGroup);
+    mirrorHitbox.userData = { name: 'Зеркало [F]', type: 'bathroom_mirror' };
+    interactables.push(mirrorHitbox);
+
+    // ==================== LIGHT SWITCH & AMBIENCE ====================
     var switchPlateMat = makeMat(0xdedad2);
     var switchRockerMat = makeMat(0xf0ede6);
     addMesh(new THREE.BoxGeometry(0.12, 0.16, 0.025), switchPlateMat, 0.80, 1.35, 2.98);
@@ -1649,42 +1990,36 @@ function buildApartment(isReturn) {
     sw.userData = { name: 'Выключатель', type: 'switch' };
     interactables.push(sw);
 
-    // Lighting
     scene.add(new THREE.AmbientLight(0x1a1a1a, 1.0));
     var winLight = new THREE.PointLight(0x4488ff, 1.0, 15);
-    winLight.position.set(0, 1.5, -2.5);
+    winLight.position.set(0.4, 1.5, -2.8);
     scene.add(winLight);
-    roomLight = new THREE.PointLight(0xffeedd, 0, 15);
-    roomLight.position.set(0, 2.9, 0);
+    roomLight = new THREE.PointLight(0xffeedd, 0, 16);
+    roomLight.position.set(0.4, 2.9, -0.2);
     scene.add(roomLight);
 
-    // Snow outside window (wide panoramic snowfall across the entire courtyard)
-    addSnow(-22, -3.05, -16, 16, 0, 9.5, 2600, 0.075);
+    // Snow outside window
+    addSnow(-22, -3.45, -16, 16, 0, 9.5, 2600, 0.075);
 
-    // Christmas tree in the corner near bed and exit
+    // Christmas tree in corner
     buildChristmasTree();
 
     // Chapter-specific setup
     if (isReturn) {
-        // Chapter 5: return home
         gameState.lightOn = true;
         roomLight.intensity = 1.0;
         camera.position.set(0, 1.6, 2.0);
         camera.lookAt(0, 1.5, 0);
         setObjective('Закажи пиццу');
-        
-        // Add phone to the nightstand
-        var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 0.6, 0.61, -2.6);
+
+        var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.2, 0.61, -3.0);
         phone.userData = { name: 'Телефон (Заказать пиццу)', type: 'phone' };
         interactables.push(phone);
         gameState.apartmentPhoneMesh = phone;
-        
-        chapterUpdate = function() {
-            // Wait for bed interaction, logic is in handleInteraction
-        };
+
+        chapterUpdate = function() {};
     } else {
-        // Chapter 1: start in bed
-        camera.position.set(2.0, 0.8, -1.0);
+        camera.position.set(2.6, 0.8, -1.4);
     }
 }
 
@@ -2082,7 +2417,7 @@ function buildMorning() {
     buildApartment(false); // build standard apartment
     
     // Add phone on nightstand for morning messages
-    var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 0.6, 0.61, -2.6);
+    var phone = addMesh(new THREE.BoxGeometry(0.15, 0.02, 0.3), makeMat(0x111111), 1.2, 0.61, -3.0);
     phone.userData = { name: 'Телефон', type: 'phone' };
     interactables.push(phone);
 
@@ -2783,7 +3118,7 @@ function buildUnpackApartment() {
 
     // Supermarket grocery bag on the kitchen table
     var bagGroup = new THREE.Group();
-    bagGroup.position.set(-2.5, 0.875, 0.70);
+    bagGroup.position.set(-2.4, 0.875, 1.20);
     scene.add(bagGroup);
 
     var bagTex = createProceduralTexture(256, 256, function(cx, w, h) {
@@ -6644,6 +6979,78 @@ function handleInteraction(obj) {
             showThought('Выключил.');
         }
     }
+    
+    else if (d.type === 'bathroom_door') {
+        if (d.animating) return;
+        d.animating = true;
+        if (!d.isOpen) {
+            d.isOpen = true;
+            gameState.bathroomDoorOpen = true;
+            playDoorOpenSound();
+            showThought('Открыл дверь в ванную комнату.');
+            if (gameState.bathroomDoorCollider) {
+                var cIdx = colliders.indexOf(gameState.bathroomDoorCollider);
+                if (cIdx !== -1) colliders.splice(cIdx, 1);
+            }
+            var brot = 0;
+            var biv = setInterval(function() {
+                if (d.hingeGroup) d.hingeGroup.rotation.y -= 0.05;
+                brot += 0.05;
+                if (brot >= Math.PI * 0.55) {
+                    clearInterval(biv);
+                    d.animating = false;
+                }
+            }, 25);
+        } else {
+            d.isOpen = false;
+            gameState.bathroomDoorOpen = false;
+            playDoorOpenSound();
+            showThought('Закрыл дверь в ванную комнату.');
+            var brot2 = 0;
+            var biv2 = setInterval(function() {
+                if (d.hingeGroup) d.hingeGroup.rotation.y += 0.05;
+                brot2 += 0.05;
+                if (brot2 >= Math.PI * 0.55) {
+                    clearInterval(biv2);
+                    d.animating = false;
+                    if (gameState.bathroomDoorCollider) {
+                        colliders.push(gameState.bathroomDoorCollider);
+                    }
+                }
+            }, 25);
+        }
+    }
+    else if (d.type === 'bathroom_sink') {
+        playWaterStreamSound();
+        if (ch === 8) {
+            showThought('Включил кран над раковиной... Вода пока ещё течёт. Умылся холодной водой, чтобы прогнать страх.');
+        } else {
+            showThought('Включил кран над раковиной... Чистая прохладная вода. Умыл лицо и освежился.');
+        }
+    }
+    else if (d.type === 'bathroom_toilet') {
+        playToiletFlushSound();
+        showThought('Нажал кнопку смыва... Вода с характерным шумом ушла в канализацию.');
+    }
+    else if (d.type === 'bathroom_tub') {
+        playWaterStreamSound();
+        showThought('Белоснежная эмалированная ванна с хромированным душем. Можно было бы принять горячий душ.');
+    }
+    else if (d.type === 'bathroom_mirror') {
+        playClickSound();
+        if (ch === 1) {
+            showThought('Смотрю в зеркало над раковиной... Сонное бледное лицо, синяки под глазами. Надо спешить на работу.');
+        } else if (ch === 5) {
+            showThought('В зеркале отражаются усталые глаза после тяжёлой ночной смены... Скорее бы лечь в постель.');
+        } else if (ch === 6) {
+            showThought('Смотрю в зеркало... Прекрасное утро! Кошмар закончился, выгляжу бодрым и полным сил.');
+        } else if (ch === 8) {
+            showThought('В зеркале отражается тревога в глазах... В городе апокалипсис. Главное — сидеть дома и не шуметь.');
+        } else {
+            showThought('Смотрю в своё отражение в зеркале.');
+        }
+    }
+
     else if (d.type === 'switch') {
         gameState.lightOn = !gameState.lightOn;
         if (roomLight) roomLight.intensity = gameState.lightOn ? 1.0 : 0.0;
@@ -6732,7 +7139,7 @@ function handleInteraction(obj) {
                 setObjective('Жди доставку пиццы');
                 setTimeout(function() {
                     showThought('Дзинь-дзинь! Пицца приехала!');
-                    var pizzaBox = addMesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), makeMat(0xeeaa55), -2.25, 0.825, -2.2);
+                    var pizzaBox = addMesh(new THREE.BoxGeometry(0.5, 0.05, 0.5), makeMat(0xeeaa55), -2.0, 0.45, -2.05);
                     pizzaBox.userData = { name: 'Коробка пиццы', type: 'pizza' };
                     interactables.push(pizzaBox);
                     setObjective('Съешь пиццу');
@@ -6852,7 +7259,7 @@ function handleInteraction(obj) {
             if (!gameState.sleptChapter8) {
                 gameState.sleptChapter8 = true;
                 showThought('Ложусь поспать... Главное — никому не открывать дверь.');
-                camera.position.set(2.0, 0.8, -1.0);
+                camera.position.set(2.6, 0.8, -1.4);
                 startSleep(5, function() {
                     var t = setInterval(function() {
                         camera.position.y += 0.04;
@@ -6867,7 +7274,7 @@ function handleInteraction(obj) {
                 });
             } else {
                 showThought('Ложусь вздремнуть...');
-                camera.position.set(2.0, 0.8, -1.0);
+                camera.position.set(2.6, 0.8, -1.4);
                 startSleep(5, function() {
                     var t2 = setInterval(function() {
                         camera.position.y += 0.04;
@@ -8604,21 +9011,42 @@ function animate() {
         // Per-chapter update (handles boundaries + events)
         if (chapterUpdate) chapterUpdate();
 
-        // Apartment boundary (chapters 1, 5, 6, and 8) - strictly block passing through door or walls
+        // Apartment boundary (chapters 1, 5, 6, and 8) - Compound Main Room + Bathroom + Doorway
+        // Apartment boundary (chapters 1, 5, 6, and 8) - Compound Main Room + Bathroom + Doorway
         if (gameState.chapter === 1 || gameState.chapter === 5 || gameState.chapter === 6 || gameState.chapter === 8) {
             var p = camera.position;
-            p.x = Math.max(-2.55, Math.min(2.55, p.x));
-            if (p.z > 2.5) {
-                p.z = 2.5;
-                if (velocity.z < 0) velocity.z = 0; // stop forward motion against door
-            }
-            if (p.z < -2.55) {
-                p.z = -2.55;
-                if (velocity.z > 0) velocity.z = 0;
+            var inBathroomDoorway = (p.z >= -0.55 && p.z <= 0.45 && p.x <= -2.70 && p.x >= -3.30);
+            var inBathroom = (p.x <= -2.75);
+
+            if (inBathroom) {
+                // Inside bathroom boundaries (x: -5.75 to -2.75, z: -0.45 to 2.05)
+                p.x = Math.max(-5.75, p.x);
+                p.z = Math.max(-0.45, Math.min(2.05, p.z));
+
+                // Cannot cross back to main room through the dividing wall unless through doorway
+                if (!inBathroomDoorway && p.x > -3.15) {
+                    p.x = -3.15;
+                    if (velocity.x > 0) velocity.x = 0;
+                }
+            } else {
+                // Inside main room boundaries (x: -2.75 to 3.55, z: -3.15 to 2.75)
+                p.x = Math.min(3.55, p.x);
+                if (p.z < -3.15) {
+                    p.z = -3.15;
+                    if (velocity.z < 0) velocity.z = 0;
+                }
+                if (p.z > 2.75) {
+                    p.z = 2.75;
+                    if (velocity.z > 0) velocity.z = 0;
+                }
+                // Cannot cross into bathroom through dividing wall unless through doorway
+                if (!inBathroomDoorway && p.x < -2.75) {
+                    p.x = -2.75;
+                    if (velocity.x < 0) velocity.x = 0;
+                }
             }
         }
 
-        // Shop boundary (chapter 7)
         if (gameState.chapter === 7) {
             var sp = camera.position;
             sp.x = Math.max(-4.6, Math.min(4.6, sp.x));
