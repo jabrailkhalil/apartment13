@@ -1,0 +1,7 @@
+Tool: built-in imagegen (image edit).
+Reference: the original WALLPAPER_B64 image in assets.js.
+Output: assets/wallpaper-seamless.jpg; embedded copy: wallpaper-asset.js.
+The original artwork in assets.js is preserved.
+
+Prompt:
+Use case: precise-object-edit. Asset type: seamlessly repeating albedo wallpaper texture for the existing Apartment 13 first-person Soviet-apartment horror game. Image 1 is the edit target, the current floral wallpaper. Preserve its recognizable dusty rose / muted burgundy roses, dark olive foliage, aged ivory paper, worn fine paper grain and vintage faded printed textile character. Change the image into a true square seamless repeating texture tile, 1024 by 1024, orthographic front view filling the entire frame edge to edge. Remove the photographic vignette, dark edge borders, lighting gradient and baked directional shadows; the base paper brightness should be uniform across all four edges and center. Redistribute the same floral motifs as a balanced small vintage repeat, exactly matching opposite edges for continuous tiling both horizontally and vertically. Flat diffuse texture only, no room, no perspective, no frame, no labels, no text, no watermark, no hard grid, no visible tile boundary. Keep the aged gloomy palette and fine grunge without large unique stains or dark perimeter. This is a surface texture, not a product photograph.

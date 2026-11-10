@@ -11,11 +11,11 @@
 </head>
 <body>
     <div id="blocker">
-        <div id="instructions">
+        <div id="instructions" role="button" tabindex="0">
             <span id="click-to-wake">Нажмите, чтобы проснуться</span>
             <br />
             <br />
-            <span class="small-text">WASD = Ходить | Мышь = Осмотреться | ЛКМ = Взаимодействовать</span>
+            <span id="controls-hint" class="small-text">WASD / стрелки — ходить · Мышь — осмотреться<br>ЛКМ / F — взаимодействовать · Esc — пауза</span>
         </div>
     </div>
     
@@ -681,6 +681,8 @@
     </div>
 
     <script src="assets.js"></script>
+    <script src="wallpaper-asset.js"></script>
+    <script src="surface-textures.js"></script>
     <script src="game.js"></script>
 </body>
 </html>

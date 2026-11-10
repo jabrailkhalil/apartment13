@@ -798,15 +798,26 @@ function setRumbleVolume(target, duration) {
     }, 100);
 }
 // ==================== POINTER LOCK ====================
+function resetMovement() {
+    moveForward = moveBackward = moveLeft = moveRight = false;
+    velocity.set(0, 0, 0);
+    stepTimer = 0;
+}
+
 function PointerLock(cam, dom) {
     this.camera = cam;
     this.domElement = dom;
     this.isLocked = false;
+    this.useDragLook = false;
+    this.isDragging = false;
+    this.lockPending = false;
+    this.lockAttempt = 0;
     this._euler = new THREE.Euler(0, 0, 0, 'YXZ');
     var self = this;
 
     this._onMouseMove = function(e) {
         if (!self.isLocked) return;
+        if (self.useDragLook && !self.isDragging) return;
         self._euler.setFromQuaternion(self.camera.quaternion);
         self._euler.y -= (e.movementX || 0) * 0.002;
         self._euler.x -= (e.movementY || 0) * 0.002;
@@ -815,7 +826,11 @@ function PointerLock(cam, dom) {
     };
 
     this._onChange = function() {
+        self.lockPending = false;
+        resetMovement();
+        self.isDragging = false;
         if (document.pointerLockElement === self.domElement) {
+            self.useDragLook = false;
             self.isLocked = true;
             document.addEventListener('mousemove', self._onMouseMove);
             if (self.onLock) self.onLock();
@@ -826,9 +841,67 @@ function PointerLock(cam, dom) {
         }
     };
     document.addEventListener('pointerlockchange', this._onChange);
+    document.addEventListener('pointerlockerror', function() {
+        if (self.lockPending && !self.isLocked) self.enableDragLook();
+    });
+    document.addEventListener('mousedown', function(e) {
+        if (self.useDragLook && self.isLocked && e.button === 2 && e.target.tagName === 'CANVAS') {
+            self.isDragging = true;
+            e.preventDefault();
+        }
+    });
+    document.addEventListener('mouseup', function(e) {
+        if (e.button === 2) self.isDragging = false;
+    });
+    document.addEventListener('contextmenu', function(e) {
+        if (self.useDragLook && self.isLocked && e.target.tagName === 'CANVAS') e.preventDefault();
+    });
 }
-PointerLock.prototype.lock = function() { this.domElement.requestPointerLock(); };
-PointerLock.prototype.unlock = function() { if (document.exitPointerLock) document.exitPointerLock(); };
+PointerLock.prototype.enableDragLook = function() {
+    if (this.isLocked) return;
+    this.lockPending = false;
+    var firstFallback = !this.useDragLook;
+    this.useDragLook = true;
+    this.isLocked = true;
+    this.isDragging = false;
+    resetMovement();
+    document.addEventListener('mousemove', this._onMouseMove);
+    var hint = document.getElementById('controls-hint');
+    if (hint) hint.innerHTML = 'WASD / стрелки — ходить · ПКМ + мышь — осмотреться<br>ЛКМ / F — взаимодействовать · Esc — пауза';
+    if (this.onLock) this.onLock();
+    if (firstFallback) showThought('Для осмотра удерживай правую кнопку мыши. ЛКМ или F — взаимодействовать.');
+};
+PointerLock.prototype.lock = function() {
+    if (this.isLocked) return;
+    if (this.useDragLook || !this.domElement.requestPointerLock) {
+        this.enableDragLook();
+        return;
+    }
+    var self = this;
+    this.lockPending = true;
+    var attempt = ++this.lockAttempt;
+    try {
+        var result = this.domElement.requestPointerLock();
+        if (result && result.catch) result.catch(function() {
+            if (self.lockPending && self.lockAttempt === attempt) self.enableDragLook();
+        });
+    } catch (error) {
+        this.enableDragLook();
+    }
+};
+PointerLock.prototype.unlock = function() {
+    this.lockPending = false;
+    this.lockAttempt++;
+    resetMovement();
+    this.isDragging = false;
+    if (this.useDragLook) {
+        this.isLocked = false;
+        document.removeEventListener('mousemove', this._onMouseMove);
+        if (this.onUnlock) this.onUnlock();
+    } else if (document.exitPointerLock) {
+        document.exitPointerLock();
+    }
+};
 
 // ==================== HELPERS ====================
 function showThought(text) {
@@ -1243,8 +1316,7 @@ function loadChapter(n) {
     if (gameState.transitioning) return;
     gameState.chapter = n;
     clearScene();
-    moveForward = moveBackward = moveLeft = moveRight = false;
-    velocity.set(0, 0, 0);
+    resetMovement();
 
     blocker.style.display = 'none';
     uiLayer.style.display = 'block';
@@ -1412,7 +1484,7 @@ function getBathroomFloorTexture() {
     });
     cachedBathFloorTex.wrapS = THREE.RepeatWrapping;
     cachedBathFloorTex.wrapT = THREE.RepeatWrapping;
-    cachedBathFloorTex.repeat.set(4, 4);
+    configureSurfaceTexture(cachedBathFloorTex, false);
     return cachedBathFloorTex;
 }
 
@@ -1443,7 +1515,7 @@ function getBathroomWallTexture() {
     });
     cachedBathWallTex.wrapS = THREE.RepeatWrapping;
     cachedBathWallTex.wrapT = THREE.RepeatWrapping;
-    cachedBathWallTex.repeat.set(4, 3);
+    configureSurfaceTexture(cachedBathWallTex, false);
     return cachedBathWallTex;
 }
 
@@ -1492,10 +1564,7 @@ function buildApartment(isReturn) {
     scene.fog = new THREE.Fog(0x020202, 1.0, 16);
 
     var tl = new THREE.TextureLoader();
-    var wallTex = tl.load(WALLPAPER_B64);
-    wallTex.wrapS = THREE.RepeatWrapping;
-    wallTex.wrapT = THREE.RepeatWrapping;
-    wallTex.repeat.set(4, 1.5);
+    var wallTex = getWallpaperTexture();
 
     var wallMat = new THREE.MeshLambertMaterial({ color: 0x888888, map: wallTex });
     var floorMat = makeMat(0x3d352b);
@@ -1541,6 +1610,9 @@ function buildApartment(isReturn) {
     lwFront.rotation.y = Math.PI / 2;
     var lwTop = addMesh(new THREE.PlaneGeometry(1.15, 0.8), wallMat, -3.0, 2.6, 0.775);
     lwTop.rotation.y = Math.PI / 2;
+
+    // Window and door cutouts keep the same pattern scale and phase as the full walls.
+    mapMaterialSurfaces(scene, wallMat, 1.8, 1.8);
 
     // Doorway Frame Trim
     var trimMat = makeMat(0x4a3222);
@@ -1962,8 +2034,8 @@ function buildApartment(isReturn) {
     colliders.push({ minX: -2.95, maxX: -2.00, minZ: 2.10, maxZ: 3.00 });
 
     // ==================== BATHROOM ROOM (ВАННАЯ КОМНАТА) ====================
-    var bathFloorMat = new THREE.MeshLambertMaterial({ map: getBathroomFloorTexture() });
-    var bathWallMat = new THREE.MeshLambertMaterial({ map: getBathroomWallTexture() });
+    var bathFloorMat = new THREE.MeshLambertMaterial({ color: 0xc7d0da, map: getBathroomFloorTexture() });
+    var bathWallMat = new THREE.MeshLambertMaterial({ color: 0xb7c1ca, map: getBathroomWallTexture() });
     var bathCeilMat = makeMat(0xf1f5f9);
 
     // Floor & Ceiling (x: -5.8 to -3.0, z: -0.2 to +2.4)
@@ -1988,8 +2060,11 @@ function buildApartment(isReturn) {
     var bwDivTop = addMesh(new THREE.PlaneGeometry(1.15, 0.8), bathWallMat, -3.0, 2.6, 0.775);
     bwDivTop.rotation.y = -Math.PI / 2;
 
+    mapMaterialSurfaces(scene, bathWallMat, 3.2, 3.2);
+    mapSurfaceUVs(bFloor, 2.8, 2.8);
+
     // Bathroom Lighting
-    var bathLight = new THREE.PointLight(0xfff7ed, 0.90, 7);
+    var bathLight = new THREE.PointLight(0xfff7ed, 0.65, 7);
     bathLight.position.set(-4.4, 2.75, 1.1);
     scene.add(bathLight);
     gameState.bathroomLight = bathLight;
@@ -5804,55 +5879,45 @@ function buildSnowyCar(x, z, rotY, bodyColor) {
 // ==================== BUILD: STREET ====================
 function buildStreet(toWork) {
     var len = 50;
+    var sceneryLength = len + 40;
     scene.background = new THREE.Color(0x02050c);
     scene.fog = new THREE.Fog(0x02050c, 3, 24);
 
-    var tlStreet = new THREE.TextureLoader();
-    var stalkerTex = tlStreet.load(STALKER_FAR_B64);
-    var stalkerMat = new THREE.MeshBasicMaterial({ map: stalkerTex });
-
-    var snowGroundTex = tlStreet.load(SNOW_GROUND_B64);
-    snowGroundTex.wrapS = THREE.RepeatWrapping;
-    snowGroundTex.wrapT = THREE.RepeatWrapping;
-    snowGroundTex.repeat.set(1.5, 18);
+    var snowGroundTex = getSnowSurfaceTexture();
     var snowGroundMat = new THREE.MeshLambertMaterial({ map: snowGroundTex });
-
-    var skyTex = tlStreet.load(NIGHT_SKY_B64);
-    skyTex.wrapS = THREE.RepeatWrapping;
-    skyTex.wrapT = THREE.RepeatWrapping;
-    skyTex.repeat.set(2.5, 8);
-    var skyMat = new THREE.MeshBasicMaterial({ map: skyTex });
 
     // 1. Central Snowy Asphalt Road
     var roadMat = makeMat(0x1e242d);
-    var road = addMesh(new THREE.PlaneGeometry(5.2, len), roadMat, 0, 0.005, -len / 2);
+    var road = addMesh(new THREE.PlaneGeometry(5.2, sceneryLength), roadMat, 0, 0.005, -len / 2);
     road.rotation.x = -Math.PI / 2;
 
     // Snow overlay on roadway
-    var roadSnow = addMesh(new THREE.PlaneGeometry(5.2, len), snowGroundMat, 0, 0.012, -len / 2);
+    var roadSnow = addMesh(new THREE.PlaneGeometry(5.2, sceneryLength), snowGroundMat, 0, 0.012, -len / 2);
     roadSnow.rotation.x = -Math.PI / 2;
 
     // Subtle dark tire tracks in the snow
-    var tireTrackMat = makeMat(0x181c22);
-    var trackL = addMesh(new THREE.PlaneGeometry(0.38, len), tireTrackMat, -1.15, 0.015, -len / 2);
+    var tireTrackMat = makeMat(0x465364, { map: getTireTrackTexture(), transparent: true, opacity: 0.38, depthWrite: false });
+    var trackL = addMesh(new THREE.PlaneGeometry(0.38, sceneryLength), tireTrackMat, -1.15, 0.015, -len / 2);
     trackL.rotation.x = -Math.PI / 2;
-    var trackR = addMesh(new THREE.PlaneGeometry(0.38, len), tireTrackMat,  1.15, 0.015, -len / 2);
+    var trackR = addMesh(new THREE.PlaneGeometry(0.38, sceneryLength), tireTrackMat,  1.15, 0.015, -len / 2);
     trackR.rotation.x = -Math.PI / 2;
+    tireTrackMat.map.repeat.y = sceneryLength / 0.6;
 
     // 2. Concrete Curbs (Бордюры) with snow caps
     var curbMat = makeMat(0x4b5563);
     var curbSnowMat = makeMat(0xf8fafc);
-    var curbL = addMesh(new THREE.BoxGeometry(0.24, 0.22, len), curbMat, -2.62, 0.11, -len / 2);
-    addMesh(new THREE.BoxGeometry(0.26, 0.06, len), curbSnowMat, -2.62, 0.24, -len / 2);
-    var curbR = addMesh(new THREE.BoxGeometry(0.24, 0.22, len), curbMat,  2.62, 0.11, -len / 2);
-    addMesh(new THREE.BoxGeometry(0.26, 0.06, len), curbSnowMat,  2.62, 0.24, -len / 2);
+    var curbL = addMesh(new THREE.BoxGeometry(0.24, 0.22, sceneryLength), curbMat, -2.62, 0.11, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.26, 0.06, sceneryLength), curbSnowMat, -2.62, 0.24, -len / 2);
+    var curbR = addMesh(new THREE.BoxGeometry(0.24, 0.22, sceneryLength), curbMat,  2.62, 0.11, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.26, 0.06, sceneryLength), curbSnowMat,  2.62, 0.24, -len / 2);
 
     // 3. Raised Pedestrian Sidewalks (Тротуары)
     var sidewalkMat = makeMat(0x374151);
-    var walkL = addMesh(new THREE.BoxGeometry(3.6, 0.18, len), sidewalkMat, -4.45, 0.09, -len / 2);
-    addMesh(new THREE.PlaneGeometry(3.6, len), snowGroundMat, -4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
-    var walkR = addMesh(new THREE.BoxGeometry(3.6, 0.18, len), sidewalkMat,  4.45, 0.09, -len / 2);
-    addMesh(new THREE.PlaneGeometry(3.6, len), snowGroundMat,  4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
+    var walkL = addMesh(new THREE.BoxGeometry(3.6, 0.18, sceneryLength), sidewalkMat, -4.45, 0.09, -len / 2);
+    addMesh(new THREE.PlaneGeometry(3.6, sceneryLength), snowGroundMat, -4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
+    var walkR = addMesh(new THREE.BoxGeometry(3.6, 0.18, sceneryLength), sidewalkMat,  4.45, 0.09, -len / 2);
+    addMesh(new THREE.PlaneGeometry(3.6, sceneryLength), snowGroundMat,  4.45, 0.185, -len / 2).rotation.x = -Math.PI / 2;
+    mapMaterialSurfaces(scene, snowGroundMat, 6, 6);
 
     // 4. Volumetric Soft Snowdrifts (Сугробы) along curbs and building edges
     var snowdriftMat = makeMat(0xf1f5f9);
@@ -5869,9 +5934,8 @@ function buildStreet(toWork) {
         addMesh(new THREE.BoxGeometry(dd.w, dd.h, dd.d), snowdriftMat, dd.x, dd.h * 0.5 + 0.10, dd.z);
     }
 
-    // 5. Starry Night Sky Ceiling
-    var skyCeiling = addMesh(new THREE.PlaneGeometry(28, len), skyMat, 0, 13.5, -len / 2);
-    skyCeiling.rotation.x = Math.PI / 2;
+    // 5. One continuous sky instead of a photograph repeated across a low ceiling.
+    addNightSky();
 
     // 6. Soviet Panel Apartment Buildings (Хрущёвки / Панельки) with lit windows
     var buildingTex = getStreetBuildingTexture();
@@ -5881,16 +5945,16 @@ function buildStreet(toWork) {
     });
 
     // Left building block
-    var lwall = addMesh(new THREE.PlaneGeometry(len, 14), buildingMat, -6.25, 7.0, -len / 2);
+    var lwall = addMesh(new THREE.PlaneGeometry(sceneryLength, 14), buildingMat, -6.25, 7.0, -len / 2);
     lwall.rotation.y = Math.PI / 2;
     // Roof cornice on left
-    addMesh(new THREE.BoxGeometry(0.5, 0.4, len), makeMat(0x334155), -6.1, 14.1, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.5, 0.4, sceneryLength), makeMat(0x334155), -6.1, 14.1, -len / 2);
 
     // Right building block
-    var rwall = addMesh(new THREE.PlaneGeometry(len, 14), buildingMat, 6.25, 7.0, -len / 2);
+    var rwall = addMesh(new THREE.PlaneGeometry(sceneryLength, 14), buildingMat, 6.25, 7.0, -len / 2);
     rwall.rotation.y = -Math.PI / 2;
     // Roof cornice on right
-    addMesh(new THREE.BoxGeometry(0.5, 0.4, len), makeMat(0x334155), 6.1, 14.1, -len / 2);
+    addMesh(new THREE.BoxGeometry(0.5, 0.4, sceneryLength), makeMat(0x334155), 6.1, 14.1, -len / 2);
 
     // Drainpipes running down buildings
     var pipeMat = makeMat(0x475569);
@@ -5992,12 +6056,14 @@ function buildStreet(toWork) {
     addMesh(new THREE.BoxGeometry(1.6, 0.06, 0.42), benchWoodMat, 0, 0.46, 0, bench1);
     addMesh(new THREE.BoxGeometry(1.64, 0.08, 0.44), curbSnowMat, 0, 0.52, 0, bench1);
 
-    // 12. End and Rear Backdrops
-    var endStreetTex = tlStreet.load(STREET_B64);
-    var endStreetMat = new THREE.MeshBasicMaterial({ map: endStreetTex });
-    var endBackdrop = addMesh(new THREE.PlaneGeometry(24, 14), endStreetMat, 0, 6.0, -len);
-    var rearBackdrop = addMesh(new THREE.PlaneGeometry(24, 14), stalkerMat, 0, 6.0, 1.5);
+    // 12. Distant architecture fades into the same fog as the street.
+    var endBackdrop = addMesh(new THREE.PlaneGeometry(28, 14), buildingMat, 0, 7, -len - 10);
+    var rearBackdrop = addMesh(new THREE.PlaneGeometry(28, 14), buildingMat, 0, 7, 30);
     rearBackdrop.rotation.y = Math.PI;
+    if (buildingTex) {
+        configureSurfaceTexture(buildingTex, false);
+        mapMaterialSurfaces(scene, buildingMat, 12.5, 7);
+    }
 
     // 13. Atmospheric Night Lighting & Blizzard
     scene.add(new THREE.AmbientLight(0x152238, 1.15));
@@ -8167,6 +8233,8 @@ function checkCollisions() {
     var px = camera.position.x;
     var pz = camera.position.z;
     for (var i = 0; i < colliders.length; i++) {
+        px = camera.position.x;
+        pz = camera.position.z;
         var c = colliders[i];
         var ex = px > c.minX - r && px < c.maxX + r;
         var ez = pz > c.minZ - r && pz < c.maxZ + r;
@@ -8201,13 +8269,25 @@ function init() {
     camera.add(playerFlashlight.target);
     scene.add(camera);
 
-    renderer = new THREE.WebGLRenderer({ antialias: false });
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     controls = new PointerLock(camera, document.body);
+    controls.onLock = function() {
+        blocker.style.display = 'none';
+        uiLayer.style.display = 'block';
+        instructions.blur();
+    };
     controls.onUnlock = function() {
+        resetMovement();
+        currentInteractable = null;
+        interactionPrompt.style.opacity = 0;
+        document.getElementById('crosshair').classList.remove('active');
         if (gameState.chapter > 0 && !gameState.transitioning && gameState.chapter !== -1 && !gameState.inUI) {
+            var title = document.getElementById('click-to-wake');
+            if (title) title.textContent = 'Продолжить';
             blocker.style.display = 'flex';
             uiLayer.style.display = 'none';
         }
@@ -9409,6 +9489,22 @@ function onCompDragEnd() {
             controls.lock();
         }
     });
+    instructions.addEventListener('keydown', function(e) {
+        if (e.target !== instructions) return;
+        if (e.code === 'Enter' || e.code === 'Space') {
+            e.preventDefault();
+            instructions.click();
+        }
+    });
+
+    function pauseOnFocusLoss() {
+        resetMovement();
+        if (controls.isLocked || controls.lockPending) controls.unlock();
+    }
+    window.addEventListener('blur', pauseOnFocusLoss);
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) pauseOnFocusLoss();
+    });
 
     raycaster = new THREE.Raycaster();
     raycaster.far = 4;
@@ -9423,14 +9519,25 @@ function onCompDragEnd() {
             }
             return;
         }
-        
+        if (e.code === 'Escape' && controls.isLocked) {
+            controls.unlock();
+            return;
+        }
+        if (!controls.isLocked || gameState.transitioning || isSleeping) return;
+
         switch (e.code) {
             case 'KeyW': case 'ArrowUp':    moveForward  = true; break;
             case 'KeyS': case 'ArrowDown':  moveBackward = true; break;
             case 'KeyA': case 'ArrowLeft':  moveLeft     = true; break;
             case 'KeyD': case 'ArrowRight': moveRight    = true; break;
-            case 'KeyF': standUp(); break;
+            case 'KeyF':
+                if (!e.repeat) {
+                    if (isSitting) standUp();
+                    else if (currentInteractable) handleInteraction(currentInteractable);
+                }
+                break;
         }
+        if (/^Arrow/.test(e.code) || e.code === 'KeyF') e.preventDefault();
         if (e.ctrlKey && e.code === 'KeyP') {
             e.preventDefault();
             if (controls.isLocked) controls.unlock();
@@ -9446,7 +9553,7 @@ function onCompDragEnd() {
     });
 
     document.addEventListener('mousedown', function(e) {
-        if (e.button === 0 && controls.isLocked && currentInteractable) {
+        if (e.button === 0 && controls.isLocked && !gameState.transitioning && !gameState.inUI && !isSleeping && currentInteractable) {
             handleInteraction(currentInteractable);
         }
     });
@@ -9454,6 +9561,7 @@ function onCompDragEnd() {
     window.addEventListener('resize', function() {
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
         renderer.setSize(window.innerWidth, window.innerHeight);
     });
 }
@@ -9467,17 +9575,19 @@ function animate() {
     }
 
     var time = performance.now();
+    var frameDelta = Math.min((time - prevTime) / 1000, 0.05);
 
-    if (controls.isLocked) {
+    if (controls.isLocked && !gameState.transitioning && !gameState.inUI && !isSleeping) {
         // Raycasting for interactions
         raycaster.setFromCamera(center, camera);
         var hits = raycaster.intersectObjects(interactables, true);
         var crosshairEl = document.getElementById('crosshair');
         if (hits.length > 0 && hits[0].object.userData && hits[0].object.userData.type) {
             var hit = hits[0].object;
-            if (currentInteractable !== hit) {
+            var promptText = '[ЛКМ / F] ' + (hit.userData.name || 'Взаимодействовать').replace(/\s*\[F\]/g, '');
+            if (currentInteractable !== hit || interactionPrompt.textContent !== promptText) {
                 currentInteractable = hit;
-                interactionPrompt.textContent = '[ЛКМ] ' + hit.userData.name;
+                interactionPrompt.textContent = promptText;
                 interactionPrompt.style.opacity = 1;
                 if (crosshairEl) crosshairEl.classList.add('active');
             }
@@ -9498,7 +9608,7 @@ function animate() {
                 playerFlashlight.intensity = 1.5;
             }
 
-            var delta = Math.min((time - prevTime) / 1000, 0.1);
+            var delta = frameDelta;
             velocity.x -= velocity.x * 10.0 * delta;
             velocity.z -= velocity.z * 10.0 * delta;
 
@@ -9508,7 +9618,7 @@ function animate() {
 
             var spd = 40.0;
             if (moveForward || moveBackward) velocity.z -= direction.z * spd * delta;
-            if (moveLeft || moveRight)       velocity.x -= direction.x * spd * delta;
+            if (moveLeft || moveRight)       velocity.x += direction.x * spd * delta;
 
             var fwd = new THREE.Vector3();
             camera.getWorldDirection(fwd);
@@ -9585,14 +9695,15 @@ function animate() {
         var sws = u.sways;
         var phs = u.swayPhases;
         var pTime = time * 0.001;
+        var snowFrameScale = frameDelta * 60;
 
         for (var si = 0; si < u.count; si++) {
             var sIdx = si * 3;
             // Downward fall with individual speed
-            pos[sIdx + 1] -= sps[si];
+            pos[sIdx + 1] -= sps[si] * snowFrameScale;
             // Gentle natural wind sway on X and Z
-            pos[sIdx]     += Math.sin(pTime * 2.2 + phs[si]) * sws[si];
-            pos[sIdx + 2] += Math.cos(pTime * 1.6 + phs[si]) * (sws[si] * 0.6);
+            pos[sIdx]     += Math.sin(pTime * 2.2 + phs[si]) * sws[si] * snowFrameScale;
+            pos[sIdx + 2] += Math.cos(pTime * 1.6 + phs[si]) * (sws[si] * 0.6) * snowFrameScale;
 
             // Wrap around Y
             if (pos[sIdx + 1] < u.yMin) {
